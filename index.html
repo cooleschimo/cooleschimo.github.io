@@ -303,6 +303,13 @@
       <div class="dual">
         <div class="col">
           <div class="section-label">writing.py</div>
+          <a class="piece" href="#" onclick="document.getElementById('bayesModal').classList.add('open');return false;">
+            <div class="piece-title">Bayesian Estimation of Informed Trading</div>
+            <div class="piece-meta">
+              <span class="piece-desc">PIN model on 29M Polymarket trades across four Bayesian specs</span>
+              <span class="piece-type">Bayesian</span>
+            </div>
+          </a>
           <a class="piece" href="https://github.com/cooleschimo/NeuroScan-AI4ALL" target="_blank">
             <div class="piece-title">NeuroScan</div>
             <div class="piece-meta">
@@ -383,6 +390,20 @@
       <h2 class="proj-modal-title">Quantum Computing Patent Classifier</h2>
       <p class="proj-modal-body">Built a classification system to map Singapore's quantum innovation landscape across 100,000+ patents, organizing them into a custom technology taxonomy the government's analysis needed but that no existing classification scheme provided — at a scale where manual labeling was impossible. The system learns to categorize with little to no labeled data and improves itself as it runs, which is what made it tractable across a taxonomy this fine-grained. The output fed directly into government R&amp;D investment strategy and helped identify Singapore's comparative advantages in quantum. I'm currently extending the core approach into a domain-general classification engine.</p>
       <div class="proj-modal-note">Repository is private (government data).</div>
+    </div>
+  </div>
+
+  <div id="bayesModal" class="proj-modal">
+    <div class="proj-modal-backdrop" onclick="document.getElementById('bayesModal').classList.remove('open')"></div>
+    <div class="proj-modal-box">
+      <button class="proj-modal-close" onclick="document.getElementById('bayesModal').classList.remove('open')" aria-label="Close">&#x2715;</button>
+      <div class="proj-modal-tag">Bayesian Statistics &nbsp;&middot;&nbsp; University of Chicago &nbsp;&middot;&nbsp; March 2025</div>
+      <h2 class="proj-modal-title">Bayesian Estimation of Informed Trading in Prediction Markets</h2>
+      <p class="proj-modal-body">What fraction of trading on prediction markets is driven by private information versus noise? Estimated the Probability of Informed Trading (PIN) on 2,263 resolved binary Polymarket markets (~29 million trades) using four Bayesian prior specifications: static independent, hierarchical partial pooling, regime-switching, and time-varying. MLE produces boundary solutions in 84.4% of markets; the Bayesian approach produces zero. The regime-switching model reveals that 99.4% of markets alternate between quiet (PIN &asymp; 0.11) and active (PIN &asymp; 0.55) regimes, and its PIN is the only specification that significantly predicts price accuracy (&beta; = 2.88, p = 0.013). Key finding: unlike equity markets where informed trading signals adverse selection cost, in prediction markets it signals forecast quality — informed traders correct the systematic optimism bias of uninformed traders, pushing prices toward truth.</p>
+      <div class="proj-modal-note" style="display:flex;gap:16px;flex-wrap:wrap;">
+        <a href="essays/bayes/Bayesian Estimation of Informed Trading in Prediction Markets_Chimin.pdf" target="_blank" style="color:rgba(255,255,255,0.55);font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;border-bottom:1px solid rgba(255,255,255,0.15);padding-bottom:2px;">Full Paper &rarr;</a>
+        <a href="essays/bayes/bayesfinalslides.pdf" target="_blank" style="color:rgba(255,255,255,0.55);font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;border-bottom:1px solid rgba(255,255,255,0.15);padding-bottom:2px;">Slides &rarr;</a>
+      </div>
     </div>
   </div>
 
@@ -643,7 +664,7 @@
 
     // Close modal on Escape
     document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') document.getElementById('quantumModal').classList.remove('open');
+      if (e.key === 'Escape') { document.getElementById('quantumModal').classList.remove('open'); document.getElementById('bayesModal').classList.remove('open'); }
     });
   </script>
 </body>
