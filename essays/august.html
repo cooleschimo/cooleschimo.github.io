@@ -7,13 +7,30 @@
 <link rel="stylesheet" href="essay.css">
 </head>
 <body>
+<div id="progress-bar"></div>
+
+<div class="essay-wrap">
 <div class="essay-container">
-<a class="essay-back" href="../index.html">← back</a>
-<h1 class="essay-title">august</h1>
-<div class="essay-body">
-<p class="no-indent" style="text-indent:0;line-height:2.2;max-width:520px">august was a little gypsy man who came in his little caravan. he did a little twirl, sang a little song, and invited me to come along. i traipsed up a hill with him and had a good pant, but a good laugh too. when i got tired, he gave me flowers — birds of paradise, hyacinths, sunflowers, hollyhocks and roses.</p>
-<p class="no-indent" style="text-indent:0;line-height:2.2;max-width:520px">then he was gone. the gentle breeze carried away the petals of my youth; left me with rose-pricked fingers and blistered feet. only a stupid smile and tear streaks remain — damp tyre tracks depressed into my memory to tell me i once lived in a little gypsy caravan.</p>
+
+<a class="essay-back" href="../index.html">back</a>
+
+<div class="essay-header">
+  <div class="essay-type-tag">Poetry</div>
+  <h1 class="essay-title">august</h1>
+</div>
+
+<div class="essay-divider"></div>
+
+<div class="essay-body prose-poem">
+<p>august was a little gypsy man who came in his little caravan. he did a little twirl, sang a little song, and invited me to come along. i traipsed up a hill with him and had a good pant, but a good laugh too. when i got tired, he gave me flowers — birds of paradise, hyacinths, sunflowers, hollyhocks and roses.</p>
+<p>then he was gone. the gentle breeze carried away the petals of my youth; left me with rose-pricked fingers and blistered feet. only a stupid smile and tear streaks remain — damp tyre tracks depressed into my memory to tell me i once lived in a little gypsy caravan.</p>
+</div>
+
 </div>
 </div>
+
+<script>
+window.addEventListener('scroll',function(){var d=document.documentElement,t=d.scrollHeight-d.clientHeight;document.getElementById('progress-bar').style.width=(t>0?(d.scrollTop/t*100):0)+"%%";});
+</script>
 </body>
 </html>

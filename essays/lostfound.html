@@ -3,30 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>lost & found — Chimin</title>
-
-
+<title>lost &amp; found — Chimin</title>
 <link rel="stylesheet" href="essay.css">
-<style>
-.poem-two-col{max-width:900px;margin:0 auto}
-.poem-row{display:grid;grid-template-columns:1fr 1fr;gap:0 48px;margin-bottom:1px}
-.poem-row .left{text-align:right;font-size:.88rem;line-height:1.7}
-.poem-row .right{text-align:left;font-size:.88rem;line-height:1.7}
-.poem-row .left em,.poem-row .right em{font-style:italic}
-.poem-title-row{text-align:center;margin-bottom:32px}
-.poem-title-row span{font-weight:700;font-size:1.1rem;letter-spacing:.15em}
-@media(max-width:700px){
-  .poem-row{grid-template-columns:1fr;gap:4px 0}
-  .poem-row .left{text-align:left;color:#666;font-size:.82rem}
-  .poem-row .right{text-align:left;margin-bottom:12px}
-}
-</style>
 </head>
-<body style="background:#0e0e12;color:#d8d4cc">
-<div class="essay-container" style="max-width:920px">
-<a class="essay-back" href="../index.html">← back to the snow</a>
+<body>
+<div id="progress-bar"></div>
 
-<div class="poem-title-row"><span>lost &nbsp;&amp;&nbsp; found</span></div>
+<div class="essay-wrap">
+<div class="poem-container">
+
+<a class="essay-back" href="../index.html">back</a>
+
+<div class="poem-title-row">
+  <span>lost &nbsp;&amp;&nbsp; found</span>
+</div>
 
 <div class="poem-two-col">
 <div class="poem-row"><div class="left">they see the athlete sitting stoically in the shadows of her past glory;</div><div class="right">remembering not her purpose or direction</div></div>
@@ -59,6 +49,12 @@
 <div class="poem-row"><div class="left">an apparition wandering through the skeleton of her former self—</div><div class="right">choosing to invest in a constructive project of self-improvement.</div></div>
 <div class="poem-row"><div class="left">her victory is not found through emotional rebellion.</div><div class="right"><em>my victory is found in stoic resilience.</em></div></div>
 </div>
+
 </div>
+</div>
+
+<script>
+window.addEventListener('scroll',function(){var d=document.documentElement,t=d.scrollHeight-d.clientHeight;document.getElementById('progress-bar').style.width=(t>0?(d.scrollTop/t*100):0)+"%%";});
+</script>
 </body>
 </html>

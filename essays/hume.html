@@ -3,17 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hume & Free Will — Chimin</title>
-
-
+<title>The Ability to Do Otherwise — Chimin</title>
 <link rel="stylesheet" href="essay.css">
 </head>
-<body style="background:#0e0e12;color:#d8d4cc">
-<div class="essay-container">
-<a class="essay-back" href="../index.html">← back to the snow</a>
+<body>
+<div id="progress-bar"></div>
 
-<h1 class="essay-title">The Ability to Do Otherwise</h1>
-<p class="essay-subtitle">Is an ability to do otherwise necessary for the kind of free will that is sufficient for moral responsibility?</p>
+<div class="essay-wrap">
+<div class="essay-container">
+
+<a class="essay-back" href="../index.html">back</a>
+
+<div class="essay-header">
+  <div class="essay-type-tag">Philosophy</div>
+  <h1 class="essay-title">The Ability to Do Otherwise</h1>
+  <p class="essay-subtitle">Is an ability to do otherwise necessary for the kind of free will that is sufficient for moral responsibility?</p>
+</div>
+
+<div class="essay-divider"></div>
 
 <div class="essay-body">
 <p>I argue that the ability to do otherwise is necessary for the kind of free will that is sufficient for moral responsibility. The discussion centres on two nested questions:</p>
@@ -57,6 +64,12 @@
 <p>McKenna, M. (2013) 'Reasons-Responsiveness, Agents, and Mechanisms', <em>Oxford Studies in Agency and Responsibility Volume 1,</em> pp. 151–183.</p>
 <p>Robb, D. (2020) <em>Moral Responsibility and the Principle of Alternative Possibilities,</em> Stanford Encyclopedia of Philosophy.</p>
 </div>
+
 </div>
+</div>
+
+<script>
+window.addEventListener('scroll',function(){var d=document.documentElement,t=d.scrollHeight-d.clientHeight;document.getElementById('progress-bar').style.width=(t>0?(d.scrollTop/t*100):0)+"%%";});
+</script>
 </body>
 </html>

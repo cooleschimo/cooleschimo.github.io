@@ -1,23 +1,298 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Space+Mono:ital@0;1&family=DM+Sans:ital,wght@0,400;0,500;1,400&display=swap');
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'DM Sans',sans-serif;background:#0e0e12;color:#d8d4cc;line-height:1.85;font-size:16px}
-.essay-container{max-width:680px;margin:0 auto;padding:60px 28px 100px}
-.essay-back{display:inline-block;margin-bottom:48px;font-family:'Space Mono',monospace;font-size:.72rem;color:#706e68;text-decoration:none;transition:color .2s;letter-spacing:.04em}
-.essay-back:hover{color:#eae8e3}
-.essay-title{font-family:'Playfair Display',serif;font-size:clamp(1.6rem,4vw,2.2rem);font-weight:700;color:#eae8e3;line-height:1.25;margin-bottom:8px;letter-spacing:-.01em}
-.essay-subtitle{font-size:.9rem;font-style:italic;color:#706e68;margin-bottom:40px;line-height:1.5}
-.essay-body p{margin-bottom:20px;text-align:justify;text-indent:2em;color:#b8b4ac}
-.essay-body p:first-child,.essay-body p.no-indent{text-indent:0}
-.essay-body strong{color:#d8d4cc;font-weight:600}
-.essay-body blockquote{margin:28px 0;padding:0 0 0 20px;border-left:2px solid rgba(255,255,255,.06);font-style:italic;color:#888}
-.works-cited{margin-top:56px;padding-top:28px;border-top:1px solid rgba(255,255,255,.06)}
-.works-cited h3{font-family:'Space Mono',monospace;font-size:.68rem;font-weight:400;text-transform:uppercase;letter-spacing:.15em;color:#706e68;margin-bottom:18px}
-.works-cited p{font-size:.78rem;margin-bottom:8px;text-indent:-2em;padding-left:2em;line-height:1.65;text-align:left;color:#888}
-.poem-two-col{max-width:860px;margin:24px auto}
-.poem-row{display:grid;grid-template-columns:1fr 1fr;gap:0 36px;margin-bottom:2px}
-.poem-row .left{text-align:right;font-size:.84rem;line-height:1.7;color:#b8b4ac}
-.poem-row .right{text-align:left;font-size:.84rem;line-height:1.7;color:#b8b4ac}
-.poem-row em{font-style:italic}
-.poem-title-row{text-align:center;margin-bottom:36px}
-.poem-title-row span{font-family:'Playfair Display',serif;font-weight:700;font-size:1.2rem;color:#eae8e3;letter-spacing:.12em}
-@media(max-width:650px){.essay-container{padding:40px 20px 70px}.poem-row{grid-template-columns:1fr;gap:6px 0}.poem-row .left{text-align:left;opacity:.6;font-size:.78rem}.poem-row .right{margin-bottom:14px}}
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Space+Mono:ital@0;1&family=DM+Sans:ital,wght@0,400;0,500;1,400&display=swap');
+
+:root {
+  --text: #2a1a1a;
+  --muted: #a08878;
+  --body-text: #3a2a2a;
+  --accent1: #e85d3a;
+  --accent2: #f0a856;
+  --accent3: #c49de8;
+  --border: rgba(42,26,26,0.1);
+  --bg: #faf6f0;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Reading progress bar ─────────────────────── */
+#progress-bar {
+  position: fixed;
+  top: 0; left: 0;
+  height: 2px;
+  width: 0%;
+  background: linear-gradient(to right, var(--accent1), var(--accent2), var(--accent3));
+  z-index: 200;
+  transition: width 0.08s linear;
+}
+
+/* ── Page layout ──────────────────────────────── */
+.essay-wrap {
+  min-height: 100vh;
+  padding: 72px 0 120px;
+}
+
+.essay-container {
+  max-width: 660px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.poem-container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ── Back link ────────────────────────────────── */
+.essay-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 64px;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+.essay-back::before {
+  content: '←';
+  transition: transform 0.2s ease;
+}
+.essay-back:hover { color: var(--text); }
+.essay-back:hover::before { transform: translateX(-4px); }
+
+/* Progress bar sits on top of light bg — keep the same gradient */
+
+/* ── Essay header ─────────────────────────────── */
+.essay-header {
+  margin-bottom: 48px;
+}
+
+.essay-type-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--accent2);
+  margin-bottom: 20px;
+}
+.essay-type-tag::after {
+  content: '';
+  display: inline-block;
+  width: 28px;
+  height: 1px;
+  background: var(--accent2);
+  opacity: 0.45;
+}
+
+.essay-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  margin-bottom: 14px;
+  background: linear-gradient(135deg, var(--accent1), var(--accent2), var(--accent3), var(--accent1));
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 6s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50%       { background-position: 100% 50%; }
+}
+
+.essay-subtitle {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem;
+  font-style: italic;
+  color: var(--muted);
+  line-height: 1.6;
+  max-width: 480px;
+}
+
+.essay-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 40px 0 48px;
+}
+
+/* ── Source poem ──────────────────────────────── */
+.source-poem {
+  margin-bottom: 8px;
+}
+
+.source-poem-title {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+  margin-bottom: 24px;
+}
+
+.source-poem-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1rem;
+  line-height: 2;
+  color: #5a3a3a;
+  white-space: pre;
+  overflow-x: auto;
+  font-weight: 400;
+  font-style: italic;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+/* ── Essay body ───────────────────────────────── */
+.essay-body p {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.18rem;
+  line-height: 1.95;
+  color: var(--body-text);
+  margin-bottom: 1.6em;
+  text-align: justify;
+  text-indent: 2em;
+  font-weight: 400;
+}
+.essay-body p:first-child,
+.essay-body p.no-indent { text-indent: 0; }
+
+.essay-body strong { color: var(--text); font-weight: 600; }
+.essay-body em { font-style: italic; }
+
+/* Standalone <strong> paragraph = section heading */
+.essay-body p:has(> strong:only-child) {
+  text-indent: 0;
+  margin-top: 44px;
+  margin-bottom: 6px;
+}
+.essay-body p:has(> strong:only-child) > strong {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: #9a6abf;
+  font-weight: 400;
+}
+
+.essay-body blockquote {
+  margin: 36px 0;
+  padding: 0 0 0 24px;
+  border-left: 2px solid rgba(180,120,80,0.3);
+  font-style: italic;
+  color: #6a4a3a;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.1rem;
+  line-height: 1.85;
+}
+
+/* ── Works cited ──────────────────────────────── */
+.works-cited {
+  margin-top: 72px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+}
+.works-cited h3 {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.58rem;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--muted);
+  margin-bottom: 24px;
+}
+.works-cited p {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.8rem;
+  margin-bottom: 12px;
+  text-indent: -2em;
+  padding-left: 2em;
+  line-height: 1.7;
+  text-align: left;
+  color: #8a7060;
+}
+
+/* ── Poem title (lost & found) ────────────────── */
+.poem-title-row {
+  text-align: center;
+  margin-bottom: 56px;
+}
+.poem-title-row span {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 400;
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  color: var(--text);
+  letter-spacing: 0.08em;
+}
+
+/* ── Two-column poem ──────────────────────────── */
+.poem-two-col {}
+
+.poem-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 80px;
+  margin-bottom: 3px;
+  align-items: baseline;
+}
+
+.poem-row .left,
+.poem-row .right {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: #4a3030;
+  white-space: nowrap;
+}
+
+.poem-row .left  { text-align: right; }
+.poem-row .right { text-align: left; }
+.poem-row em     { font-style: italic; }
+
+/* ── Prose poem (august) ──────────────────────── */
+.prose-poem p {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.15rem;
+  text-indent: 0 !important;
+  line-height: 2.1;
+  max-width: 520px;
+  font-style: italic;
+  color: #4a3030;
+  text-align: left !important;
+}
+
+/* ── Responsive ───────────────────────────────── */
+@media (max-width: 700px) {
+  .essay-wrap { padding: 48px 0 80px; }
+
+  .poem-row {
+    grid-template-columns: 1fr;
+    gap: 3px 0;
+  }
+  .poem-row .left,
+  .poem-row .right { white-space: normal; }
+  .poem-row .left {
+    text-align: left;
+    color: #b09080;
+    font-size: 0.82rem;
+  }
+  .poem-row .right { margin-bottom: 14px; }
+}

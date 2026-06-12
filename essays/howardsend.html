@@ -3,17 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Howards End — Chimin</title>
-
-
+<title>The Pieces Margaret Picked Up — Chimin</title>
 <link rel="stylesheet" href="essay.css">
 </head>
-<body style="background:#0e0e12;color:#d8d4cc">
-<div class="essay-container">
-<a class="essay-back" href="../index.html">← back to the snow</a>
+<body>
+<div id="progress-bar"></div>
 
-<h1 class="essay-title">The Pieces Margaret Picked Up</h1>
-<p class="essay-subtitle">Investigating the Psychological Ideal of Howards End</p>
+<div class="essay-wrap">
+<div class="essay-container">
+
+<a class="essay-back" href="../index.html">back</a>
+
+<div class="essay-header">
+  <div class="essay-type-tag">Literary Critique</div>
+  <h1 class="essay-title">The Pieces Margaret Picked Up</h1>
+  <p class="essay-subtitle">Investigating the Psychological Ideal of Howards End</p>
+</div>
+
+<div class="essay-divider"></div>
 
 <div class="essay-body">
 <p>Based on the grounds of Jungian theory, <em>Howards End</em> presents the integration of the anima and the animus as a psychological ideal. The integration of the anima and the animus is epitomised by the novel's epigraph "Only connect...", as well as the Jungian process of individuation, which is the central concept of Jung's psychology. One of the requirements of Jung's psychological goal of individuation is the integration of the anima and the animus. The anima is the feminine archetype of a man's unconscious and similarly the animus the masculine in a woman's unconscious, (Jung CW 9ii, par. 27) and they sum up one's unconscious judgments (Meletinsky 46). When one integrates the archetypes, one is essentially keeping both masculine and feminine attributes of one's unconscious in harmony and balance. In tandem with this Jungian goal is <em>Howards End</em>'s demonstration of the anima-animus integration as a psychological ideal, through the portrayal of characters with either an unintegrated anima or animus to complement a central character, Margaret, who has integrated both archetypes.</p>
@@ -47,6 +54,12 @@
 <p>Martin, Percival W. <em>Experiment in Depth.</em> Routledge and Kegan Paul, 1955.</p>
 <p>Meletinsky, Eleazar M. <em>The Poetics of Myth.</em> Garland Publishing Inc, 1998.</p>
 </div>
+
 </div>
+</div>
+
+<script>
+window.addEventListener('scroll',function(){var d=document.documentElement,t=d.scrollHeight-d.clientHeight;document.getElementById('progress-bar').style.width=(t>0?(d.scrollTop/t*100):0)+"%%";});
+</script>
 </body>
 </html>
