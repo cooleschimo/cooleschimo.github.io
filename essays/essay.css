@@ -30,7 +30,10 @@ body {
   background: linear-gradient(to right, var(--accent1), var(--accent2), var(--accent3));
   z-index: 200;
   transition: width 0.08s linear;
+  opacity: 0;
+  transition: width 0.08s linear, opacity 0.3s ease;
 }
+#progress-bar.active { opacity: 1; }
 
 /* ── Page layout ──────────────────────────────── */
 .essay-wrap {
@@ -239,8 +242,13 @@ body {
   font-family: 'Cormorant Garamond', serif;
   font-weight: 400;
   font-size: clamp(1.6rem, 4vw, 2.4rem);
-  color: var(--text);
   letter-spacing: 0.08em;
+  background: linear-gradient(135deg, var(--accent1), var(--accent2), var(--accent3), var(--accent1));
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 6s ease-in-out infinite;
 }
 
 /* ── Two-column poem ──────────────────────────── */

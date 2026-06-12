@@ -59,7 +59,7 @@
 </div>
 
 <script>
-window.addEventListener('scroll',function(){var d=document.documentElement,t=d.scrollHeight-d.clientHeight;document.getElementById('progress-bar').style.width=(t>0?(d.scrollTop/t*100):0)+"%%";});
+window.addEventListener('scroll',function(){var d=document.documentElement,t=d.scrollHeight-d.clientHeight;document.getElementById('progress-bar').style.width=(t>0?(d.scrollTop/t*100):0)+"%";var b=document.getElementById("progress-bar");b.classList.toggle("active",d.scrollTop>0);});
 </script>
 </body>
 </html>
