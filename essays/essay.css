@@ -1,9 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Space+Mono:ital@0;1&family=DM+Sans:ital,wght@0,400;0,500;1,400&display=swap');
 
 :root {
-  --text: #2a1a1a;
+  --text: #3d1a1a;
   --muted: #a08878;
-  --body-text: #3a2a2a;
+  --body-text: #4a2020;
   --accent1: #e85d3a;
   --accent2: #f0a856;
   --accent3: #c49de8;
@@ -127,7 +127,7 @@ body {
   font-style: italic;
   color: var(--muted);
   line-height: 1.6;
-  max-width: 480px;
+  max-width: 100%;
 }
 
 .essay-divider {
@@ -154,7 +154,7 @@ body {
   font-family: 'Cormorant Garamond', serif;
   font-size: 1rem;
   line-height: 2;
-  color: #5a3a3a;
+  color: #5a2828;
   white-space: pre;
   overflow-x: auto;
   font-weight: 400;
@@ -201,7 +201,7 @@ body {
   padding: 0 0 0 24px;
   border-left: 2px solid rgba(180,120,80,0.3);
   font-style: italic;
-  color: #6a4a3a;
+  color: #6a3030;
   font-family: 'Cormorant Garamond', serif;
   font-size: 1.1rem;
   line-height: 1.85;
@@ -230,7 +230,7 @@ body {
   padding-left: 2em;
   line-height: 1.7;
   text-align: left;
-  color: #8a7060;
+  color: #8a5a5a;
 }
 
 /* ── Poem title (lost & found) ────────────────── */
@@ -267,7 +267,7 @@ body {
   font-family: 'Cormorant Garamond', serif;
   font-size: 0.95rem;
   line-height: 1.8;
-  color: #4a3030;
+  color: #4a2020;
   white-space: nowrap;
 }
 
@@ -283,7 +283,7 @@ body {
   line-height: 2.1;
   max-width: 520px;
   font-style: italic;
-  color: #4a3030;
+  color: #4a2020;
   text-align: left !important;
 }
 
