@@ -40,9 +40,9 @@ body {
   top: 8px;
   right: 16px;
   font-family: 'Space Mono', monospace;
-  font-size: 0.52rem;
+  font-size: 0.62rem;
   text-transform: uppercase;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.22em;
   color: var(--muted);
   z-index: 201;
   opacity: 0;

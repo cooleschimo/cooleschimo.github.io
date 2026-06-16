@@ -49,18 +49,20 @@ var totalWords=b?b.innerText.trim().split(/[^a-zA-Z]+/).filter(Boolean).length:0
 var totalMins=Math.ceil(totalWords/200);
 var bar=document.getElementById("progress-bar");
 var rtBar=document.getElementById("reading-time-bar");
-if(rtBar)rtBar.textContent=totalMins+" min read";
-window.addEventListener("scroll",function(){
+function updateBar(){
   var d=document.documentElement,t=d.scrollHeight-d.clientHeight;
   var pct=t>0?d.scrollTop/t:0;
   bar.style.width=(pct*100)+"%";
-  bar.classList.toggle("active",d.scrollTop>0);
+  var scrolled=d.scrollTop>0;
+  bar.classList.toggle("active",scrolled);
   if(rtBar){
-    rtBar.classList.toggle("active",d.scrollTop>0);
+    rtBar.classList.toggle("active",scrolled);
     var minsLeft=Math.ceil(totalMins*(1-pct));
     rtBar.textContent=pct>=0.99?"done":minsLeft<=1?"1 min left":minsLeft+" min left";
   }
-});
+}
+updateBar();
+window.addEventListener("scroll",updateBar);
 </script>
 
 
