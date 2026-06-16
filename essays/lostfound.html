@@ -14,15 +14,14 @@
 }
 
 .poem-scale-wrap {
-  /* fixed reference width; everything inside scales proportionally */
   width: 100%;
   font-size: clamp(0.52rem, 0.95vw, 0.82rem);
+  display: flex;
+  flex-direction: column;
 }
 
 .twin-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0 12em;
+  display: flex;
   margin-bottom: 0.28em;
   align-items: baseline;
 }
@@ -34,9 +33,12 @@
   line-height: 1.85;
   color: #4a2020;
   white-space: nowrap;
+  /* each column exactly half the container minus the fixed gutter */
+  width: calc(50% - 5em);
+  flex-shrink: 0;
 }
 
-.twin-row .left  { text-align: right; }
+.twin-row .left  { text-align: right; margin-right: 10em; }
 .twin-row .right { text-align: left; }
 .twin-row em     { font-style: italic; }
 
