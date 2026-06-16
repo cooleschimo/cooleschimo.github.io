@@ -8,6 +8,7 @@
 </head>
 <body>
 <div id="progress-bar"></div>
+<div id="reading-time-bar"></div>
 
 <div class="essay-wrap">
 <div class="essay-container">
@@ -15,7 +16,7 @@
 <a class="essay-back" href="../index.html">back</a>
 
 <div class="essay-header">
-  <div class="essay-meta"><div class="essay-type-tag">Economics</div><span class="reading-time" id="reading-time"></span></div>
+  <div class="essay-type-tag">Economics</div>
   <h1 class="essay-title">Mental and Physical Subsistence for All</h1>
   <p class="essay-subtitle">A Smithian Critique of the Underprovision of Art in the Free Market</p>
 </div>
@@ -115,17 +116,18 @@
 var b=document.querySelector(".essay-body");
 var totalWords=b?b.innerText.trim().split(/[^a-zA-Z]+/).filter(Boolean).length:0;
 var totalMins=Math.ceil(totalWords/200);
-var rt=document.getElementById("reading-time");
-if(rt)rt.textContent=totalMins+" min read";
+var bar=document.getElementById("progress-bar");
+var rtBar=document.getElementById("reading-time-bar");
+if(rtBar)rtBar.textContent=totalMins+" min read";
 window.addEventListener("scroll",function(){
   var d=document.documentElement,t=d.scrollHeight-d.clientHeight;
   var pct=t>0?d.scrollTop/t:0;
-  document.getElementById("progress-bar").style.width=(pct*100)+"%";
-  var bar=document.getElementById("progress-bar");
+  bar.style.width=(pct*100)+"%";
   bar.classList.toggle("active",d.scrollTop>0);
-  if(rt){
+  if(rtBar){
+    rtBar.classList.toggle("active",d.scrollTop>0);
     var minsLeft=Math.ceil(totalMins*(1-pct));
-    rt.textContent=pct>=0.99?"done":minsLeft<=0?"< 1 min left":minsLeft+" min left";
+    rtBar.textContent=pct>=0.99?"done":minsLeft<=1?"1 min left":minsLeft+" min left";
   }
 });
 </script>

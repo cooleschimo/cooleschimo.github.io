@@ -35,6 +35,21 @@ body {
 }
 #progress-bar.active { opacity: 1; }
 
+#reading-time-bar {
+  position: fixed;
+  top: 8px;
+  right: 16px;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.52rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+  z-index: 201;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+#reading-time-bar.active { opacity: 1; }
+
 /* ── Page layout ──────────────────────────────── */
 .essay-wrap {
   min-height: 100vh;
