@@ -25,7 +25,7 @@ body {
 #progress-bar {
   position: fixed;
   top: 0; left: 0;
-  height: 20px;
+  height: 2px;
   width: 0%;
   background: linear-gradient(to right, var(--accent1), var(--accent2), var(--accent3));
   z-index: 200;
@@ -36,20 +36,16 @@ body {
 
 #reading-time-bar {
   position: fixed;
-  top: 0;
-  left: 0;
-  height: 20px;
+  top: 8px;
+  right: 16px;
   font-family: 'Space Mono', monospace;
-  font-size: 0.5rem;
+  font-size: 0.62rem;
   text-transform: uppercase;
   letter-spacing: 0.22em;
-  color: white;
+  color: var(--muted);
   white-space: nowrap;
   z-index: 201;
   opacity: 0;
-  display: flex;
-  align-items: center;
-  padding-left: 10px;
   transition: opacity 0.3s ease;
   pointer-events: none;
 }
