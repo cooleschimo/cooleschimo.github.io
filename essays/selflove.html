@@ -15,7 +15,7 @@
 <a class="essay-back" href="../index.html">back</a>
 
 <div class="essay-header">
-  <div class="essay-type-tag">Opinion</div>
+  <div class="essay-meta"><div class="essay-type-tag">Opinion</div><span class="reading-time" id="reading-time"></span></div>
   <h1 class="essay-title">Self-love Shouldn't Be Killing You</h1>
 </div>
 
@@ -45,5 +45,6 @@
 <script>
 window.addEventListener('scroll',function(){var d=document.documentElement,t=d.scrollHeight-d.clientHeight;document.getElementById('progress-bar').style.width=(t>0?(d.scrollTop/t*100):0)+"%";var b=document.getElementById("progress-bar");b.classList.toggle("active",d.scrollTop>0);});
 </script>
+<script>var b=document.querySelector(".essay-body");if(b){var w=b.innerText.trim().split(/[^a-zA-Z]+/).length,m=Math.ceil(w/200);document.getElementById("reading-time").textContent=m+" min read";}</script>
 </body>
 </html>

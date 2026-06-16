@@ -92,6 +92,25 @@ body {
   color: var(--accent2);
   margin-bottom: 20px;
 }
+.essay-meta {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.essay-meta .essay-type-tag {
+  margin-bottom: 0;
+}
+
+.reading-time {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--muted);
+}
+
 .essay-type-tag::after {
   content: '';
   display: inline-block;
