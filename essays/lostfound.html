@@ -6,39 +6,67 @@
 <title>lost &amp; found — Chimin</title>
 <link rel="stylesheet" href="essay.css">
 <style>
-/* Twin Cinema layout — scales as a unit with viewport, immune to text zoom */
+/* Twin Cinema layout */
 .poem-outer {
   width: 100%;
   overflow-x: auto;
-  padding: 0 2vw;
 }
 
-.poem-scale-wrap {
-  width: 100%;
+.poem-table {
   font-size: clamp(0.65rem, 1.15vw, 1.05rem);
-  display: flex;
-  flex-direction: column;
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
 }
 
-.twin-row {
-  display: flex;
-  margin-bottom: 0.28em;
-  align-items: baseline;
-}
-
-.twin-row .left,
-.twin-row .right {
+.poem-table td {
   font-family: 'Cormorant Garamond', serif;
   font-size: 1em;
   line-height: 1.85;
   color: #4a2020;
   white-space: nowrap;
-  flex-shrink: 0;
+  padding: 0;
+  vertical-align: baseline;
 }
 
-.twin-row .left  { text-align: right; width: calc(60% - 2em); margin-right: 4em; }
-.twin-row .right { text-align: left; width: calc(40% - 2em); }
-.twin-row em     { font-style: italic; }
+.poem-table .tc-left {
+  text-align: right;
+  width: 50vw;
+  padding-right: 3em;
+}
+
+.poem-table .tc-gap {
+  width: 0;
+  padding: 0;
+}
+
+.poem-table .tc-right {
+  text-align: left;
+  width: calc(50vw - 24px);
+  padding-left: 3em;
+}
+
+/* Override poem-container: span full width so table can use vw-based columns */
+.poem-container {
+  max-width: 100vw !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 24px 0 0 !important;
+}
+
+.poem-table em { font-style: italic; }
+
+.tc-title {
+  font-family: 'Cormorant Garamond', serif;
+  letter-spacing: 0.08em;
+  background: linear-gradient(135deg, var(--accent1), var(--accent2), var(--accent3), var(--accent1));
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 6s ease-in-out infinite;
+  white-space: nowrap;
+}
 
 /* twin cinema note */
 .twin-cinema-note {
@@ -58,52 +86,58 @@
 <div id="progress-bar"></div>
 
 <div class="essay-wrap">
+<div style="max-width: 960px; margin: 0 auto; padding: 0 24px;">
+  <a class="essay-back" href="../index.html">back</a>
+</div>
+
 <div class="poem-container">
 
-<a class="essay-back" href="../index.html">back</a>
-
-<div class="poem-title-row">
-  <span>lost &nbsp;&amp;&nbsp; found</span>
-</div>
-
-<div class="twin-cinema-note">
-  <p>Written in Twin Cinema — a form by Singaporean poet Daryl Lim Wei Jie, in which two independent poems share a page as parallel columns. Read each column top to bottom on its own, or read across each row to find a third poem in the space between. Best viewed in landscape.</p>
-</div>
-
 <div class="poem-outer">
-<div class="poem-scale-wrap">
-<div class="twin-row"><div class="left">they see the athlete sitting stoically in the shadows of her past glory;</div><div class="right">remembering not her purpose or direction</div></div>
-<div class="twin-row"><div class="left">but the snap of her backbone—</div><div class="right">from years ago—</div></div>
-<div class="twin-row"><div class="left">"hey, how are you? do you think you'll be back soon?"</div><div class="right">"i'm not sure anymore"—she tells herself:</div></div>
-<div class="twin-row"><div class="left">can't she</div><div class="right">just persist, somehow,</div></div>
-<div class="twin-row"><div class="left">claw her way back? forge her own path? not give up?</div><div class="right">defy the grayscale scans; ignore</div></div>
-<div class="twin-row"><div class="left">the pain</div><div class="right">that which eats away at the spine and seeps through the legs.</div></div>
-<div class="twin-row"><div class="left">how could it be that</div><div class="right">she has to come to terms with a fate this</div></div>
-<div class="twin-row"><div class="left">bad though?</div><div class="right">disastrous injury has brought…</div></div>
-<div class="twin-row"><div class="left">curveballs. <em>they're unpredictable, but you can handle them.</em> they simply do not understand</div><div class="right">what the value of stoicism is, many question:</div></div>
-<div class="twin-row"><div class="left"><em>…why can't you get back to the court? why are you not throwing these curveballs beyond the red court lines</em></div><div class="right">in the face of destiny's final verdict—her mental acceptance of</div></div>
-<div class="twin-row"><div class="left">forfeiting the only solution to preclude</div><div class="right">the loss of what she once loved is a calamity.</div></div>
-<div class="twin-row"><div class="left">(<em>what a disappointment!</em>)</div><div class="right">but silent endurance, in fact, is not the equivalence of resignation—</div></div>
-<div class="twin-row"><div class="left">locking oneself in feeble acquiescence—</div><div class="right">that's called defeat. <em>determinism is not synonymous with defeatism.</em></div></div>
-<div class="twin-row"><div class="left">they say, <em>you should push yourself furiously to get back on your feet;</em></div><div class="right">she says, <em>accepting that there are things in life I cannot change requires courage</em> —</div></div>
-<div class="twin-row"><div class="left">actively fighting to overcome insurmountable odds is</div><div class="right">a strength indeed. and so is building perseverance, which does not need</div></div>
-<div class="twin-row"><div class="left">rising above</div><div class="right">visible suffering,</div></div>
-<div class="twin-row"><div class="left">pain or adversity—</div><div class="right">just sustained discipline, even in smooth-sailing times.</div></div>
-<div class="twin-row"><div class="left"><em>this is how you preserve self-esteem</em></div><div class="right">and in Islam they call this sabr. <em>though i am not a religious disciple, i am religiously disciplined</em></div></div>
-<div class="twin-row"><div class="left">and prove strength to others</div><div class="right">by conscientiously cultivating mental and physical fortitude</div></div>
-<div class="twin-row"><div class="left">—not through indifference;</div><div class="right">through hours of glute bridges, years of behavioral restrictions and a lifetime of strict routine.</div></div>
-<div class="twin-row"><div class="left"><em>where does being stoic get you?</em></div><div class="right"><em>it gets me to</em></div></div>
-<div class="twin-row"><div class="left">triumph and fighting spirit</div><div class="right"><em>within: I am nurturing an inner faith through which peace grows, pain is controlled and fears</em></div></div>
-<div class="twin-row"><div class="left">subside, unfamiliar narratives that</div><div class="right"><em>inspire patience</em> — new direction must</div></div>
-<div class="twin-row"><div class="left">diverge from canonized motivational stories,</div><div class="right">guide her own personal life, free from regret and lamenting,</div></div>
-<div class="twin-row"><div class="left">and more importantly, from social expectations. they think she does not strive</div><div class="right">to redefine her mind and self…</div></div>
-<div class="twin-row"><div class="left">to break free from her body's boundaries…</div><div class="right">to reclaim her agency…the conclusion is</div></div>
-<div class="twin-row"><div class="left">just not right. she is lost—</div><div class="right">she <em>was</em> lost—but has now found herself. she is no longer unsure of her worth—</div></div>
-<div class="twin-row"><div class="left">an apparition wandering through the skeleton of her former self—</div><div class="right">choosing to invest in a constructive project of self-improvement.</div></div>
-<div class="twin-row"><div class="left">her victory is not found through emotional rebellion.</div><div class="right"><em>my victory is found in stoic resilience.</em></div></div>
-</div>
+<table class="poem-table"><tbody>
+<tr class="title-row">
+  <td class="tc-left tc-title" style="font-size:clamp(1.8rem,4vw,3.2rem);">lost</td>
+  <td class="tc-gap" style="width:4em; padding:0; text-align:center; font-family:'Cormorant Garamond',serif; font-size:clamp(1.2rem,2.5vw,2rem); letter-spacing:0.08em; background:linear-gradient(135deg,var(--accent1),var(--accent2),var(--accent3),var(--accent1)); background-size:300% 300%; -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; animation:shimmer 6s ease-in-out infinite;">&amp;</td>
+  <td class="tc-right tc-title" style="font-size:clamp(1.8rem,4vw,3.2rem);">found</td>
+</tr>
+<tr><td colspan="3" style="height:56px;"></td></tr>
+<tr><td class="tc-left">they see the athlete sitting stoically in the shadows of her past glory;</td><td class="tc-gap"></td><td class="tc-right">remembering not her purpose or direction</td></tr>
+<tr><td class="tc-left">but the snap of her backbone—</td><td class="tc-gap"></td><td class="tc-right">from years ago—</td></tr>
+<tr><td class="tc-left">"hey, how are you? do you think you'll be back soon?"</td><td class="tc-gap"></td><td class="tc-right">"i'm not sure anymore"—she tells herself:</td></tr>
+<tr><td class="tc-left">can't she</td><td class="tc-gap"></td><td class="tc-right">just persist, somehow,</td></tr>
+<tr><td class="tc-left">claw her way back? forge her own path? not give up?</td><td class="tc-gap"></td><td class="tc-right">defy the grayscale scans; ignore</td></tr>
+<tr><td class="tc-left">the pain</td><td class="tc-gap"></td><td class="tc-right">that which eats away at the spine and seeps through the legs.</td></tr>
+<tr><td class="tc-left">how could it be that</td><td class="tc-gap"></td><td class="tc-right">she has to come to terms with a fate this</td></tr>
+<tr><td class="tc-left">bad though?</td><td class="tc-gap"></td><td class="tc-right">disastrous injury has brought…</td></tr>
+<tr><td class="tc-left">curveballs. <em>they're unpredictable, but you can handle them.</em> they simply do not understand</td><td class="tc-gap"></td><td class="tc-right">what the value of stoicism is, many question:</td></tr>
+<tr><td class="tc-left"><em>…why can't you get back to the court? why are you not throwing these curveballs beyond the red court lines</em></td><td class="tc-gap"></td><td class="tc-right">in the face of destiny's final verdict—her mental acceptance of</td></tr>
+<tr><td class="tc-left">forfeiting the only solution to preclude</td><td class="tc-gap"></td><td class="tc-right">the loss of what she once loved is a calamity.</td></tr>
+<tr><td class="tc-left">(<em>what a disappointment!</em>)</td><td class="tc-gap"></td><td class="tc-right">but silent endurance, in fact, is not the equivalence of resignation—</td></tr>
+<tr><td class="tc-left">locking oneself in feeble acquiescence—</td><td class="tc-gap"></td><td class="tc-right">that's called defeat. <em>determinism is not synonymous with defeatism.</em></td></tr>
+<tr><td class="tc-left">they say, <em>you should push yourself furiously to get back on your feet;</em></td><td class="tc-gap"></td><td class="tc-right">she says, <em>accepting that there are things in life I cannot change requires courage</em> —</td></tr>
+<tr><td class="tc-left">actively fighting to overcome insurmountable odds is</td><td class="tc-gap"></td><td class="tc-right">a strength indeed. and so is building perseverance, which does not need</td></tr>
+<tr><td class="tc-left">rising above</td><td class="tc-gap"></td><td class="tc-right">visible suffering,</td></tr>
+<tr><td class="tc-left">pain or adversity—</td><td class="tc-gap"></td><td class="tc-right">just sustained discipline, even in smooth-sailing times.</td></tr>
+<tr><td class="tc-left"><em>this is how you preserve self-esteem</em></td><td class="tc-gap"></td><td class="tc-right">and in Islam they call this sabr. <em>though i am not a religious disciple, i am religiously disciplined</em></td></tr>
+<tr><td class="tc-left">and prove strength to others</td><td class="tc-gap"></td><td class="tc-right">by conscientiously cultivating mental and physical fortitude</td></tr>
+<tr><td class="tc-left">—not through indifference;</td><td class="tc-gap"></td><td class="tc-right">through hours of glute bridges, years of behavioral restrictions and a lifetime of strict routine.</td></tr>
+<tr><td class="tc-left"><em>where does being stoic get you?</em></td><td class="tc-gap"></td><td class="tc-right"><em>it gets me to</em></td></tr>
+<tr><td class="tc-left">triumph and fighting spirit</td><td class="tc-gap"></td><td class="tc-right"><em>within: I am nurturing an inner faith through which peace grows, pain is controlled and fears</em></td></tr>
+<tr><td class="tc-left">subside, unfamiliar narratives that</td><td class="tc-gap"></td><td class="tc-right"><em>inspire patience</em> — new direction must</td></tr>
+<tr><td class="tc-left">diverge from canonized motivational stories,</td><td class="tc-gap"></td><td class="tc-right">guide her own personal life, free from regret and lamenting,</td></tr>
+<tr><td class="tc-left">and more importantly, from social expectations. they think she does not strive</td><td class="tc-gap"></td><td class="tc-right">to redefine her mind and self…</td></tr>
+<tr><td class="tc-left">to break free from her body's boundaries…</td><td class="tc-gap"></td><td class="tc-right">to reclaim her agency…the conclusion is</td></tr>
+<tr><td class="tc-left">just not right. she is lost—</td><td class="tc-gap"></td><td class="tc-right">she <em>was</em> lost—but has now found herself. she is no longer unsure of her worth—</td></tr>
+<tr><td class="tc-left">an apparition wandering through the skeleton of her former self—</td><td class="tc-gap"></td><td class="tc-right">choosing to invest in a constructive project of self-improvement.</td></tr>
+<tr><td class="tc-left">her victory is not found through emotional rebellion.</td><td class="tc-gap"></td><td class="tc-right"><em>my victory is found in stoic resilience.</em></td></tr>
+</tbody></table>
 </div>
 
+</div>
+
+<div style="max-width: 960px; margin: 64px auto 0; padding: 0 24px;">
+  <div class="twin-cinema-note">
+    <p>Written in Twin Cinema — a form by Singaporean poet Daryl Lim Wei Jie, in which two independent poems share a page as parallel columns. Read each column top to bottom on its own, or read across each row to find a third poem in the space between. Best viewed in landscape.</p>
+  </div>
 </div>
 </div>
 
