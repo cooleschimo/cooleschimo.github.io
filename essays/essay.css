@@ -37,9 +37,12 @@ body {
 #reading-time-bar {
   position: fixed;
   top: 8px;
+  left: auto;
   right: 16px;
   font-family: 'Space Mono', monospace;
   font-size: 0.62rem;
+  font-weight: 400;
+  font-style: normal;
   text-transform: uppercase;
   letter-spacing: 0.22em;
   color: var(--muted);
