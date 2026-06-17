@@ -5,16 +5,42 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Singing the Oppressor's Song — Chimin</title>
 <style>
-.coming-soon {
+.poem-carousel {
+  position: relative;
+  overflow: hidden;
+}
+.poem-slides {
+  display: flex;
+  transition: transform 0.4s ease;
+}
+.poem-slide {
+  min-width: 100%;
+}
+.carousel-nav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+}
+.carousel-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
   font-family: 'Space Mono', monospace;
   font-size: 0.62rem;
+  color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.18em;
+  padding: 0;
+  transition: color 0.2s;
+}
+.carousel-btn:hover { color: var(--text); }
+.carousel-btn:disabled { opacity: 0.25; cursor: default; }
+.carousel-indicator {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.58rem;
   color: var(--muted);
-  font-style: italic;
-  margin-top: 48px;
-  padding-top: 32px;
-  border-top: 1px solid var(--border);
+  letter-spacing: 0.15em;
 }
 </style>
 <link rel="stylesheet" href="essay.css">
@@ -37,8 +63,60 @@
 <div class="essay-divider"></div>
 
 <div class="source-poem">
-  <div class="source-poem-title">I Sing the Body Electric — Walt Whitman, Section 7</div>
-<pre class="source-poem-text">A slave at auction!
+  <div class="source-poem-title">I Sing the Body Electric — Walt Whitman</div>
+  <div class="poem-carousel">
+    <div class="poem-slides" id="poem-slides">
+
+      <div class="poem-slide">
+<pre class="source-poem-text">[5]
+
+This is the female form,
+A divine nimbus exhales from it from head to foot,
+It attracts with fierce undeniable attraction,
+I am drawn by its breath as if I were no more than a helpless vapor
+       . . . . all falls aside but myself and it,
+Books, art, religion, time . . . the visible and solid earth . . . the atmos-
+       phere and the fringed clouds . . . what was expected of heaven
+       or feared of hell are now consumed,
+Mad filaments, ungovernable shoots play out of it . . the response
+       likewise ungovernable,
+Hair, bosom, hips, bend of legs, negligent falling hands—all diffused
+       . . . . mine too diffused,
+Ebb stung by the flow, and flow stung by the ebb . . . . loveflesh
+       swelling and deliciously aching,
+Limitless limpid jets of love hot and enormous . . . quivering jelly
+       of love . . . white-blow and delirious juice,
+Bridegroom-night of love working surely and softly into the prostrate
+       dawn,
+Undulating into the willing and yielding day,
+Lost in the cleave of the clasping and sweetfleshed day.
+
+This is the nucleus . . . after the child is born of woman the man is
+       born of woman,
+This is the bath of birth . . . this is the merge of small and large and
+       the outlet again.
+
+Be not ashamed women . . your privilege encloses the rest . . it is the
+       exit of the rest,
+You are the gates of the body and you are the gates of the soul.
+
+The female contains all qualities and tempers them . . . . she is in
+       her place . . . . she moves with perfect balance,
+She is all things duly veiled . . . . she is both passive and active . . . .
+       she is to conceive daughters as well as sons and sons as well as
+       daughters.
+
+As I see my soul reflected in nature . . . . as I see through a mist one
+       with inexpressible completeness and beauty . . . . see the bent
+       head and arms folded over the breast . . . . the female I see,
+I see the bearer of the great fruit which is immortality . . . . the good
+       thereof is not tasted by roues, and never can be.</pre>
+      </div>
+
+      <div class="poem-slide">
+<pre class="source-poem-text">[7]
+
+A slave at auction!
 I help the auctioneer . . . . the sloven does not half know his
       business.
 
@@ -78,6 +156,50 @@ How do you know who shall come from the offspring of his offspring
       through the centuries?
 Who might you find you have come from yourself, if you could trace
       back through the centuries?</pre>
+      </div>
+
+      <div class="poem-slide">
+<pre class="source-poem-text">[8]
+
+A woman at auction,
+She too is not only herself . . . . she is the teeming mother of
+       mothers,
+She is the bearer of them that shall grow and be mates to the
+       mothers.
+
+Her daughters or their daughters' daughters . . . who knows who shall
+       mate with them?
+Who knows through the centuries what heroes may come from them?
+
+In them and of them natal love . . . . in them the divine mystery
+       . . . . the same old beautiful mystery.
+
+Have you ever loved a woman?
+Your mother . . . . is she living? . . . . Have you been much with
+       her? and has she been much with you?
+Do you not see that these are exactly the same to all in all nations
+       and times all over the earth?
+
+If life and the soul are sacred the human body is sacred;
+And the glory and sweet of a man is the token of manhood untainted,
+And in man or woman a clean strong firmfibred body is beautiful
+       as the most beautiful face.
+
+Have you seen the fool that corrupted his own live body? or the
+       fool that corrupted her own live body?
+For they do not conceal themselves, and cannot conceal themselves.
+
+Who degrades or defiles the living human body is cursed,
+Who degrades or defiles the body of the dead is not more cursed.</pre>
+      </div>
+
+    </div>
+    <div class="carousel-nav">
+      <button class="carousel-btn" id="prev-btn" onclick="moveSlide(-1)" disabled>← prev</button>
+      <span class="carousel-indicator" id="slide-indicator">1 / 3</span>
+      <button class="carousel-btn" id="next-btn" onclick="moveSlide(1)">next →</button>
+    </div>
+  </div>
 </div>
 
 <div class="essay-divider"></div>
@@ -115,7 +237,7 @@ Flakes of breastmuscle, pliant backbone and neck, flesh not flabby, goodsized ar
 
 <p>However, while I believe that Whitman emancipates both the slave and the woman—each to a certain extent—through hijacking their oppressor's language, he is ultimately more effective in affirming the slave's innate worth more than the woman's. In Section 7 of the poem, the mounting intensity of the speaker's list of modified body parts eventually culminates in "wonders within there yet" (95), after spanning the entire stanza in a single sentence. An emphasis is made strong through its repeated stressed-unstressed rhythm and alliterative 'w' — the speaker thus stresses that no amount of external physical examination can capture the full intrinsic humanity of the person. The word "yet" is especially crucial: though these "wonders" remain unseen by the bidders who only scrutinize his body, they exist in his soul, waiting to be recognized. Indeed, the speaker not only highlights the existence of the slave's innate but unappreciated worth, but also adjures the audience to peer past surface observations: "They shall be stript that you may see them." (92) While the word "stript" suggests a violent subjection of the slave to an invasive glare on the auction block, the line is also simultaneously a request—a plea even—for the audience to "see" the human within. We can even return to the speaker's previous usage of imperatives in the poem, "look on" and "examine." They are more than just the auctioneer's instructions, or the speaker's sardonic imitation of them. They are the speaker's call to action for the audience to truly see what superficial glances have missed — and also Whitman's call to action for the reader as he wrote in an age of rampant slavery.</p>
 
-<p>Yet when we compare these "wonders within" to the woman's "bath of birth" (59), we discover a significantly limited view of female worth. While the enslaved man possesses multiple dimensions—intellectual capacity ("allbaffling brain" (89)), ambitions ("passions and desires...all reachings and aspirations" (97)) and spiritual strength ("pluck, volition" (93))—the woman in Section 5 is valued only as "the bearer of the great fruit which is immortality" (65), a glorified allusion to her child-bearing abilities. The speaker reminds women that their ability "to conceive daughters as well as sons" (63) is their "privilege." (60) Invoking the idea of "privilege" in stanzas overwhelmingly focused on fertility frames childbearing as a special honor that women should naturally celebrate when it is as much a limitation as a blessing. The inequality between men and women becomes even clearer when comparing parallel passages: Whitman's speaker emphatically declares that the enslaved man is "the father of those who shall be fathers in their turns, / In him the start of populous states and rich republics." (99-100) However, the enslaved woman in Section 9 is merely "the teeming mother of mothers, / She is the bearer of them that shall grow and be mates to the mothers." (105-106) The enslaved man's significance extends to political and historical impact ("populous states and rich republics"), while the woman's significance still remains confined to reproduction and the domestic sphere ("the bearer of them…mates to the mothers"). Whitman's limited view of female worth ultimately endorses, and even reinforces, conventional gender hierarchies — in stark contrast to the multitudes of potential he envisions for the enslaved man.</p>
+<p>Yet when we compare these "wonders within" to the woman's "bath of birth" (59), we discover a significantly limited view of female worth. While the enslaved man possesses multiple dimensions—intellectual capacity ("allbaffling brain" (89)), ambitions ("passions and desires...all reachings and aspirations" (97)) and spiritual strength ("pluck, volition" (93))—the woman in Section 5 is valued only as "the bearer of the great fruit which is immortality" (65), a glorified allusion to her child-bearing abilities. The speaker reminds women that their ability "to conceive daughters as well as sons" (63) is their "privilege." (60) Invoking the idea of "privilege" in stanzas overwhelmingly focused on fertility frames childbearing as a special honor that women should naturally celebrate when it is as much a limitation as a blessing. The inequality between men and women becomes even clearer when comparing parallel passages: Whitman's speaker emphatically declares that the enslaved man is "the father of those who shall be fathers in their turns, / In him the start of populous states and rich republics." (99-100) However, the enslaved woman in Section 8 is merely "the teeming mother of mothers, / She is the bearer of them that shall grow and be mates to the mothers." (105-106) The enslaved man's significance extends to political and historical impact ("populous states and rich republics"), while the woman's significance still remains confined to reproduction and the domestic sphere ("the bearer of them…mates to the mothers"). Whitman's limited view of female worth ultimately endorses, and even reinforces, conventional gender hierarchies — in stark contrast to the multitudes of potential he envisions for the enslaved man.</p>
 
 <p>In "I Sing the Body Electric", Whitman's contrasting treatments of the slave and the woman reveal both the revolutionary potential and inherent limitations of his poetic vision of détournement. Similar to the sentimental literature that dominated nineteenth-century America, a genre in which authors appealed to the emotions of their target audience to spur social reform—for instance writing in a manner to "make readers 'feel right' and assume an antislavery position" (Weinstein, 2007)—Whitman worked within the dominant ideology of society and subverted it from within to inspire change. In fact, Section 7 achieves this exactly; it turns the dehumanizing gaze of the audience—and even of the poem's readers—back upon itself to reveal a fundamental moral bankruptcy. In the same vein, we consider Whitman's adoption of the androcentric view of women: had Whitman been writing for a male audience, his emphasis on women's reproductive capacity might be understood as challenging men to respect this power. However his direct address to women—"Be not ashamed women" (60)—suggests he intended female readers to find affirmation in his words. Such is the irony: his affirmation to women comes through celebrating the very biological function that nineteenth-century society was reducing women to — an endorsement of the very structures of inequality he sought to subvert through détournement. "I Sing the Body Electric" is most certainly not "the cry of the right and wrong of the woman sex" as Whitman had envisioned (Mullins, 1993), but it is nonetheless a sincere and powerful effort towards dismantling social hierarchies. The poem is thus testament to how even the most revolutionary poetic voices may be constrained by their historical and social position—a white male poet in a patriarchal society.</p>
 
@@ -153,6 +275,16 @@ function updateBar(){
 }
 updateBar();
 window.addEventListener("scroll",updateBar);
+
+var currentSlide=0;
+var totalSlides=3;
+function moveSlide(dir){
+  currentSlide=Math.max(0,Math.min(totalSlides-1,currentSlide+dir));
+  document.getElementById("poem-slides").style.transform="translateX(-"+(currentSlide*100)+"%)";
+  document.getElementById("slide-indicator").textContent=(currentSlide+1)+" / "+totalSlides;
+  document.getElementById("prev-btn").disabled=currentSlide===0;
+  document.getElementById("next-btn").disabled=currentSlide===totalSlides-1;
+}
 </script>
 
 </body>
