@@ -5,6 +5,43 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Singing the Oppressor's Song — Chimin</title>
 <style>
+.poem-lined {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1rem;
+  line-height: 1.15;
+  color: #5a2828;
+  font-style: italic;
+  font-weight: 400;
+  position: relative;
+}
+.poem-lined .pl {
+  display: block;
+  padding-right: 3em;
+  position: relative;
+  white-space: pre-wrap;
+}
+.poem-lined .pl.num::after {
+  content: attr(data-n);
+  position: absolute;
+  right: 0;
+  font-style: normal;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--muted);
+  top: 0.1em;
+  letter-spacing: 0;
+}
+.poem-lined .pl-blank { display: block; height: 0.8em; }
+.poem-lined .pl-head {
+  display: block;
+  font-style: normal;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  margin-bottom: 0.4em;
+}
+
 .poem-carousel {
   position: relative;
   overflow: hidden;
@@ -73,126 +110,133 @@
     <div class="poem-slides" id="poem-slides">
 
       <div class="poem-slide">
-<pre class="source-poem-text">[5]
-This is the female form,
-A divine nimbus exhales from it from head to foot,
-It attracts with fierce undeniable attraction,
-I am drawn by its breath as if I were no more than a helpless vapor
-       . . . . all falls aside but myself and it,
-Books, art, religion, time . . . the visible and solid earth . . . the atmos-
-       phere and the fringed clouds . . . what was expected of heaven
-       or feared of hell are now consumed,
-Mad filaments, ungovernable shoots play out of it . . the response
-       likewise ungovernable,
-Hair, bosom, hips, bend of legs, negligent falling hands—all diffused
-       . . . . mine too diffused,
-Ebb stung by the flow, and flow stung by the ebb . . . . loveflesh
-       swelling and deliciously aching,
-Limitless limpid jets of love hot and enormous . . . quivering jelly
-       of love . . . white-blow and delirious juice,
-Bridegroom-night of love working surely and softly into the prostrate
-       dawn,
-Undulating into the willing and yielding day,
-Lost in the cleave of the clasping and sweetfleshed day.
-
-This is the nucleus . . . after the child is born of woman the man is
-       born of woman,
-This is the bath of birth . . . this is the merge of small and large and
-       the outlet again.
-
-Be not ashamed women . . your privilege encloses the rest . . it is the
-       exit of the rest,
-You are the gates of the body and you are the gates of the soul.
-
-The female contains all qualities and tempers them . . . . she is in
-       her place . . . . she moves with perfect balance,
-She is all things duly veiled . . . . she is both passive and active . . . .
-       she is to conceive daughters as well as sons and sons as well as
-       daughters.
-
-As I see my soul reflected in nature . . . . as I see through a mist one
-       with inexpressible completeness and beauty . . . . see the bent
-       head and arms folded over the breast . . . . the female I see,
-I see the bearer of the great fruit which is immortality . . . . the good
-       thereof is not tasted by roues, and never can be.</pre>
+<div class="poem-lined">
+<span class="pl-head">[5]</span>
+<span class="pl">This is the female form,</span>
+<span class="pl">A divine nimbus exhales from it from head to foot,</span>
+<span class="pl">It attracts with fierce undeniable attraction,</span>
+<span class="pl">I am drawn by its breath as if I were no more than a helpless vapor</span>
+<span class="pl">       . . . . all falls aside but myself and it,</span>
+<span class="pl num" data-n="50">Books, art, religion, time . . . the visible and solid earth . . . the atmos-</span>
+<span class="pl">       phere and the fringed clouds . . . what was expected of heaven</span>
+<span class="pl">       or feared of hell are now consumed,</span>
+<span class="pl">Mad filaments, ungovernable shoots play out of it . . the response</span>
+<span class="pl">       likewise ungovernable,</span>
+<span class="pl num" data-n="55">Ebb stung by the flow, and flow stung by the ebb . . . . loveflesh</span>
+<span class="pl">Hair, bosom, hips, bend of legs, negligent falling hands—all diffused</span>
+<span class="pl">       . . . . mine too diffused,</span>
+<span class="pl">       swelling and deliciously aching,</span>
+<span class="pl">Limitless limpid jets of love hot and enormous . . . quivering jelly</span>
+<span class="pl num" data-n="60">       of love . . . white-blow and delirious juice,</span>
+<span class="pl">Bridegroom-night of love working surely and softly into the prostrate</span>
+<span class="pl">       dawn,</span>
+<span class="pl">Undulating into the willing and yielding day,</span>
+<span class="pl">Lost in the cleave of the clasping and sweetfleshed day.</span>
+<span class="pl-blank"></span>
+<span class="pl num" data-n="65">This is the nucleus . . . after the child is born of woman the man is</span>
+<span class="pl">       born of woman,</span>
+<span class="pl">This is the bath of birth . . . this is the merge of small and large and</span>
+<span class="pl">       the outlet again.</span>
+<span class="pl-blank"></span>
+<span class="pl num" data-n="70">Be not ashamed women . . your privilege encloses the rest . . it is the</span>
+<span class="pl">       exit of the rest,</span>
+<span class="pl">You are the gates of the body and you are the gates of the soul.</span>
+<span class="pl-blank"></span>
+<span class="pl">The female contains all qualities and tempers them . . . . she is in</span>
+<span class="pl num" data-n="75">       her place . . . . she moves with perfect balance,</span>
+<span class="pl">She is all things duly veiled . . . . she is both passive and active . . . .</span>
+<span class="pl">       she is to conceive daughters as well as sons and sons as well as</span>
+<span class="pl">       daughters.</span>
+<span class="pl-blank"></span>
+<span class="pl num" data-n="80">As I see my soul reflected in nature . . . . as I see through a mist one</span>
+<span class="pl">       with inexpressible completeness and beauty . . . . see the bent</span>
+<span class="pl">       head and arms folded over the breast . . . . the female I see,</span>
+<span class="pl">I see the bearer of the great fruit which is immortality . . . . the good</span>
+<span class="pl">       thereof is not tasted by roues, and never can be.</span>
+</div>
       </div>
 
       <div class="poem-slide">
-<pre class="source-poem-text">[7]
-A slave at auction!
-I help the auctioneer . . . . the sloven does not half know his
-      business.
-
-Gentlemen, look on this curious creature,
-Whatever the bids of the bidders, they cannot be high enough for
-      him,
-For him the globe lay preparing quintillions of years without one
-      animal or plant,
-For him the revolving cycles truly and steadily rolled.
-
-In that head, the all-baffling brain,
-In it and below it, the making of the attributes of heroes.
-Examine these limbs, red, black, or white . . . . they are very cunning
-      in tendon and nerve;
-They shall be stript that you may see them.
-
-Exquisite senses, life-lit eyes, pluck, volition,
-Flakes of breast-muscle, pliant backbone and neck, flesh not flabby,
-      goodsized arms and legs,
-And wonders within there yet.
-
-Within there runs his blood . . . . the same old blood . . . . the same
-      red-running blood;
-There swells and jets his heart . . . . There all passions and desires
-      . . all reachings and aspirations:
-
-Do you think they are not there because they are not expressed in
-      parlors and lecture-rooms?
-
-This is not only one man—this is the father of those who shall be
-      fathers in their turns,
-In him the start of populous states and rich republics,
-Of him countless immortal lives with countless embodiments and
-      enjoyments.
-
-How do you know who shall come from the offspring of his offspring
-      through the centuries?
-Who might you find you have come from yourself, if you could trace
-      back through the centuries?</pre>
+<div class="poem-lined">
+<span class="pl-head">[7]</span>
+<span class="pl">A slave at auction!</span>
+<span class="pl">I help the auctioneer . . . . the sloven does not half know his</span>
+<span class="pl">      business.</span>
+<span class="pl-blank"></span>
+<span class="pl num" data-n="85">Gentlemen look on this curious creature,</span>
+<span class="pl">Whatever the bids of the bidders they cannot be high enough for</span>
+<span class="pl">      him,</span>
+<span class="pl">For him the globe lay preparing quintillions of years without one</span>
+<span class="pl">      animal or plant,</span>
+<span class="pl num" data-n="90">For him the revolving cycles truly and steadily rolled.</span>
+<span class="pl-blank"></span>
+<span class="pl">In that head the allbaffling brain,</span>
+<span class="pl">In it and below it the making of the attributes of heroes.</span>
+<span class="pl">Examine these limbs, red black or white . . . . they are very cunning</span>
+<span class="pl num" data-n="95">      in tendon and nerve;</span>
+<span class="pl">They shall be stript that you may see them.</span>
+<span class="pl-blank"></span>
+<span class="pl">Exquisite senses, lifelit eyes, pluck, volition,</span>
+<span class="pl">Flakes of breastmuscle, pliant backbone and neck, flesh not flabby,</span>
+<span class="pl num" data-n="100">      goodsized arms and legs,</span>
+<span class="pl">And wonders within there yet.</span>
+<span class="pl-blank"></span>
+<span class="pl-blank"></span>
+<span class="pl">Within there runs his blood . . . . the same old blood . . the same</span>
+<span class="pl num" data-n="105">      red running blood;</span>
+<span class="pl">There swells and jets his heart . . . . There all passions and desires</span>
+<span class="pl">      . . all reachings and aspirations:</span>
+<span class="pl-blank"></span>
+<span class="pl">Do you think they are not there because they are not expressed in</span>
+<span class="pl num" data-n="110">      parlors and lecture-rooms?</span>
+<span class="pl-blank"></span>
+<span class="pl">This is not only one man—this is the father of those who shall be</span>
+<span class="pl">      fathers in their turns,</span>
+<span class="pl">In him the start of populous states and rich republics,</span>
+<span class="pl">Of him countless immortal lives with countless embodiments and</span>
+<span class="pl num" data-n="115">      enjoyments.</span>
+<span class="pl-blank"></span>
+<span class="pl">How do you know who shall come from the offspring of his offspring</span>
+<span class="pl">      through the centuries?</span>
+<span class="pl">Who might you find you have come from yourself, if you could trace</span>
+<span class="pl num" data-n="120">      back through the centuries?</span>
+</div>
       </div>
 
       <div class="poem-slide">
-<pre class="source-poem-text">[8]
-A woman at auction,
-She too is not only herself . . . . she is the teeming mother of
-       mothers,
-She is the bearer of them that shall grow and be mates to the
-       mothers.
-
-Her daughters or their daughters' daughters . . . who knows who shall
-       mate with them?
-Who knows through the centuries what heroes may come from them?
-
-In them and of them natal love . . . . in them the divine mystery
-       . . . . the same old beautiful mystery.
-
-Have you ever loved a woman?
-Your mother . . . . is she living? . . . . Have you been much with
-       her? and has she been much with you?
-Do you not see that these are exactly the same to all in all nations
-       and times all over the earth?
-
-If life and the soul are sacred the human body is sacred;
-And the glory and sweet of a man is the token of manhood untainted,
-And in man or woman a clean strong firmfibred body is beautiful
-       as the most beautiful face.
-
-Have you seen the fool that corrupted his own live body? or the
-       fool that corrupted her own live body?
-For they do not conceal themselves, and cannot conceal themselves.
-
-Who degrades or defiles the living human body is cursed,
-Who degrades or defiles the body of the dead is not more cursed.</pre>
+<div class="poem-lined">
+<span class="pl-head">[8]</span>
+<span class="pl">A woman at auction,</span>
+<span class="pl">She too is not only herself . . . . she is the teeming mother of</span>
+<span class="pl num" data-n="105">       mothers,</span>
+<span class="pl">She is the bearer of them that shall grow and be mates to the</span>
+<span class="pl">       mothers.</span>
+<span class="pl-blank"></span>
+<span class="pl">Her daughters or their daughters' daughters . . . who knows who shall</span>
+<span class="pl num" data-n="110">       mate with them?</span>
+<span class="pl">Who knows through the centuries what heroes may come from them?</span>
+<span class="pl-blank"></span>
+<span class="pl">In them and of them natal love . . . . in them the divine mystery</span>
+<span class="pl">       . . . . the same old beautiful mystery.</span>
+<span class="pl-blank"></span>
+<span class="pl num" data-n="115">Have you ever loved a woman?</span>
+<span class="pl">Your mother . . . . is she living? . . . . Have you been much with</span>
+<span class="pl">       her? and has she been much with you?</span>
+<span class="pl">Do you not see that these are exactly the same to all in all nations</span>
+<span class="pl">       and times all over the earth?</span>
+<span class="pl-blank"></span>
+<span class="pl num" data-n="120">If life and the soul are sacred the human body is sacred;</span>
+<span class="pl">And the glory and sweet of a man is the token of manhood untainted,</span>
+<span class="pl">And in man or woman a clean strong firmfibred body is beautiful</span>
+<span class="pl">       as the most beautiful face.</span>
+<span class="pl-blank"></span>
+<span class="pl num" data-n="125">Have you seen the fool that corrupted his own live body? or the</span>
+<span class="pl">       fool that corrupted her own live body?</span>
+<span class="pl">For they do not conceal themselves, and cannot conceal themselves.</span>
+<span class="pl-blank"></span>
+<span class="pl">Who degrades or defiles the living human body is cursed,</span>
+<span class="pl num" data-n="130">Who degrades or defiles the body of the dead is not more cursed.</span>
+</div>
       </div>
 
     </div>
