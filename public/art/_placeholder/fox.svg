@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+  <!-- PLACEHOLDER: a sitting arctic fox in one thin line. Replace with Chimin's own line art; keep one <path> per stroke for the draw-in. -->
+  <path d="M108 78 C 100 58, 98 42, 104 22 C 120 36, 130 50, 134 66"/>
+  <path d="M166 66 C 170 50, 180 36, 196 22 C 202 42, 200 58, 192 78"/>
+  <path d="M108 78 C 104 96, 110 112, 128 122 C 138 130, 146 138, 150 142 C 154 138, 162 130, 172 122 C 190 112, 196 96, 192 78"/>
+  <path d="M131 92 C 132 94, 135 94, 136 92"/>
+  <path d="M164 92 C 165 94, 168 94, 169 92"/>
+  <path d="M146 136 L154 136 L150 141 Z"/>
+  <path d="M124 124 C 102 150, 94 194, 98 246"/>
+  <path d="M176 122 C 204 140, 224 188, 228 246"/>
+  <path d="M138 172 C 128 200, 126 224, 128 246"/>
+  <path d="M92 252 C 104 248, 116 248, 128 252"/>
+  <path d="M200 252 C 212 248, 224 248, 236 252"/>
+  <path d="M228 240 C 252 244, 270 230, 266 208 C 263 194, 250 188, 240 196"/>
+</svg>

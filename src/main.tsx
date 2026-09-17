@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import './styles/paper.css'
+import './styles/base.css'
 import { App } from './App'
 
 // Register Chimin's own handwriting only when the file exists (see vite.config.ts); the

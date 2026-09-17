@@ -1,88 +1,49 @@
-/* Colour tokens from DESIGN.md. Placeholders until sampled from Chimin's paintings. */
+/* Design tokens. White gallery ground, near-black ink, one cobalt accent. */
 :root,
 :root[data-mode='day'] {
-  --paper: #f6f1e7;
-  --ink: #2f3b4a;
-  --ink-soft: #6b7785;
-  --ice: #cfe3ea;
-  --sky: #a9c8d8;
-  --rust: #c9704f;
-  --moss: #8a9a6b;
-  --blush: #e8b9a8;
-  --sun: #f0c66a;
-  --aurora-a: transparent;
-  --aurora-b: transparent;
+  --bg: #ffffff;
+  --ink: #141414;
+  --ink-2: #6b6b6b;
+  --ink-3: #a3a3a3;
+  --line: #e6e6e6;
+  --accent: #2743c8;
+  --accent-soft: #e9edfb;
+  --image-rest: grayscale(1) contrast(0.92) brightness(1.04);
   color-scheme: light;
 }
 :root[data-mode='night'] {
-  --paper: #172233;
-  --ink: #efe6d4;
-  --ink-soft: #a9b3c2;
-  --ice: #3a5468;
-  --sky: #22344c;
-  --rust: #d98a6a;
-  --moss: #9db08a;
-  --blush: #c99a94;
-  --sun: #f3e2a8; /* becomes the moon */
-  --aurora-a: #7fd6b5;
-  --aurora-b: #9a8fd9;
+  --bg: #0f0f10;
+  --ink: #f2f2f2;
+  --ink-2: #9a9a9a;
+  --ink-3: #5c5c5c;
+  --line: #262626;
+  --accent: #8fa0ff;
+  --accent-soft: #1a2040;
+  --image-rest: grayscale(1) contrast(0.9) brightness(0.85);
   color-scheme: dark;
 }
 
-/* Stroke widths: heavy marker for hero-scale drawings, medium for frames, fine for dividers and map lines. */
 :root {
-  --stroke-heavy: 3.2;
-  --stroke-medium: 1.6;
-  --stroke-fine: 0.9;
-}
-
-/* Type scale. Handwriting never below 18px. */
-:root {
-  --font-hand: 'chimin-hand', 'Shantell Sans', 'Segoe Print', 'Bradley Hand', cursive;
-  --font-serif: 'Newsreader', 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --font-display: 'Instrument Serif', 'Times New Roman', Times, serif;
+  --font-sans: 'Geist', system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-reading: 'Newsreader', Georgia, serif;
 
-  --hand-1: 4rem;      /* 64 */
-  --hand-2: 2.5rem;    /* 40 */
-  --hand-3: 1.75rem;   /* 28 */
-  --hand-4: 1.375rem;  /* 22 */
-  --serif-1: 1.1875rem;/* 19 */
-  --serif-2: 1.0625rem;/* 17 */
-  --mono-1: 0.8125rem; /* 13 */
-}
-@media (max-width: 640px) {
-  :root {
-    --hand-1: 2.75rem;
-    --hand-2: 2rem;
-    --hand-3: 1.5rem;
-  }
+  --display-1: clamp(2.75rem, 6.6vw, 5.5rem);   /* statement */
+  --display-2: clamp(2rem, 3.4vw, 2.75rem);      /* section title */
+  --display-3: 1.5rem;                            /* card title */
+  --text-1: 1.0625rem;                            /* body 17 */
+  --text-2: 0.9375rem;                            /* secondary 15 */
+  --text-3: 0.875rem;                             /* ui 14 */
+  --label: 0.75rem;                               /* mono 12 */
+
+  --gutter: clamp(20px, 5vw, 64px);
+  --measure: 1200px;
+  --stroke: 1.6;
 }
 
-@font-face {
-  font-family: 'Shantell Sans';
-  font-style: normal;
-  font-weight: 300 800;
-  font-display: swap;
-  src: url('/fonts/shantell-sans-latin.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Newsreader';
-  font-style: normal;
-  font-weight: 300 800;
-  font-display: swap;
-  src: url('/fonts/newsreader-latin.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Newsreader';
-  font-style: italic;
-  font-weight: 300 800;
-  font-display: swap;
-  src: url('/fonts/newsreader-italic-latin.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'JetBrains Mono';
-  font-style: normal;
-  font-weight: 300 800;
-  font-display: swap;
-  src: url('/fonts/jetbrains-mono-latin.woff2') format('woff2');
-}
+@font-face { font-family: 'Instrument Serif'; font-style: normal; font-weight: 400; font-display: swap; src: url('/fonts/instrument-serif-latin.woff2') format('woff2'); }
+@font-face { font-family: 'Geist'; font-style: normal; font-weight: 100 900; font-display: swap; src: url('/fonts/geist-latin.woff2') format('woff2'); }
+@font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 300 800; font-display: swap; src: url('/fonts/jetbrains-mono-latin.woff2') format('woff2'); }
+@font-face { font-family: 'Newsreader'; font-style: normal; font-weight: 300 800; font-display: swap; src: url('/fonts/newsreader-latin.woff2') format('woff2'); }
+@font-face { font-family: 'Newsreader'; font-style: italic; font-weight: 300 800; font-display: swap; src: url('/fonts/newsreader-italic-latin.woff2') format('woff2'); }

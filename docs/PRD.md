@@ -10,12 +10,22 @@ decisions recorded in §8.
 
 ## 1. What this is
 
+> **Direction change, 2026-09-17 (v3).** Chimin reviewed the first M1 build and rejected the
+> hand-drawn sketchbook execution as childish and unclean. The site is now a clean, modern,
+> gallery-white portfolio (see `DESIGN.md` v3): sharp serif statement, Geist body, one cobalt
+> accent, thin single-colour line art as the only illustration. The content plan below (what
+> the sections contain) still stands; the *execution* of every section written in sketchbook
+> language (igloos, taped photos, snow globes, physics workshop, animals reacting to the
+> cursor) is **to be re-decided** under the new direction before that milestone is built.
+> M1 has been rebuilt under the new direction and is the reference for how the rest should look.
+
+
 A personal site that feels like a hand-made travel sketchbook set in a small illustrated arctic world (igloos, a polar bear, an arctic fox, a snowy owl). It shows technical projects and writing, plus photography, travel notes and a design lab of tiny desktop/browser toys.
 
-It is NOT a polished SaaS-style portfolio. Doodle lines, watercolor fills, paper grain, handwriting. Interaction quality (hover, scroll, physics) is the main craft focus.
+It is a polished, quiet portfolio: white ground, sharp type, one accent, a few precise line drawings. Interaction quality is the craft focus, and restraint is part of that quality.
 
-### The one grammar: ink to colour
-Everything on the site starts as pencil or ink linework and gains watercolour when you touch it: hover, keyboard focus, tap, or scroll-into-view. The colour bleeds in under a wobbly SVG mask (feTurbulence + feDisplacementMap on growing blots), never a flat fade. This is the site's signature and applies to project blocks, place globes, animals, headings and the day/night wash. Reduced motion: colour crossfades in.
+### The one signature: ink to colour
+Project and place images rest desaturated. Hover floods them with colour from the pointer under a crisp circular mask; focus and tap flood everything. Everything else on the page is still. Reduced motion: a crossfade.
 
 ### Goals
 1. One continuous, fluid vertical scroll through the world. Zero navigation friction: every piece of content reachable by scrolling or one click on the mini-map.
@@ -40,7 +50,7 @@ Everything on the site starts as pencil or ink linework and gains watercolour wh
 - Tailwind CSS v4 (`@tailwindcss/vite`)
 - Deploy: GitHub Pages via GitHub Actions from `main` only. Repo is a user site (`cooleschimo.github.io`), so Vite `base: '/'`. See §11.
 - Content: JSON + MDX under `/content`
-- Fonts: self-hosted in `public/fonts` (Shantell Sans variable as the handwriting placeholder, Newsreader variable for reading, JetBrains Mono variable for labels). `chimin-hand.woff2` replaces Shantell Sans by dropping the file in; the `@font-face` is already declared.
+- Fonts: self-hosted in `public/fonts`: Instrument Serif (display), Geist (body/UI), JetBrains Mono (labels), Newsreader (long-form reading, M4). No handwriting font.
 
 ### Install (M1 set, already in package.json)
 
@@ -102,42 +112,34 @@ Do NOT run `polish`, `normalize`, `quieter`, or any minimalist/high-end/brutalis
 
 ## 3. Site structure (single page, top to bottom)
 
-Global, fixed layers:
-- **Sky band** (`position: fixed`, behind the page): watercolour sky wash, snow, the sun by day / the moon by night. Sections scroll over it, so the sun is reachable from anywhere.
-- **Sun/moon toggle**: the sun itself is the day/night control. Click it and it arcs below the horizon on a GSAP motion path while the moon rises (~900 ms); the page wash follows. Keyboard: it is a real `<button>`.
-- **Mini-map**: a folded map corner bottom-right that unfolds on hover, focus or tap into a doodled map with one landmark per section; click = Lenis `scrollTo`. Collapses to a compass icon on mobile.
-- **Paper grain**: tiled noise PNG at ~10% `multiply` (day) / `screen` (night), fixed, pointer-events none.
+Global:
+- **Top bar** (fixed, 64px): name left, section links centre (scribbled accent underline on hover), day/night icon right. This is the navigation; there is no mini-map.
+- **No sky band, no grain, no fixed decoration.** The page is white.
 
 ### 3.0 Day / night
-- Day: warm paper, blue-grey ink. Work section emphasises code projects.
-- Night: deep navy paper, cream ink, aurora in the sky band (SVG wash in M1–M5, shader in M6). Writing section is emphasised; owl wakes up.
-- Implement as CSS custom properties on `:root[data-mode]`. Persist in `localStorage`, applied before first paint by an inline script. Transition = watercolor wash sweeping across the viewport (SVG mask, ~900 ms), crossfade under reduced motion.
+- Day: white ground, near-black ink. Night: near-black ground, off-white ink, lighter accent.
+- CSS custom properties on `:root[data-mode]`, persisted in `localStorage`, applied before first paint. Switching is a 350ms token crossfade.
 
 ### 3.1 Hero
-- Name draws itself stroke by stroke (DrawSVG) in Chimin's handwriting SVG, then bleeds colour.
-- One-line intro, handwriting font.
-- Slow parallax snow in the sky band (2D canvas; cap ~90 flakes on mobile; paused off-screen and when the tab is hidden; static under reduced motion).
-- Arctic fox peeks from behind a snowdrift; head/eyes track cursor (v1: two-pose sprite swap + small rotate; M6: Rive). Only the fox's ink is hoverable (alpha hit-testing).
-- Scroll cue: doodled arrow that wobbles at ~6 fps and nudges down.
-- Key linework carries the **wobble filter** (see DESIGN.md).
+- Mono eyebrow, a large Instrument Serif statement with one italic accent word, a two-line Geist lede, one mono meta row. All copy is Chimin's; the current text is a marked placeholder.
+- One line drawing (the fox, in the accent colour) sits in the right column and draws itself in on load. It does not react to the cursor.
+- Text rises in on load. No scroll cue.
 
-### 3.2 Work igloo — projects
-- A **scatter** of different-sized ice blocks (rough.js rectangles, watercolour ice fill, seeded rotation 1–3° and seeded offsets, rejection-sampled for spacing), not a grid. On first scroll-into-view the blocks deal in from above with a 60 ms stagger and settle (GSAP, `back.out`). Real physics is not used here.
-- **Ink-to-colour reveal (signature interaction):** at rest each block is linework over an ice-blue wash. On hover the project image bleeds in from the pointer under an SVG mask of growing blots with feTurbulence-displaced edges; the mask follows the pointer with a lerp and recedes ~1.2 s after it leaves.
-  - Touch: tap = bleed expands from the tap point to full reveal; second tap opens the project.
-  - Keyboard: focus = full reveal; Enter opens.
-  - Reduced motion: simple crossfade.
-  - M6 option: replace the mask with a single-FBO heat shader if the SVG version feels flat.
-- Click opens an in-place expanded card (motion `layoutId`), not a new page: title, 2-line summary, stack tags, links.
-- Initial projects: NeuroScan, Political Bias Detection Pipeline, Patent Classification (summary only, methodology is proprietary — no detail), Bayesian prediction-markets project.
+### 3.2 Work — projects
+- Section head: "Work" and a mono count. A two-column grid of project cards: 16:10 image, serif title with an arrow, one-line summary, mono tags right-aligned. Cards rise in once on first view.
+- **Ink-to-colour flood (signature):** the image rests desaturated; hover floods colour from the pointer under a crisp circular mask; leaving recedes it to the pointer's last position.
+  - Touch: first tap floods, second tap opens. Keyboard: focus floods, Enter opens.
+  - Reduced motion: crossfade.
+- Open = an inline expand under the card with links (GitHub, paper, slides). No new page.
+- Projects: NeuroScan, Political Bias Detection, Patent Classification (summary only, methodology proprietary), Bayesian Estimation of Informed Trading (paper + slides already in `public/essays/bayes/`). Cards without a link yet are tagged `draft`.
 
-### 3.3 Writing igloo
+### 3.3 Writing (execution to re-decide under v3)
 - List of essays/poems as torn-paper slips (torn edge = rough.js clip path, not an image). Hover = rough-notation underline + slip lifts.
 - Click expands inline to MDX content in a reading column (serif, max 62ch).
 - All ten essays from the old site go live in v1: august, catullus, howardsend, hume, induction, lostfound, salesman, selflove, smith, whitman. Old URLs under `/essays/` keep working until each is converted.
 - Snowy owl perched on the igloo; blinks by day, eyes open and head turns at night.
 
-### 3.4 Photo hut — photography (Ricoh GR IIIx + Canon)
+### 3.4 Photography — Ricoh GR IIIx + Canon (execution to re-decide under v3)
 - Photos laid out as a loose contact sheet on a lightbox table, slightly rotated. **One draggable per section**: the photos are draggable (motion `drag`, constrained); nothing else in the hut is.
 - **Viewfinder interaction:** photos rest at blur(3px) + 40% saturation. The cursor is replaced by the camera viewfinder frame PNG inside the hut only; photos inside the frame render sharp and full colour (CSS mask or clip-path following the pointer, lerped).
 - Click = shutter blink (black frame 80ms + subtle scale) then lightbox with caption: place, camera, one line.
@@ -145,7 +147,7 @@ Global, fixed layers:
 - Touch: no viewfinder; photos sharpen as they cross viewport centre (ScrollTrigger).
 - Images: responsive `srcset`, AVIF/WebP, lazy, blurhash or dominant-colour placeholder.
 
-### 3.5 Travel — the snow-globe shelf
+### 3.5 Travel (execution to re-decide under v3; the snow-globe shelf is likely too cute for the new direction)
 - A hand-drawn shelf (rough.js) runs down the section with one **snow globe per place**. Inside each globe: the place's linework doodle (supplied by Chimin), a base with the place name in handwriting and the date. Globes sit at seeded tilts and sizes.
 - **Shake and settle:** as a globe scrolls into view its snow is stirred up and settles over ~2 s (2D canvas or SVG particles inside a clip path; one shake per visit, none under reduced motion).
 - **Ink to colour:** hover/focus/tap fills the globe's doodle with watercolour (the site grammar).
@@ -154,7 +156,7 @@ Global, fixed layers:
 - Index: an unfolded hand-drawn map (d3-geo → path data → roughjs) at the top of the section with a pin per place; clicking a pin scrolls to that globe. The map is the only pinned element on the site (short, skippable via the mini-map). The fox walks the dotted route between pins as the map is scrolled through.
 - Initial places: Budapest, Cinque Terre, Split, Mostar, Dubrovnik, Malta, Mallorca, Venice, Verona, Lake Garda, Como, Slovenia, Singapore, Chicago. Ship v1 with whichever 3 have art; the rest render as pencil-only "not painted yet" globes.
 
-### 3.6 Polar bear's workshop — design lab
+### 3.6 Design lab (execution to re-decide under v3)
 - Matter-js world the width of the section, floor at the bottom. When the section enters, items drop from above (60 ms stagger, gravity scale ~0.0014, restitution ~0.12, friction ~0.55, chamfered bodies at 84–92% of the sprite, sleeping on): each design toy is a body with its icon; empty slots are wooden crates labelled "still building".
 - Drag and throw with mouse/touch (`MouseConstraint`); Lenis is stopped while dragging. Click-vs-drag: <400 ms and <10 px is a click. Device tilt optional, off by default.
 - Click on an item opens its card: what it is, install link.
@@ -163,10 +165,10 @@ Global, fixed layers:
 - Polar bear sits at a workbench beside it; glances at whatever you throw (v1: static).
 
 ### 3.7 Footer
-- Igloo at dusk, links (GitHub cooleschimo, Instagram chi.minutiae, email) as hand-lettered signs. Footer text falls with gravity once when first reached (span→body mapping from `FallingText`), skip if reduced motion.
+- A hairline, then links (GitHub cooleschimo, Instagram chi.minutiae, email) and a mono name/year. Built.
 
-### The fox
-The fox travels the whole page and does exactly one small thing per section: peeks and tracks the cursor in the hero, sniffs a block in the work igloo, walks the map route in travel, curls up asleep by the workshop, waves in the footer. It never blocks content and never asks for a click.
+### The animals
+Under v3 the animals are subjects of line drawings, not characters that react to the user. One drawing per section at most. Whether the bear and owl appear at all is open.
 
 ---
 
@@ -230,12 +232,12 @@ Generated in code (Claude Code builds these): paper grain tile, watercolor filte
 
 ## 7. Milestones (vertical slices — each one is built and previewed on the branch; deploy is a separate, manual decision, see §11)
 
-**M1 — Spine + signature interaction** (this session)
-Scaffold, tokens from DESIGN.md, Lenis↔ScrollTrigger wiring, paper grain + watercolour + wobble filter utilities, `<RoughBox>` and rough focus ring, fixed sky band with the sun/moon toggle, hero with DrawSVG name, snow, fox and scroll cue, ONE ice block with the working ink-to-colour reveal (hover + tap + keyboard + reduced motion), mini-map stub, GH Actions workflow.
-Done when: the preview scrolls smoothly at 60fps on a laptop, the reveal works on hover and tap, the sun toggles night.
+**M1 — Spine + signature interaction** (built, v3)
+Scaffold, tokens, Lenis↔ScrollTrigger, top bar with day/night, hero with statement and drawn-in fox, work grid with four cards and the ink-to-colour flood (hover + tap + keyboard + reduced motion), footer, GH Actions workflow.
+Done: verified headless, no console errors, 61fps.
 
-**M2 — Travel shelf** with 3 globes, shake-and-settle, hold-to-reveal, inline spread, rough map with fox on route.
-**M3 — Photo hut** with viewfinder, lightbox, filters, 12 photos.
+**M2 — Photography** (moved up: it is the most 'real' content and fits the gallery direction). Decide execution first.
+**M3 — Travel.** Decide execution first.
 **M4 — Work scatter complete + Writing igloo** with all ten essays in MDX.
 **M5 — Workshop physics + footer.**
 **M6 — Day/night wash polish, aurora shader, Rive animals, optional wet-paint shader, mini-map polish.**
@@ -246,37 +248,30 @@ After each milestone run impeccable `critique` against DESIGN.md and list findin
 ---
 
 ## 8. Decisions made (2026-09-17; change here if needed)
-- One-scroll world, no enterable rooms. Animals are static/sprite-swap until M6.
-- Ink-to-colour is the site-wide grammar; M1 does it with an SVG mask, not WebGL. three.js stays out of the bundle until M6.
-- No pinned sections except the travel map. Page-flip and the pinned sketchbook are dropped; travel is the snow-globe shelf (§3.5).
-- The sun is the day/night toggle in a fixed sky band; the mini-map is a folded map corner.
-- Shantell Sans is the handwriting placeholder until `chimin-hand.woff2` exists.
-- Three stroke-width tokens (heavy / medium / fine). Fixed type scale: handwriting 22/28/40/64, serif 17/19, mono 13. One weight per face; hierarchy by colour, not bold; mono uppercase as the only second voice.
-- Work section is a seeded scatter with a GSAP deal-in, not a grid and not live physics.
-- Hold-to-reveal on places. The fox does one thing per section. One draggable thing per section.
-- Wobble filter on key linework and handwriting; tiled-noise paper grain; alpha hit-testing on sticker-like art.
-- Wet-paint cursor shader deferred to M6 and optional.
-- Touch: ink reveal = tap-to-bleed; viewfinder = sharpen on scroll.
-- Art overlap: no separate "art" section; watercolour lives inside the travel shelf.
-- All ten old essays go live in v1. Stay on cooleschimo.github.io (no custom domain for now).
-- `react`/`react-dom` pinned to 19.2.x; `react-pageflip` and `wired-elements` are not used.
-- Old `essays/*.html`, `essay.css` and the Bayes PDFs live in `public/essays/` so existing URLs keep working; `index.html`/`index-old.html` are gone (in git history).
+- v3 direction: clean, modern, gallery-white; closest reference jackiezhang.co.za for confidence, scottmilton.com for type discipline. Chimin's words: the sketchbook build "looks very childish, unprofessional, and doesn't have the modern aesthetic taste I'm after".
+- Kept from the sketchbook plan: the arctic thread as thin line-art accents; the ink-to-colour reveal on projects (now a crisp flood); a day/night toggle (now a small icon). Dropped: handwriting fonts, paper grain, watercolour, rough boxes, wobble, sky band, sun arc, mini-map, scatter layouts, mascots reacting to the cursor.
+- Fonts: Instrument Serif, Geist, JetBrains Mono, Newsreader (reading). No custom handwriting font.
+- One-scroll page, no enterable rooms. No pinned or scrubbed sections.
+- Deploy from `main` only; preview on the branch first. Stay on cooleschimo.github.io.
+- All ten old essays go live in v1 (M4). Old essay URLs keep working from `public/essays/`.
+- `react`/`react-dom` pinned to 19.2.x; `react-pageflip` and `wired-elements` are not used. three.js not before a shader is actually needed.
+- Copy: Claude may write placeholder copy only when marked as such in the source; Chimin writes the real copy.
 
 ## 9. Open questions for Chimin
-- Which 3 places get art first? (needed for M2)
-- Real project images and one-line summaries for the four projects (M4)
+- Real copy for the hero (eyebrow, statement, lede, meta) and for the four project cards.
+- Real project images (16:10 screenshots) and links for Political Bias Detection and Patent Classification.
+- Execution of Writing, Photography, Travel and Design lab under v3 (PRD §3.3–3.6).
+- Does the bear or owl appear at all?
 
 ---
 
 ## 10. Kickoff prompt for the next session
 
 ```
-Read docs/PRD.md, docs/DESIGN.md and docs/refs/teardowns.md §1.
-The M1 slice is on branch claude/new-session-kjcz7d. Run `npm install && npm run dev`,
-run impeccable `critique` against DESIGN.md on it, list findings, then build M2 (PRD §3.5)
-as a vertical slice. Do not deploy; publish a preview instead (see PRD §11).
-Rules: DESIGN.md overrides any installed design skill. Use placeholder art from
-public/art/_placeholder. Ask before adding any dependency not listed in PRD §2.
+Read docs/HANDOFF.md, docs/PRD.md and docs/DESIGN.md (v3).
+Branch claude/new-session-kjcz7d has the v3 M1. Run it, critique it against DESIGN.md v3,
+list findings. Then propose two executions for the Photography section under v3 and build
+the one Chimin picks as M2. Do not deploy; publish a preview. Ask before adding any dependency.
 ```
 
 ## 11. Deployment

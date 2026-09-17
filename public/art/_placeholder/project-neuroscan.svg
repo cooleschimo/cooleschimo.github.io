@@ -1,11 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400">
-  <!-- PLACEHOLDER project image: replace with a real screenshot. -->
-  <rect width="640" height="400" fill="#c9704f"/>
-  <g fill="none" stroke="#f6f1e7" stroke-width="6" stroke-linecap="round">
-    <path d="M160 200 c0 -70 60 -120 160 -120 s160 50 160 120 s-60 120 -160 120 s-160 -50 -160 -120z"/>
-    <path d="M320 80 c-30 40 -30 200 0 240"/>
-    <path d="M200 140 c40 20 40 100 0 120"/>
-    <path d="M440 140 c-40 20 -40 100 0 120"/>
-  </g>
-  <text x="320" y="360" font-family="Georgia, serif" font-size="26" fill="#f6f1e7" text-anchor="middle">neuroscan (placeholder)</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
+  <!-- PLACEHOLDER project image (neuroscan). Replace with a real screenshot; keep 16:10. -->
+  <rect width="800" height="500" fill="#2743c8"/>
+  <g fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" opacity="0.92"><path d="M400 120c-70 0-120 45-120 110 0 30 12 55 30 75-6 20 0 42 20 55 25 15 55 8 70-15 15 23 45 30 70 15 20-13 26-35 20-55 18-20 30-45 30-75 0-65-50-110-120-110z"/><path d="M400 120v240"/><path d="M340 200c20 10 40 10 60 0M400 260c20 10 40 10 60 0M320 250c15-8 30-8 45 0M460 190c15-8 30-8 45 0"/></g>
 </svg>

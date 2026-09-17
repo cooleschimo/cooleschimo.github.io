@@ -1,26 +1,20 @@
 import { useEffect } from 'react'
 import { startLenis } from './lib/lenis'
-import { WatercolorDefs } from './primitives/Watercolor'
-import { PaperGrain } from './primitives/PaperGrain'
-import { SkyBand } from './shell/SkyBand'
-import { ModeToggle } from './shell/ModeToggle'
-import { MiniMap } from './shell/MiniMap'
+import { TopBar } from './shell/TopBar'
 import { Hero } from './sections/Hero'
 import { Work } from './sections/Work'
+import { Footer } from './sections/Footer'
 
 export function App() {
   useEffect(() => { startLenis() }, [])
   return (
     <>
-      <WatercolorDefs />
-      <SkyBand />
-      <ModeToggle />
+      <TopBar />
       <main className="page">
         <Hero />
         <Work />
       </main>
-      <MiniMap />
-      <PaperGrain />
+      <Footer />
     </>
   )
 }

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
+  <!-- PLACEHOLDER project image (bias). Replace with a real screenshot; keep 16:10. -->
+  <rect width="800" height="500" fill="#d95d44"/>
+  <g fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" opacity="0.92"><path d="M180 130h440M180 170h440M180 210h300M180 250h440M180 290h380M180 330h440M180 370h260"/><path d="M560 200l60 30-60 30z"/></g>
+</svg>

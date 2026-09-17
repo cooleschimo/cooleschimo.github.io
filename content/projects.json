@@ -2,10 +2,42 @@
   {
     "slug": "neuroscan",
     "title": "NeuroScan",
-    "summary": "a small tool that reads brain-scan volumes and points a clinician at the slice worth looking at first.",
+    "summary": "Reads brain-scan volumes and points a clinician at the slice worth looking at first.",
     "tags": ["python", "pytorch", "nifti"],
     "image": "/art/_placeholder/project-neuroscan.svg",
-    "links": [{ "label": "github", "href": "https://github.com/cooleschimo" }],
+    "links": [{ "label": "GitHub", "href": "https://github.com/cooleschimo" }],
     "mode": "day"
+  },
+  {
+    "slug": "bias-pipeline",
+    "title": "Political Bias Detection",
+    "summary": "A pipeline that scores news articles for political lean and shows its evidence.",
+    "tags": ["python", "nlp", "transformers"],
+    "image": "/art/_placeholder/project-bias.svg",
+    "links": [{ "label": "GitHub", "href": "https://github.com/cooleschimo" }],
+    "mode": "day",
+    "draft": true
+  },
+  {
+    "slug": "patent-classification",
+    "title": "Patent Classification",
+    "summary": "Classifies patent filings into technology classes. Methodology is proprietary; summary only.",
+    "tags": ["python", "classification"],
+    "image": "/art/_placeholder/project-patent.svg",
+    "links": [],
+    "mode": "day",
+    "draft": true
+  },
+  {
+    "slug": "bayes-prediction-markets",
+    "title": "Bayesian Estimation of Informed Trading",
+    "summary": "Estimating informed trading in prediction markets with a Bayesian model. Paper and slides.",
+    "tags": ["bayesian", "markets", "stan"],
+    "image": "/art/_placeholder/project-bayes.svg",
+    "links": [
+      { "label": "Paper (PDF)", "href": "/essays/bayes/Bayesian Estimation of Informed Trading in Prediction Markets_Chimin.pdf" },
+      { "label": "Slides (PDF)", "href": "/essays/bayes/bayesfinalslides.pdf" }
+    ],
+    "mode": "night"
   }
 ]

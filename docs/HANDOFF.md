@@ -1,101 +1,106 @@
-# Handoff notes — arctic sketchbook v2
+# Handoff notes — Chimin Liu, personal site (v3)
 
-Updated 2026-09-17 at the end of the second session (teardowns, decisions, M1 build).
-Read this, then `docs/PRD.md` and `docs/DESIGN.md`, before writing any code.
+Updated 2026-09-17 at the end of the second session. Read this, then `docs/PRD.md` and
+`docs/DESIGN.md` (both v3), before writing any code.
 
 ---
 
-## 1. Status
+## 1. What happened this session, in order
 
-- Branch: `claude/new-session-kjcz7d`. **Nothing is deployed.** The workflow only runs on
-  pushes to `main`; Chimin wants to review a preview before anything goes live.
-- M1 is built and verified headless (see §4). Run it with `npm install && npm run dev`.
-- `docs/refs/teardowns.md` has the full teardown of every reference site plus a synthesis
-  (§1 of that file) mapping findings onto the decisions.
-- All HANDOFF §3 decisions from the first session are answered and folded into PRD §8 and
-  DESIGN.md. The travel section is no longer a sketchbook: it is a **snow-globe shelf**
-  (PRD §3.5).
+1. Every reference site in the old HANDOFF §5 was torn down live → `docs/refs/teardowns.md`.
+2. The sketchbook decisions were agreed and M1 was built in that style (commits `c0af973`…`1802542`).
+3. Chimin reviewed it: "very childish, unprofessional, doesn't have the modern aesthetic taste
+   I'm after, doesn't look clean." Chosen direction: closest to jackiezhang.co.za, but on a
+   pure white ground; keep the arctic thread only as subtle line-art accents, keep the
+   ink-to-colour reveal and a day/night toggle; drop handwriting fonts.
+4. M1 was rebuilt under that direction (v3). DESIGN.md was rewritten; PRD.md was updated and
+   every section still written in sketchbook language is marked "execution to re-decide".
 
-## 2. What exists in the repo
+**Nothing is deployed.** The workflow runs only on pushes to `main`.
+
+## 2. What exists
 
 ```
 .github/workflows/deploy.yml   build + deploy to Pages on push to main / manual dispatch
-index.html, vite.config.ts     Vite 8, React 19.2, Tailwind 4; optional chimin-hand font check
-content/projects.json          NeuroScan only (placeholder image + summary)
-public/art/_placeholder/       name-signature.svg, fox-idle.svg, fox-peek.svg, project-neuroscan.svg
-public/art/grain.png           tiled paper grain
-public/fonts/                  Shantell Sans, Newsreader (+italic), JetBrains Mono, all variable woff2
-public/essays/                 the old site's essays + Bayes PDFs, URLs unchanged
-src/lib/                       gsap (plugins registered), lenis, seed, mode, motion-prefs, inline-svg
-src/primitives/                RoughBox, RoughFocusRing, Watercolor (shared filter defs), SketchWobble, PaperGrain
-src/shell/                     SkyBand (fixed sky + snow + aurora), ModeToggle (the sun), MiniMap (folded corner)
-src/sections/                  Hero, Work
-src/work/                      IceBlock, InkReveal (the signature reveal)
-src/world/                     Snow, Fox, ScrollCue
-src/styles/                    tokens.css (colours, strokes, type scale, @font-face), paper.css (everything else)
+content/projects.json          four projects (two tagged draft; Bayes links to PDFs in public/essays/bayes)
+public/art/_placeholder/       fox.svg (line art, one path per stroke), project-*.svg (16:10 colour blocks)
+public/fonts/                  Instrument Serif, Geist, JetBrains Mono, Newsreader (+italic)
+public/essays/                 the old site's essays + PDFs, URLs unchanged
+src/lib/                       gsap (DrawSVG, MotionPath, ScrollTrigger registered), lenis, mode, motion-prefs, inline-svg, seed
+src/shell/TopBar.tsx           fixed bar: name, links with rough-notation underline on hover, ModeToggle
+src/shell/ModeToggle.tsx       sun / crescent icon; setMode() flips tokens
+src/sections/Hero.tsx          eyebrow, statement, lede, meta (placeholder copy, marked), Fox
+src/sections/Work.tsx          head + two-column grid of ProjectCard, rise-in on first view
+src/sections/Footer.tsx        hairline, links, name/year
+src/work/ProjectCard.tsx       card; hover flood, tap/keyboard paths, inline expand with links
+src/work/InkReveal.tsx         desaturated <img> under an SVG <image> masked by one circle that follows the pointer
+src/world/Fox.tsx              inline SVG drawn in with DrawSVG on load
+src/styles/tokens.css          colours, type scale, @font-face
+src/styles/base.css            all layout and component styles (Tailwind is loaded but barely used)
 ```
 
-## 3. How the signature pieces work (so you don't re-derive them)
+Deleted in v3 (in git history if ever wanted): RoughBox, RoughFocusRing, Watercolor defs,
+SketchWobble, PaperGrain, SkyBand, MiniMap, Snow, ScrollCue, the sketchbook Hero/IceBlock,
+Shantell Sans, grain.png, the doodle placeholders.
 
-- **InkReveal**: the project image sits in an inline `<svg>` as `<image mask="url(#…)">`. The mask
-  is six `<circle>`s filtered by `#wc-edge` (feTurbulence + feDisplacementMap). A gsap.ticker loop
-  lerps the first circle to the pointer and chains the rest behind it; radius tweens in with
-  `back.out` and out over 1.2 s. `revealed` (focus / tap) tweens the radius past the diagonal.
-  Reduced motion drops the mask and crossfades opacity. The hit `<button>` is passed in as
-  `overlay` so pointer events bubble through the component.
-- **ModeToggle**: sun and moon are `<g>`s in one SVG; `MotionPathPlugin` moves the leaving one down
-  a hidden arc and the arriving one up the mirrored arc. A `.mode-wash` div in the new paper colour
-  grows as a `clip-path: circle()` from the sun, `setMode()` fires when it covers the page, and
-  `html.no-transition` stops the CSS colour transitions from flashing underneath.
-- **SketchWobble**: one filter per instance; seed re-rolled at `fps` (default 8) via gsap.ticker,
-  only while an IntersectionObserver says it is visible. The wrapper needs a layout box
-  (`display:block` / positioned) or the filter clips absolutely positioned children.
-- **Hero ground**: the hero has an opaque paper ground from 48% down (54% on phones) with the
-  wobbly horizon on its top edge, so scrolling covers the fixed sky band.
-- **RoughBox / RoughFocusRing**: rough.js into an absolutely positioned SVG, redrawn on resize,
-  seed from `hashSeed(key)`. The focus ring shows via `:focus-visible > .rough-focus`.
+## 3. How the signature pieces work
 
-## 4. Verified this session (headless Chromium, `vite preview`)
+- **InkReveal**: `.ink-reveal__rest` holds a normal `<img>` with `filter: var(--image-rest)`
+  (grayscale). Above it an inline `<svg>` draws the same image via `<image mask="url(#m-…)">`;
+  the mask is a single `<circle>` whose centre lerps to the pointer on gsap.ticker and whose
+  radius tweens to the box diagonal on enter (0.9s power3.out) and to 0 on leave (0.55s).
+  `revealed` (focus / tap / open) forces the full radius. Reduced motion: no mask, the svg
+  crossfades opacity. Pointer handling: see the note in `ProjectCard.tsx` about where the hit
+  button sits relative to the reveal; if you restructure, re-run the hover probe.
+- **ModeToggle**: `setMode()` sets `data-mode` + localStorage and dispatches `modechange`;
+  `useMode()` subscribes. The 350ms colour transition lives in base.css.
+- **TopBar underline**: rough-notation `underline`, accent colour, 1.4px, 320ms, shown on
+  mouseenter/focus and hidden on leave/blur.
+- **Fox**: `/art/_placeholder/fox.svg` is fetched and inlined so its `<path>`s can be drawn with
+  DrawSVG. Chimin's real drawing replaces the file; keep one `<path>` per stroke and
+  `stroke="currentColor"` so it takes the accent.
 
-Hero draw-in, fox peek, hover reveal + recede, keyboard focus full reveal, Enter opens the
-detail, tap-to-melt then tap-to-open on a touch viewport, night toggle (mode persisted in
-localStorage), mini-map unfold + scrollTo, reduced-motion crossfade. Zero console errors,
-zero failed requests, 61 fps sampled while scrolling. Bundle: 325 KB raw / 110 KB gzip JS.
-The verification script lived in the session scratchpad; recreate it from this list if needed.
+## 4. Verified (headless Chromium against `vite preview`)
 
-## 5. Known gaps and follow-ups (in rough priority)
+Hero rise + fox draw-in, nav hover underline, card hover flood and recede, keyboard focus flood,
+Enter expand, tap-to-flood then tap-to-open on a touch viewport, night toggle persisted,
+footer, reduced-motion. Zero console errors, zero failed requests, 61fps while scrolling.
+Bundle: ~497 KB raw / ~169 KB gzip JS (motion/react adds ~60 KB for the card expand; swap to
+`LazyMotion` + `m` if the budget gets tight).
 
-1. Only one project block. The scatter and deal-in are wired for N blocks; add the other
-   three to `content/projects.json` with real images and summaries (M4).
-2. The day/night wash is a clip-path circle, not the watercolour-masked sweep PRD §3.0 asks
-   for. Upgrade in M6 with the same blot-mask technique as InkReveal.
-3. The aurora is two radial gradients under `#wc-wash` + blur, visible only at night. It reads
-   fine but is a gradient; M6 replaces it with a shader or a painted SVG wash.
-4. Placeholder art everywhere. The fox is a doodle; `name-signature.svg` is a fake signature.
-   Real files drop into the same paths with no code changes (`chimin-hand.woff2` too).
-5. The full reveal (focus/open) ends with hard image edges because the mask circle exceeds
-   the box. Acceptable; a torn-paper clip on the image would be nicer.
-6. Run impeccable `critique` against DESIGN.md before M2 (skills not installed in this session).
-7. Mobile: the sun scales to 0.8 and sits top-right; check it doesn't collide with the name on
-   very short viewports.
+## 5. Known gaps and follow-ups
 
-## 6. Deployment (unchanged, see PRD §11)
+1. **All hero copy is placeholder** (marked in `Hero.tsx`). Chimin writes the real eyebrow,
+   statement, lede and meta row.
+2. Two project cards are tagged `draft` with placeholder blurbs; the PDFs for the Bayes project
+   are real. Real 16:10 images are needed for all four.
+3. The placeholder fox is code-drawn; it is acceptable but should be replaced by Chimin's own
+   line art.
+4. Writing, Photography, Travel and Design lab have no v3 execution yet. PRD §3.3–3.6 keep the
+   content plan and are marked "to re-decide". Suggested next: Photography first (it is the
+   most gallery-like content), as a full-width masonry or a 3-column grid with a lightbox.
+5. Night mode is a token swap; check the accent (`#8fa0ff`) against real photographs.
+6. The old sketchbook teardown synthesis (`docs/refs/teardowns.md` §1.4) maps findings onto
+   decisions that have since changed; §1.1–1.3 and the per-site sections are still valid.
+
+## 6. Deployment (see PRD §11)
 
 - Merge to `main` to deploy. First deploy replaces the old static site.
 - One manual step, once: GitHub → Settings → Pages → Source = **GitHub Actions**.
-- Preview without deploying: `npm run build && npm run preview`, or publish `dist/` built with
-  `--base=./` as a private artifact page (that is what this session did).
+- Preview without deploying: `npm run build && npm run preview`, or build with `--base=./`
+  and publish `dist/` as a private artifact page (done this session).
 
-## 7. Open questions for Chimin (PRD §9)
+## 7. Open questions for Chimin
 
-- Which 3 places get art first? (M2)
-- Real images and one-liners for the four projects (M4)
+- Real hero copy and project copy (see §5).
+- Execution for Photography, Writing, Travel, Design lab under v3.
+- Whether the bear and owl appear at all.
 
 ## 8. Kickoff prompt for the next session
 
 ```
-Read docs/HANDOFF.md, docs/PRD.md, docs/DESIGN.md and docs/refs/teardowns.md §1.
-Branch claude/new-session-kjcz7d has M1. Run it, critique it against DESIGN.md, list findings,
-then build M2 (PRD §3.5, the snow-globe shelf) as a vertical slice with 3 placeholder globes.
-Do not deploy; publish a preview. Ask before adding any dependency not in PRD §2.
+Read docs/HANDOFF.md, docs/PRD.md and docs/DESIGN.md (v3).
+Branch claude/new-session-kjcz7d has the v3 M1. Run it, critique it against DESIGN.md v3,
+list findings. Then propose two executions for the Photography section under v3 and build
+the one Chimin picks as M2. Do not deploy; publish a preview. Ask before adding any dependency.
 ```
