@@ -10,22 +10,21 @@ decisions recorded in §8.
 
 ## 1. What this is
 
-> **Direction change, 2026-09-17 (v3).** Chimin reviewed the first M1 build and rejected the
-> hand-drawn sketchbook execution as childish and unclean. The site is now a clean, modern,
-> gallery-white portfolio (see `DESIGN.md` v3): sharp serif statement, Geist body, one cobalt
-> accent, thin single-colour line art as the only illustration. The content plan below (what
-> the sections contain) still stands; the *execution* of every section written in sketchbook
-> language (igloos, taped photos, snow globes, physics workshop, animals reacting to the
-> cursor) is **to be re-decided** under the new direction before that milestone is built.
-> M1 has been rebuilt under the new direction and is the reference for how the rest should look.
+> **Direction change, 2026-09-17 (v4, "the desk").** Chimin rejected the sketchbook build
+> (childish) and then the clean typographic rebuild (further from the references). The site is
+> now modelled directly on jesspaik.com and jackiehu.design: a photographed desk of real objects
+> on warm paper, each draggable, the important ones opening a small window with that section's
+> content. See `DESIGN.md` v4. The content plan below still stands; every section is now a
+> **window** opened from an object on the desk, not a scroll section. Sections written in
+> sketchbook language are kept for their content only.
 
 
 A personal site that feels like a hand-made travel sketchbook set in a small illustrated arctic world (igloos, a polar bear, an arctic fox, a snowy owl). It shows technical projects and writing, plus photography, travel notes and a design lab of tiny desktop/browser toys.
 
-It is a polished, quiet portfolio: white ground, sharp type, one accent, a few precise line drawings. Interaction quality is the craft focus, and restraint is part of that quality.
+It is a playful, tactile portfolio in the manner of jesspaik.com and jackiehu.design: photographed objects on a desk, a serif name in the middle, small windows for content. The polish comes from the objects being real photographs.
 
-### The one signature: ink to colour
-Project and place images rest desaturated. Hover floods them with colour from the pointer under a crisp circular mask; focus and tap flood everything. Everything else on the page is still. Reduced motion: a crossfade.
+### The one signature: the desk
+Everything on the desk is a real object you can pick up. Hover lights only its actual pixels and shows its label; a click opens its window; the Tidy button sweeps the desk into a grid. That tactility is the site.
 
 ### Goals
 1. One continuous, fluid vertical scroll through the world. Zero navigation friction: every piece of content reachable by scrolling or one click on the mini-map.
@@ -110,36 +109,38 @@ Do NOT run `polish`, `normalize`, `quieter`, or any minimalist/high-end/brutalis
 
 ---
 
-## 3. Site structure (single page, top to bottom)
+## 3. Site structure (one desk, windows on top)
 
 Global:
-- **Top bar** (fixed, 64px): name left, section links centre (scribbled accent underline on hover), day/night icon right. This is the navigation; there is no mini-map.
-- **No sky band, no grain, no fixed decoration.** The page is white.
+- **The desk** (desktop): a fixed viewport, objects from `content/desk.json`, Messy/Tidy toggle bottom-centre, name top-left, day/night icon top-right. No scroll.
+- **Phones**: the same objects as a two-column grid under the name; taps open a bottom sheet.
+- **Windows**: About (the name), Work (folder), Photos (camera, polaroids), Writing (letter), Travel (sketchbook). Draggable, stackable, Escape closes.
 
 ### 3.0 Day / night
 - Day: white ground, near-black ink. Night: near-black ground, off-white ink, lighter accent.
 - CSS custom properties on `:root[data-mode]`, persisted in `localStorage`, applied before first paint. Switching is a 350ms token crossfade.
 
-### 3.1 Hero
-- Mono eyebrow, a large Instrument Serif statement with one italic accent word, a two-line Geist lede, one mono meta row. All copy is Chimin's; the current text is a marked placeholder.
-- One line drawing (the fox, in the accent colour) sits in the right column and draws itself in on load. It does not react to the cursor.
-- Text rises in on load. No scroll cue.
+### 3.1 The name and the About window
+- "Chimin Liu" in Instrument Serif, a mono role line, a mono one-liner (all placeholder copy, marked). Clicking the name opens About: a short paragraph and links (GitHub, Instagram, email).
 
-### 3.2 Work — projects
-- Section head: "Work" and a mono count. A two-column grid of project cards: 16:10 image, serif title with an arrow, one-line summary, mono tags right-aligned. Cards rise in once on first view.
-- **Ink-to-colour flood (signature):** the image rests desaturated; hover floods colour from the pointer under a crisp circular mask; leaving recedes it to the pointer's last position.
-  - Touch: first tap floods, second tap opens. Keyboard: focus floods, Enter opens.
-  - Reduced motion: crossfade.
-- Open = an inline expand under the card with links (GitHub, paper, slides). No new page.
-- Projects: NeuroScan, Political Bias Detection, Patent Classification (summary only, methodology proprietary), Bayesian Estimation of Informed Trading (paper + slides already in `public/essays/bayes/`). Cards without a link yet are tagged `draft`.
+### 3.2 Work window (the folder)
+- A list of projects: serif title, mono tags, one-line summary, links. Projects without a link are tagged `draft`.
+- Projects: NeuroScan, Political Bias Detection, Patent Classification (summary only), Bayesian Estimation of Informed Trading (paper + slides from `public/essays/bayes/`).
+- Later: each project gets its own window with images.
 
-### 3.3 Writing (execution to re-decide under v3)
+### 3.3 Writing window (the letter)
+- Built: a list of the ten essays linking to their existing pages under `/essays/`. Later: essays rendered inside the window (MDX, M4).
+
+#### Original plan, kept for content
 - List of essays/poems as torn-paper slips (torn edge = rough.js clip path, not an image). Hover = rough-notation underline + slip lifts.
 - Click expands inline to MDX content in a reading column (serif, max 62ch).
 - All ten essays from the old site go live in v1: august, catullus, howardsend, hume, induction, lostfound, salesman, selflove, smith, whitman. Old URLs under `/essays/` keep working until each is converted.
 - Snowy owl perched on the igloo; blinks by day, eyes open and head turns at night.
 
-### 3.4 Photography — Ricoh GR IIIx + Canon (execution to re-decide under v3)
+### 3.4 Photos window (the camera and the polaroids)
+- Built: a two-column grid of photographs with mono captions; CC0 stand-ins until Chimin's own. Later: a lightbox, camera/place filters, more polaroids on the desk.
+
+#### Original plan, kept for content
 - Photos laid out as a loose contact sheet on a lightbox table, slightly rotated. **One draggable per section**: the photos are draggable (motion `drag`, constrained); nothing else in the hut is.
 - **Viewfinder interaction:** photos rest at blur(3px) + 40% saturation. The cursor is replaced by the camera viewfinder frame PNG inside the hut only; photos inside the frame render sharp and full colour (CSS mask or clip-path following the pointer, lerped).
 - Click = shutter blink (black frame 80ms + subtle scale) then lightbox with caption: place, camera, one line.
@@ -147,7 +148,10 @@ Global:
 - Touch: no viewfinder; photos sharpen as they cross viewport centre (ScrollTrigger).
 - Images: responsive `srcset`, AVIF/WebP, lazy, blurhash or dominant-colour placeholder.
 
-### 3.5 Travel (execution to re-decide under v3; the snow-globe shelf is likely too cute for the new direction)
+### 3.5 Travel window (the sketchbook)
+- Built: an intro line and the list of places. Later: one spread per place (sketch, photo, note) paged inside the window; the open sketchbook on the desk shows the latest spread.
+
+#### Original plan, kept for content (the snow-globe shelf is dropped)
 - A hand-drawn shelf (rough.js) runs down the section with one **snow globe per place**. Inside each globe: the place's linework doodle (supplied by Chimin), a base with the place name in handwriting and the date. Globes sit at seeded tilts and sizes.
 - **Shake and settle:** as a globe scrolls into view its snow is stirred up and settles over ~2 s (2D canvas or SVG particles inside a clip path; one shake per visit, none under reduced motion).
 - **Ink to colour:** hover/focus/tap fills the globe's doodle with watercolour (the site grammar).
@@ -156,7 +160,10 @@ Global:
 - Index: an unfolded hand-drawn map (d3-geo → path data → roughjs) at the top of the section with a pin per place; clicking a pin scrolls to that globe. The map is the only pinned element on the site (short, skippable via the mini-map). The fox walks the dotted route between pins as the map is scrolled through.
 - Initial places: Budapest, Cinque Terre, Split, Mostar, Dubrovnik, Malta, Mallorca, Venice, Verona, Lake Garda, Como, Slovenia, Singapore, Chicago. Ship v1 with whichever 3 have art; the rest render as pencil-only "not painted yet" globes.
 
-### 3.6 Design lab (execution to re-decide under v3)
+### 3.6 Design lab (not on the desk yet)
+- Later: a small object (a toy) that opens a window listing the toys. The physics sandbox is dropped unless it can live inside a window.
+
+#### Original plan, kept for content
 - Matter-js world the width of the section, floor at the bottom. When the section enters, items drop from above (60 ms stagger, gravity scale ~0.0014, restitution ~0.12, friction ~0.55, chamfered bodies at 84–92% of the sprite, sleeping on): each design toy is a body with its icon; empty slots are wooden crates labelled "still building".
 - Drag and throw with mouse/touch (`MouseConstraint`); Lenis is stopped while dragging. Click-vs-drag: <400 ms and <10 px is a click. Device tilt optional, off by default.
 - Click on an item opens its card: what it is, install link.
@@ -165,10 +172,10 @@ Global:
 - Polar bear sits at a workbench beside it; glances at whatever you throw (v1: static).
 
 ### 3.7 Footer
-- A hairline, then links (GitHub cooleschimo, Instagram chi.minutiae, email) and a mono name/year. Built.
+- None. Links live in the About window.
 
 ### The animals
-Under v3 the animals are subjects of line drawings, not characters that react to the user. One drawing per section at most. Whether the bear and owl appear at all is open.
+Dropped. The arctic thread survives only in Chimin's own photographs and paintings once they replace the stand-ins.
 
 ---
 
@@ -232,12 +239,12 @@ Generated in code (Claude Code builds these): paper grain tile, watercolor filte
 
 ## 7. Milestones (vertical slices — each one is built and previewed on the branch; deploy is a separate, manual decision, see §11)
 
-**M1 — Spine + signature interaction** (built, v3)
-Scaffold, tokens, Lenis↔ScrollTrigger, top bar with day/night, hero with statement and drawn-in fox, work grid with four cards and the ink-to-colour flood (hover + tap + keyboard + reduced motion), footer, GH Actions workflow.
-Done: verified headless, no console errors, 61fps.
+**M1 — The desk** (built, v4)
+Desk with 13 objects (CC0 stand-ins), deal-in, drag, alpha hit-testing, Messy/Tidy, five windows with real content (essay links, PDFs, project list), mobile grid + sheet, day/night, GH Actions workflow.
+Done: verified headless (hit-testing, drag, open, tidy, night, mobile), no console errors, 61fps.
 
-**M2 — Photography** (moved up: it is the most 'real' content and fits the gallery direction). Decide execution first.
-**M3 — Travel.** Decide execution first.
+**M2 — Chimin's own objects and photos** replace the stand-ins; Photos window gets a lightbox and filters.
+**M3 — Travel spreads** inside the sketchbook window.
 **M4 — Work scatter complete + Writing igloo** with all ten essays in MDX.
 **M5 — Workshop physics + footer.**
 **M6 — Day/night wash polish, aurora shader, Rive animals, optional wet-paint shader, mini-map polish.**
@@ -248,30 +255,28 @@ After each milestone run impeccable `critique` against DESIGN.md and list findin
 ---
 
 ## 8. Decisions made (2026-09-17; change here if needed)
-- v3 direction: clean, modern, gallery-white; closest reference jackiezhang.co.za for confidence, scottmilton.com for type discipline. Chimin's words: the sketchbook build "looks very childish, unprofessional, and doesn't have the modern aesthetic taste I'm after".
-- Kept from the sketchbook plan: the arctic thread as thin line-art accents; the ink-to-colour reveal on projects (now a crisp flood); a day/night toggle (now a small icon). Dropped: handwriting fonts, paper grain, watercolour, rough boxes, wobble, sky band, sun arc, mini-map, scatter layouts, mascots reacting to the cursor.
-- Fonts: Instrument Serif, Geist, JetBrains Mono, Newsreader (reading). No custom handwriting font.
-- One-scroll page, no enterable rooms. No pinned or scrubbed sections.
+- v4 direction: the desk, modelled on jesspaik.com / jackiehu.design, warm paper ground. Chimin: the sketchbook build was "childish, unprofessional"; the typographic rebuild was "even further from what I wanted".
+- Objects are photographs (CC0 stand-ins for now). No code-drawn illustration, no handwriting font, no grain, no line-art mascots.
+- Fonts: Instrument Serif (name, headings), JetBrains Mono (labels, one-liner), Geist (window body), Newsreader (long-form, M4).
+- One fixed desk on desktop, windows for content; a scrolling grid on phones. Lenis is no longer used on the desk.
 - Deploy from `main` only; preview on the branch first. Stay on cooleschimo.github.io.
 - All ten old essays go live in v1 (M4). Old essay URLs keep working from `public/essays/`.
 - `react`/`react-dom` pinned to 19.2.x; `react-pageflip` and `wired-elements` are not used. three.js not before a shader is actually needed.
 - Copy: Claude may write placeholder copy only when marked as such in the source; Chimin writes the real copy.
 
 ## 9. Open questions for Chimin
-- Real copy for the hero (eyebrow, statement, lede, meta) and for the four project cards.
-- Real project images (16:10 screenshots) and links for Political Bias Detection and Patent Classification.
-- Execution of Writing, Photography, Travel and Design lab under v3 (PRD §3.3–3.6).
-- Does the bear or owl appear at all?
-
----
+- Photos of your own objects on a plain background (camera, sketchbook, prints, paints) to replace the CC0 stand-ins; and 8–12 of your photographs.
+- Real copy: role line, one-liner, About paragraph, project summaries.
+- Which project gets its own window first.
 
 ## 10. Kickoff prompt for the next session
 
 ```
-Read docs/HANDOFF.md, docs/PRD.md and docs/DESIGN.md (v3).
-Branch claude/new-session-kjcz7d has the v3 M1. Run it, critique it against DESIGN.md v3,
-list findings. Then propose two executions for the Photography section under v3 and build
-the one Chimin picks as M2. Do not deploy; publish a preview. Ask before adding any dependency.
+Read docs/HANDOFF.md, docs/PRD.md and docs/DESIGN.md (v4, "the desk").
+Branch claude/new-session-kjcz7d has the desk. Run it, compare it against jesspaik.com and
+jackiehu.design, list what still reads as less polished than them, fix those first. Then M2:
+swap in Chimin's objects and photographs when supplied, and build the Photos lightbox.
+Do not deploy; publish a preview. Ask before adding any dependency.
 ```
 
 ## 11. Deployment

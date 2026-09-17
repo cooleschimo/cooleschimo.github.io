@@ -1,0 +1,135 @@
+[
+  {
+    "id": "name",
+    "kind": "name",
+    "x": 0,
+    "y": -20,
+    "r": 0,
+    "w": 560,
+    "opens": "about",
+    "label": "About"
+  },
+  {
+    "id": "camera",
+    "kind": "image",
+    "src": "/art/_placeholder/objects/camera.webp",
+    "x": -540,
+    "y": -190,
+    "r": -7,
+    "w": 300,
+    "opens": "photos",
+    "label": "Photos"
+  },
+  {
+    "id": "sketchbook",
+    "kind": "image",
+    "src": "/art/_placeholder/objects/sketchbook.webp",
+    "x": 430,
+    "y": 130,
+    "r": 5,
+    "w": 380,
+    "opens": "travel",
+    "label": "Travel"
+  },
+  {
+    "id": "letter",
+    "kind": "image",
+    "src": "/art/_placeholder/objects/letter.webp",
+    "x": -470,
+    "y": 200,
+    "r": 4,
+    "w": 260,
+    "opens": "writing",
+    "label": "Writing"
+  },
+  {
+    "id": "folder",
+    "kind": "folder",
+    "x": 470,
+    "y": -230,
+    "r": -4,
+    "w": 190,
+    "opens": "work",
+    "label": "Work"
+  },
+  {
+    "id": "venice",
+    "kind": "polaroid",
+    "photo": "/art/_placeholder/photos/venice.jpg",
+    "caption": "Venice, 2024",
+    "x": -190,
+    "y": 260,
+    "r": -5,
+    "w": 190,
+    "opens": "photos",
+    "label": "Photos"
+  },
+  {
+    "id": "chicago",
+    "kind": "polaroid",
+    "photo": "/art/_placeholder/photos/chicago.jpg",
+    "caption": "Chicago",
+    "x": 200,
+    "y": -300,
+    "r": 4,
+    "w": 190,
+    "opens": "photos",
+    "label": "Photos"
+  },
+  {
+    "id": "paints",
+    "kind": "image",
+    "src": "/art/_placeholder/objects/paints.webp",
+    "x": -690,
+    "y": 30,
+    "r": 9,
+    "w": 240
+  },
+  {
+    "id": "coffee",
+    "kind": "image",
+    "src": "/art/_placeholder/objects/coffee.webp",
+    "x": 640,
+    "y": -60,
+    "r": 0,
+    "w": 120
+  },
+  {
+    "id": "tape",
+    "kind": "image",
+    "src": "/art/_placeholder/objects/tape.webp",
+    "x": -40,
+    "y": -330,
+    "r": 0,
+    "w": 120
+  },
+  {
+    "id": "pencils",
+    "kind": "image",
+    "src": "/art/_placeholder/objects/pencils.webp",
+    "x": 665,
+    "y": 290,
+    "r": -6,
+    "w": 170
+  },
+  {
+    "id": "today",
+    "kind": "calendar",
+    "x": -230,
+    "y": -270,
+    "r": -3,
+    "w": 150
+  },
+  {
+    "id": "singapore",
+    "kind": "polaroid",
+    "photo": "/art/_placeholder/photos/singapore.jpg",
+    "caption": "Singapore",
+    "x": 110,
+    "y": 300,
+    "r": 3,
+    "w": 180,
+    "opens": "photos",
+    "label": "Photos"
+  }
+]

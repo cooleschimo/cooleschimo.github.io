@@ -1,25 +1,25 @@
 /* Design tokens. White gallery ground, near-black ink, one cobalt accent. */
 :root,
 :root[data-mode='day'] {
-  --bg: #ffffff;
-  --ink: #141414;
-  --ink-2: #6b6b6b;
-  --ink-3: #a3a3a3;
-  --line: #e6e6e6;
-  --accent: #2743c8;
-  --accent-soft: #e9edfb;
-  --image-rest: grayscale(1) contrast(0.92) brightness(1.04);
+  --bg: #fbf7ef;         /* warm paper */
+  --win-bg: #fdfbf6;
+  --ink: #1c1a17;
+  --ink-2: #6f6a62;
+  --ink-3: #a8a29a;
+  --line: #e6dfd3;
+  --accent: #d9603f;     /* coral, used for the close dot and links */
+  --accent-soft: #f6e4dc;
   color-scheme: light;
 }
 :root[data-mode='night'] {
-  --bg: #0f0f10;
-  --ink: #f2f2f2;
-  --ink-2: #9a9a9a;
-  --ink-3: #5c5c5c;
-  --line: #262626;
-  --accent: #8fa0ff;
-  --accent-soft: #1a2040;
-  --image-rest: grayscale(1) contrast(0.9) brightness(0.85);
+  --bg: #1d1b18;
+  --win-bg: #f6f1e7;
+  --ink: #f1ece2;
+  --ink-2: #a9a298;
+  --ink-3: #6a655d;
+  --line: #3a3630;
+  --accent: #e9744f;
+  --accent-soft: #3a2a24;
   color-scheme: dark;
 }
 
