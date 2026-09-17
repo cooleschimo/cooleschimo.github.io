@@ -86,9 +86,3 @@
   font-display: swap;
   src: url('/fonts/jetbrains-mono-latin.woff2') format('woff2');
 }
-/* Chimin's own handwriting, when it exists. Drop chimin-hand.woff2 into public/fonts and this takes over. */
-@font-face {
-  font-family: 'chimin-hand';
-  font-display: swap;
-  src: url('/fonts/chimin-hand.woff2') format('woff2');
-}

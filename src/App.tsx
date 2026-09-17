@@ -2,17 +2,24 @@ import { useEffect } from 'react'
 import { startLenis } from './lib/lenis'
 import { WatercolorDefs } from './primitives/Watercolor'
 import { PaperGrain } from './primitives/PaperGrain'
+import { SkyBand } from './shell/SkyBand'
+import { ModeToggle } from './shell/ModeToggle'
+import { MiniMap } from './shell/MiniMap'
+import { Hero } from './sections/Hero'
+import { Work } from './sections/Work'
 
 export function App() {
-  useEffect(() => {
-    startLenis()
-  }, [])
+  useEffect(() => { startLenis() }, [])
   return (
     <>
       <WatercolorDefs />
-      <main id="top">
-        {/* sections land here after the §3 decisions */}
+      <SkyBand />
+      <ModeToggle />
+      <main className="page">
+        <Hero />
+        <Work />
       </main>
+      <MiniMap />
       <PaperGrain />
     </>
   )

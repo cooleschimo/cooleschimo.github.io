@@ -1,8 +1,4 @@
-/** Fixed, pointer-events-none grain over the whole page. Uses the filter from <WatercolorDefs>. */
+/** Fixed, pointer-events-none grain over the whole page: a small tiled noise PNG, not a live filter. */
 export function PaperGrain() {
-  return (
-    <svg className="paper-grain" aria-hidden="true" focusable="false">
-      <rect width="100%" height="100%" filter="url(#paper-grain-filter)" />
-    </svg>
-  )
+  return <div className="paper-grain" aria-hidden="true" />
 }
