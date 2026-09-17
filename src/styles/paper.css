@@ -136,7 +136,7 @@ html.no-transition, html.no-transition body, html.no-transition * { transition: 
 @media (max-width: 720px) {
   .hero { padding-top: 20vh; padding-bottom: 30vh; }
   .hero__ground { top: 54%; }
-  .hero__note { margin-top: 2em; }
+  .hero__note { margin-top: 4.2em; }
   .hero__horizon { top: -44px; height: 45px; }
   .hero__drift { height: 30px; }
   .hero__cue { left: clamp(20px, 8vw, 140px); translate: 0 0; }
