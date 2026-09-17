@@ -4,6 +4,8 @@ export function ObjectArt({ item }: { item: DeskItem }) {
   switch (item.kind) {
     case 'image':
       return <img className="obj-image" src={item.src} alt="" draggable={false} />
+    case 'sticker':
+      return <img className="obj-image obj-sticker" src={item.src} alt="" draggable={false} />
     case 'polaroid':
       return (
         <figure className="obj-polaroid">

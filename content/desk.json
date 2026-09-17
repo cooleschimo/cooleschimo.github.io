@@ -131,5 +131,49 @@
     "w": 180,
     "opens": "photos",
     "label": "Photos"
+  },
+  {
+    "id": "igloo",
+    "kind": "sticker",
+    "src": "/art/_placeholder/objects/igloo.webp",
+    "x": -320,
+    "y": -120,
+    "r": -3,
+    "w": 170,
+    "opens": "about",
+    "label": "Home"
+  },
+  {
+    "id": "fox",
+    "kind": "sticker",
+    "src": "/art/_placeholder/objects/fox.webp",
+    "x": 300,
+    "y": 110,
+    "r": 4,
+    "w": 130,
+    "opens": "travel",
+    "label": "Travel"
+  },
+  {
+    "id": "owl",
+    "kind": "sticker",
+    "src": "/art/_placeholder/objects/owl.webp",
+    "x": -380,
+    "y": 110,
+    "r": -6,
+    "w": 110,
+    "opens": "writing",
+    "label": "Writing"
+  },
+  {
+    "id": "bear",
+    "kind": "sticker",
+    "src": "/art/_placeholder/objects/bear.webp",
+    "x": 540,
+    "y": -150,
+    "r": 5,
+    "w": 120,
+    "opens": "work",
+    "label": "Work"
   }
 ]

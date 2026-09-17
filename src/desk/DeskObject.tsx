@@ -12,7 +12,7 @@ type Props = { item: DeskItem; children: ReactNode; onOpen?: () => void; hot: bo
  */
 export function DeskObject({ item, children, onOpen, hot, setHot, z, raise }: Props) {
   const reduced = useReducedMotion()
-  const hitTest = useAlphaHit(item.kind === 'image' ? item.src : undefined)
+  const hitTest = useAlphaHit(item.kind === 'image' || item.kind === 'sticker' ? item.src : undefined)
   const inner = useRef<HTMLDivElement>(null)
   const press = useRef<{ t: number; x: number; y: number } | null>(null)
   const [dragging, setDragging] = useState(false)

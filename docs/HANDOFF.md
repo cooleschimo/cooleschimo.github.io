@@ -8,7 +8,7 @@ Updated 2026-09-17 at the end of the second session. Read this, then `docs/PRD.m
 1. Reference sites torn down live → `docs/refs/teardowns.md` (still valid; its §1.4 maps onto old decisions).
 2. Sketchbook M1 built → Chimin: "very childish, unprofessional". (commits c0af973…1802542)
 3. Clean typographic M1 built → Chimin: "even further from what I wanted… you would have given me something similar to [the references]". (commit e44782f)
-4. **The desk** built, modelled directly on jesspaik.com / jackiehu.design, on warm paper:
+4. **The desk** built (then the arctic twist added as stickers, snow and aurora at Chimin's request), modelled directly on jesspaik.com / jackiehu.design, on warm paper:
    photographed objects (CC0 stand-ins cut out with rembg), deal-in, drag, alpha hit-testing,
    Messy/Tidy, five windows, mobile grid + sheet. DESIGN.md v4 and PRD updated to match.
 
@@ -19,7 +19,8 @@ Updated 2026-09-17 at the end of the second session. Read this, then `docs/PRD.m
 ```
 content/desk.json                 the objects: kind, image, x/y from centre, rotation, width, which window they open
 content/projects.json             four projects
-public/art/_placeholder/objects/  camera, sketchbook, letter(2), paints, coffee, tape, pencils (.webp cut-outs, ≤760px)
+public/art/_placeholder/objects/  camera, sketchbook, letter(2), paints, coffee, tape, pencils (.webp cut-outs, ≤760px); fox, owl, igloo, bear (sticker cut-outs with white border)
+src/desk/Snow.tsx                 sparse canvas snow over the desk; aurora is CSS in base.css (night only)
 public/art/_placeholder/photos/   venice, venice2, chicago, singapore, dubrovnik (.jpg ≤900px)
 public/art/_placeholder/CREDITS.md  source, creator and license for every stand-in
 src/desk/Desk.tsx                 world scaling, deal-in (GSAP), z-order, windows state, Messy/Tidy

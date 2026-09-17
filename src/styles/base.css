@@ -24,6 +24,13 @@ button { font: inherit; color: inherit; }
 
 /* desk */
 .desk { position: fixed; inset: 0; overflow: hidden; }
+.snow { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 30; }
+.aurora { position: absolute; left: -10%; right: -10%; top: -30vh; height: 60vh; pointer-events: none; opacity: 0; filter: blur(40px);
+  background: radial-gradient(60% 55% at 30% 60%, rgba(110, 214, 170, 0.55), transparent 70%), radial-gradient(45% 50% at 68% 45%, rgba(150, 140, 230, 0.45), transparent 70%);
+  transition: opacity 900ms ease; }
+:root[data-mode='night'] .aurora { opacity: 0.6; }
+.obj-sticker { filter: drop-shadow(0 6px 8px rgba(40, 30, 10, 0.18)) drop-shadow(0 1px 1px rgba(40, 30, 10, 0.14)); }
+.desk-object.is-hot .obj-sticker, .desk-object.is-dragging .obj-sticker { filter: drop-shadow(0 14px 16px rgba(40, 30, 10, 0.22)) drop-shadow(0 2px 2px rgba(40, 30, 10, 0.14)); }
 .desk__world { position: absolute; left: 50%; top: 50%; width: 1440px; height: 820px; transform-origin: center; }
 .desk-object { position: absolute; translate: -50% -50%; user-select: none; touch-action: none; will-change: transform; }
 .desk-object__inner { position: relative; }

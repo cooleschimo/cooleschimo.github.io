@@ -6,6 +6,7 @@ import type { DeskItem, WindowId } from './types'
 import { DeskObject } from './DeskObject'
 import { ObjectArt } from './objects'
 import { WindowManager, type OpenWindow } from '../windows/WindowManager'
+import { Snow } from './Snow'
 
 const DESK_W = 1440
 
@@ -75,6 +76,8 @@ export function Desk() {
 
   return (
     <div className="desk" style={{ cursor: hot ? 'pointer' : undefined }}>
+      <div className="aurora" aria-hidden="true" />
+      <Snow />
       <div ref={world} className="desk__world" style={{ transform: `translate(-50%, -50%) scale(${scale})` }}>
         {list.map((item) => (
           <DeskObject key={item.id} item={item} hot={hot === item.id} setHot={(h) => setHot(h ? item.id : (hot === item.id ? null : hot))}

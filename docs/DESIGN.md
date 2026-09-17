@@ -1,16 +1,20 @@
 # DESIGN.md — Chimin Liu, personal site
 
 Single source of truth for look and feel. Overrides any installed design skill, component library default, or agent instinct. If something here conflicts with PRD.md, ask.
-Revision: 2026-09-17 (v4, "the desk"). Modelled directly on jesspaik.com and jackiehu.design after Chimin rejected both the sketchbook build (childish) and the typographic rebuild (further from the references). Warm paper ground, per Chimin.
+Revision: 2026-09-17 (v4.1, "the desk" with the arctic twist). Modelled directly on jesspaik.com and jackiehu.design after Chimin rejected both the sketchbook build (childish) and the typographic rebuild (further from the references). Warm paper ground, per Chimin.
 
 ## Feel
 A photographed desk. Real objects, cut out and laid on warm paper: a camera, an open travel sketchbook, a letter, a folder, polaroids, a palette, a cup, tape, pencils, today's date. The name sits in the middle in a sharp serif. Everything can be picked up and moved; the objects that matter open a small window. It should feel like Jess Paik's and Jackie Hu's desks: playful, tactile, and polished because the objects are real.
 
 Test: would this pass as one of the reference sites with the name changed? If any object looks drawn by code, it fails.
 
+## The arctic twist
+Chimin's world (igloo, arctic fox, polar bear, snowy owl, snow) lives on the desk as **die-cut stickers**: photographs of the real animals and a real igloo, cut out with a white sticker border, the way Jackie Hu's desk has stickers. The igloo is home (About); the fox is the guide (Travel); the bear is the maker (Work); the owl is the writer (Writing). Each sits near the object it belongs to. A very sparse, slow snowfall drifts over the desk, and at night a faint aurora glows along the top edge. That is the whole twist: no drawn characters, no wobble, nothing that reacts to the cursor beyond lifting like any other object.
+
 ## Materials
 - **Objects are photographs**, cut out with transparent backgrounds, lit from above, with a soft real shadow. Until Chimin supplies their own (their camera, prints, sketchbook, paints), the stand-ins are CC0 photographs listed in `public/art/_placeholder/CREDITS.md`.
 - Paper objects that carry text (polaroid, date card, folder tab) are built in CSS/SVG but must read as physical: white stock, slight warmth, the same shadow as the photos.
+- Stickers: real photographs (CC0 stand-ins now; Chimin's own animal photos or paintings later) with a 12–16px off-white die-cut border and a light shadow.
 - No vector doodles, no line-art mascots, no generated textures.
 
 ## Ground and colour
@@ -41,7 +45,7 @@ Test: would this pass as one of the reference sites with the name changed? If an
 - **Open**: a press under 400ms that moved under 10px opens the object's window; anything else was a drag.
 - Day/night: a small sun/moon icon top-right; 350ms token crossfade.
 - Reduced motion: no deal-in, no lift; windows fade.
-- Nothing loops. No sounds. No cursor replacement.
+- The snow is the one ambient loop: ~40 flakes per 1440px, 1–2.5px, faint, off under reduced motion. No sounds. No cursor replacement.
 
 ## Never
 Code-drawn illustrations or mascots, textures and grain, hand-drawn boxes, wobble filters, watercolour effects, handwriting fonts, pastel palettes, gradients (other than shading inside an object), glass, blocking loaders, scroll pinning, iframes as content, invented facts in the copy.

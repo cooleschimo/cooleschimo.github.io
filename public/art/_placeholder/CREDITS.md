@@ -13,3 +13,7 @@ All files here are CC0 stand-ins fetched via the Openverse API until Chimin supp
 - photos/singapore.jpg — “Singapore skyline Skyline Promenade” by None (rawpixel, cc0) https://www.rawpixel.com/image/3338218/free-photo-image-city-architecture-asia
 - photos/dubrovnik.jpg — “Dubrovnik” by Bartlomiej Mostek (flickr, cc0) https://www.flickr.com/photos/118509905@N07/15472037395
 - photos/venice2.jpg — “Venice canal with gondolas” by lisafree54 (flickr, cc0) https://www.flickr.com/photos/136594255@N06/28539231743
+- objects/fox.webp — “Arctic Fox” by Mathias Appel (flickr, cc0) https://www.flickr.com/photos/91501748@N07/24369692682
+- objects/owl.webp — “Snowy owl (Bubo scandiacus)” by Vladislav Litvinov (flickr, cc0) https://www.flickr.com/photos/59724445@N07/5583634791
+- objects/igloo.webp — “Igloo” by boklm (flickr, cc0) https://www.flickr.com/photos/85825630@N00/49599525866
+- objects/bear.webp — “Polar Bear Breaks Ice” by U.S. Geological Survey (flickr, cc0) https://www.flickr.com/photos/27784370@N05/4370261221
