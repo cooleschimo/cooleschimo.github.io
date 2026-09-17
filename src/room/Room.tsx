@@ -9,7 +9,7 @@ import { RoomObject, Block } from './RoomObject'
 import { Vase } from './Vase'
 import { Fox } from './Fox'
 import { PostcardString, stringPoint } from './PostcardString'
-import { createCamera } from './camera'
+import { createCamera, ZOOM_MAX } from './camera'
 import { Sheet } from '../sheets/Sheet'
 import { Postcard } from '../sheets/Postcard'
 import { About, Photos, Writing } from '../sheets/contents'
@@ -21,6 +21,8 @@ type Open = { kind: 'about' } | { kind: 'photos' } | { kind: 'writing' } | { kin
 export function Room() {
   const mode = useMode()
   const world = useRef<HTMLDivElement>(null)
+  const roomEl = useRef<HTMLDivElement>(null)
+  const [zoom, setZoom] = useState(1)
   const camera = useRef<ReturnType<typeof createCamera> | null>(null)
   const [scale, setScale] = useState(1)
   const [open, setOpen] = useState<Open>(null)
@@ -34,12 +36,12 @@ export function Room() {
     const w = world.current
     if (!w) return
     const reduced = prefersReducedMotion()
-    camera.current = createCamera(w, reduced)
+    camera.current = createCamera(w, roomEl.current!, reduced, (c) => setZoom(Math.round(c.zoom * 100) / 100))
     if (!reduced) gsap.from(w.querySelectorAll('[data-depth]'), { opacity: 0, duration: 0.9, ease: 'power2.out', stagger: 0.08, clearProps: 'opacity' })
     return () => camera.current?.destroy()
   }, [])
 
-  const close = useCallback(() => { setOpen(null); camera.current?.reset() }, [])
+  const close = useCallback(() => { setOpen(null); camera.current?.back() }, [])
   // Dolly toward a world point (relative to the room centre), then open.
   const goTo = useCallback((x: number, y: number, zoom: number, next: Open) => {
     const tl = camera.current?.dolly(x - 720, y - 450, zoom)
@@ -51,7 +53,7 @@ export function Room() {
   const pickPt = open?.kind === 'place' ? stringPoint(open.i, places.length) : null
 
   return (
-    <div className={`room ${open ? 'room--dim' : ''}`}>
+    <div ref={roomEl} className={`room ${open ? 'room--dim' : ''} ${zoom > 1.01 ? 'room--zoomed' : ''}`}>
       <div ref={world} className="room__world" style={{ transform: `translate(-50%, -50%) scale(${scale})` }}>
         {/* depth 0: ice wall and window */}
         <div className="layer layer--wall" data-depth="0">
@@ -67,7 +69,7 @@ export function Room() {
         </div>
         {/* depth 0.25: the postcard string, hanging in front of the wall */}
         <div className="layer layer--string" data-depth="0.25">
-          <PostcardString active={open?.kind === 'place' ? open.slug : null} onPick={(slug, i) => { const pt = stringPoint(i, places.length); goTo(pt.x, pt.y + 60, 1.6, { kind: 'place', slug, i }) }} />
+          <PostcardString active={open?.kind === 'place' ? open.slug : null} onPick={(slug, i) => { const pt = stringPoint(i, places.length); goTo(pt.x, pt.y + 60, Math.min(ZOOM_MAX, 1.6), { kind: 'place', slug, i }) }} />
         </div>
         {/* depth 0.45: floor and rug */}
         <div className="layer layer--floor" data-depth="0.45">
@@ -94,7 +96,11 @@ export function Room() {
       </div>
 
       <button type="button" className="name label" onClick={() => goTo(720, 450, 1.15, { kind: 'about' })}>Chimin Liu<span className="muted"> · engineer, photographer, painter</span></button>
-      <p className="blockout-note label">grey blockout · art slots per docs/ART-BRIEF.md · move the mouse for depth</p>
+      <p className="blockout-note label">grey blockout · art slots per docs/ART-BRIEF.md</p>
+      <div className="camctl" role="group" aria-label="Camera">
+        <span className="label muted camctl__hint">{zoom > 1.01 ? 'drag to pan · double-click to reset' : 'scroll or pinch to zoom · double-click to jump in'}</span>
+        <button type="button" className="camctl__btn" onClick={() => camera.current?.reset()} disabled={zoom <= 1.01} aria-label="Reset the view">{zoom > 1.01 ? `${zoom.toFixed(1)}× · reset` : '1.0×'}</button>
+      </div>
 
       {/* The pulled-down postcard lives in the scene, in front of everything. */}
       <AnimatePresence>

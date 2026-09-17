@@ -45,10 +45,12 @@ src/styles/base.css          all room, blockout and sheet styles
 - **Art slots**: `ART.*` in `src/room/art.ts` are the paths from the brief. `useArt` loads each once via
   an `Image` probe; missing files fall back to the placeholder. Drop files in `public/art/` and reload.
   Nothing else changes. (The 404s for missing art are expected in the console until the art exists.)
-- **Camera** (`camera.ts`): layers carry `data-depth` 0..1. Each frame: translate by pointer parallax
-  (56px at depth 1, ~7px at 0) plus the dolly offset, and scale by `1 + (zoom-1)*(0.55+0.45d)`, so near
-  layers grow more. `dolly(x, y, zoom)` moves toward a world point relative to centre; `reset()` returns.
-  `goTo()` in Room dollies then opens.
+- **Camera** (`camera.ts`): a point of interest (world units from centre) + zoom, eased each frame into
+  `shown`. Layers carry `data-depth` 0..1 and scale by `1 + (zoom-1)*(0.55+0.45d)` about the poi, plus
+  pointer parallax (56px at depth 1, ~7px at 0, divided by zoom). Wheel/pinch call `zoomAtScreen()`, which
+  keeps the world point under the pointer fixed on the objects layer; drag pans when zoomed; double-click
+  jumps to 2× or resets; keys + - 0. `dolly()` saves the visitor's view and moves; `back()` restores it.
+  Room passes the `.room` element as the viewport for listeners and shows zoom in `.camctl`.
 - **Postcard string**: `stringPoint(i, n)` gives x, sag y and a perspective tilt; cards are buttons with
   a CSS sway; the picked card fades on the string and a `.pulled` card springs from its position to the centre.
 - **Postcard back**: pieces are absolutely positioned in a 640×420 space and scaled with
