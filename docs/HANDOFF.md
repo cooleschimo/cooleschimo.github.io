@@ -1,4 +1,4 @@
-# Handoff notes — Chimin Liu, personal site (v5.2, "the igloo")
+# Handoff notes — Chimin Liu, personal site (v5.3, "the igloo")
 
 Updated 2026-09-17 at the end of the second session. Read this, then `docs/PRD.md`,
 `docs/DESIGN.md` (v5) and `docs/ART-BRIEF.md`, before writing any code.
@@ -17,8 +17,12 @@ Updated 2026-09-17 at the end of the second session. Read this, then `docs/PRD.m
 5. "There's no interactive depth" → the visitor camera (`camera.ts`: zoom, pan, dolly) and the postcard string.
 6. "The igloo feels off … start above the igloo with my name … like Jess Paik's opening" and "try working
    on the assets yourself" → `Arrival.tsx` (above-igloo shot, tilt to the door, push through, room assembles
-   from a clump) and **generated collage stand-in art** for every slot (`tools/collage.py`, WebP via
-   `tools/optimize-art.py`). Chimin has not yet judged this build.
+   from a clump) and generated collage stand-in art for every slot.
+7. "I didn't want this aesthetic for everything in the room, it's too sticker-like and flat; collage is
+   for the postcards; I wanted objects that are 2D but look 3D" (with painted temple-on-sand frames as
+   the reference) → `tools/render.py`: a small numpy rasteriser that builds each object and the igloo
+   from simple 3D forms, shades them under one light, and paints over the result. Collage stays on the
+   postcards and stickers. Chimin has not yet judged this build.
 
 **Nothing is deployed.** The workflow runs only on pushes to `main`.
 
@@ -28,8 +32,9 @@ Updated 2026-09-17 at the end of the second session. Read this, then `docs/PRD.m
 content/places.json          the fourteen places (slug, name, country)
 content/projects.json        four projects (shown in About for now)
 docs/ART-BRIEF.md            style spec + numbered shot list + export specs for Chimin's generation run
-public/art/                  generated collage stand-ins (WebP) in every slot named by the brief; _placeholder/ holds CC0 photos + CREDITS.md
-tools/collage.py             generates the stand-ins (Pillow); edit palettes/shapes here to change the look
+public/art/                  generated stand-ins (WebP) in every slot named by the brief; _placeholder/ holds CC0 photos + CREDITS.md
+tools/render.py              the room and objects: meshes → z-buffer rasteriser → shading → painterly pass (numpy + Pillow); prints CSS slot sizes
+tools/collage.py             the postcard fronts, pieces and stickers (collage); its room functions are unused now
 tools/optimize-art.py        PNG/JPG under public/art → WebP q82, deletes sources
 src/room/art.ts              every image slot, by name
 src/room/useArt.tsx          useArt(src) probes whether a file exists; <Art> renders it or the blockout placeholder
@@ -73,10 +78,17 @@ src/styles/base.css          all room, blockout and sheet styles
   scale 5.5 through the door, dark, fade) and calls `onDone`; Room then runs `gsap.from` on
   `.obj, .ro, .fox, .pcard` (toward centre, scale .6, rotation ±25, expo.out, random stagger) and fades
   the layers in. Click skips. Reduced motion: 0.6s.
-- **Stand-in art**: `tools/collage.py` writes every slot (wall, floor, entrance, exterior, sky, objects,
-  flowers, string, peg, 5 places' postcard fronts + pieces, stickers) with torn-paper edges, grain, an
-  off-register second sheet and a soft shadow. Sizing of real art inside the slots is the "real art in
-  the slots" block at the end of `base.css` (`.obj--fridge img`, `.obj--table img`, `.fox img`, …).
+- **Stand-in art, room register** (`tools/render.py`): `box/lathe/ellipsoid/cylinder/tube` build meshes;
+  `Camera` + `rasterise` give colour/normal/depth buffers (perspective-correct depth, near-plane cull);
+  `shade` is Lambert key + sky fill + a little specular, warm in light and cool in shade; `paint` adds a
+  soft wash, grain, darker rims, an ink line from depth/normal edges, and the projected ground shadow.
+  `sprite()` frames each object so its own width is N CSS px at 2x and prints the CSS width/margin
+  (pad 11px). The wall, floor and entrance share `room_camera()`; the rug is placed by unprojecting the
+  rug's screen position onto the floor; the window is cut per pixel at (720,201) r100. The exterior
+  (arrival shot) is the same dome from above with a tunnel. Slot sizing is the "real art in the slots"
+  block at the end of `base.css`.
+- **Stand-in art, postcard register** (`tools/collage.py`): torn paper, washi, off-register sheets, grain.
+- **Night** is `.room__night`, one multiply-blend overlay (navy edges, warm pool at the candle).
 
 ## 4. Verified (headless Chromium against `vite preview`)
 
@@ -87,9 +99,10 @@ Console: clean (art exists for every slot now). The verify scripts lived in the 
 
 ## 5. Known gaps and follow-ups
 
-1. **Stand-in art only.** `tools/collage.py` output is a sketch of the collage style so the room can be
-   judged with texture on; Chimin runs the collage skill per the brief (test 3–5 photos first) and drops
-   the files in by name. Known weak stand-ins: the fox (blobby), the window cloud, the exterior's snow ground.
+1. **Stand-in art only.** The painted room is a sketch of the register so it can be judged with volume
+   and light on; Chimin generates the real art per the brief and drops files in by name. Known weak
+   stand-ins: the sleeping fox (reads as a curled shape, not quite a fox), the loose flower stems (thin),
+   the day sky's clouds, the exterior's snow (grainy) and its tunnel (a pipe).
 1b. Arrival is a first cut: the exterior shot is generated, the tilt is CSS perspective on a flat image.
    If Chimin wants the real "rotate down into the door", the exterior needs 2–3 layered plates (ground,
    dome, entrance) or a short pre-rendered sequence; see the MCP notes in the last session recap.

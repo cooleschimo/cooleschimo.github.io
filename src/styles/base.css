@@ -39,6 +39,9 @@ button { font: inherit; color: inherit; }
 .layer { position: absolute; inset: 0; will-change: transform; transform-origin: 50% 50%; pointer-events: none; }
 .layer--wall .window, .layer--objects > *, .layer--near > .ro { pointer-events: auto; }
 .entrance { position: absolute; inset: 0; pointer-events: none; }
+.room__night { position: absolute; inset: 0; z-index: 20; pointer-events: none; opacity: 0; mix-blend-mode: multiply; transition: opacity 700ms ease;
+  background: radial-gradient(60% 46% at 58% 66%, #f4d9a8 0%, #c9b8a6 32%, #8b93a8 62%, #5f6a86 100%); }
+:root[data-mode="night"] .room__night { opacity: 0.82; }
 .layer__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 
 /* blockout: wall */
@@ -222,20 +225,21 @@ button { font: inherit; color: inherit; }
 .arrival__dark { position: absolute; inset: 0; background: #1a1c22; opacity: 0; pointer-events: none; }
 @media (max-width: 760px) { .arrival__scene { scale: 0.5; } }
 
-/* ---------- real art in the slots (2x images with shadow padding) ---------- */
-.obj--fridge img { display: block; width: 236px; height: auto; margin: -20px 0 0 -24px; }
-.obj--table img { display: block; width: 580px; height: auto; margin: -34px 0 0 -30px; }
+/* ---------- real art in the slots (2x painted sprites; each carries an 11px pad and its ground shadow; sizes from tools/render.py) ---------- */
+.obj--fridge img { display: block; width: 308px; height: auto; margin: -11px 0 0 -11px; }
+.obj--table img { display: block; width: 596px; height: auto; margin: -11px 0 0 -11px; }
 .obj--table:has(img) .table-legs { display: none; }
-.obj--candle img { display: block; width: 44px; height: auto; margin: -8px 0 0 -12px; }
+.obj--candle img { display: block; width: 99px; height: auto; margin: -11px 0 0 -26px; }
 .obj--vase { z-index: 2; }
-.vase > img { position: absolute; left: 6px; bottom: 6px; width: 110px; height: auto; }
-.stem img { display: block; width: 62px; height: auto; margin-left: -22px; }
-.stem--in img { position: absolute; bottom: -6px; left: 0; }
-.stem--out img { width: 48px; margin-left: -15px; }
-.fox img { width: 160px; height: auto; margin: -20px 0 0 -20px; }
+.vase > img { position: absolute; left: -6px; bottom: -8px; width: 185px; height: auto; }
+.stem img { display: block; width: 66px; height: auto; margin-left: -24px; }
+.stem--in img { position: absolute; bottom: -4px; left: 0; }
+.stem--out img { width: 84px; margin-left: -30px; }
+.fox img { width: 159px; height: auto; margin: -11px 0 0 -11px; }
+.fox--awake img { width: 146px; }
 .ro img { width: 100%; }
-.ro[data-id="camera"] img { width: 136px; margin: -10px 0 0 -13px; }
-.ro--notebook img { width: 180px; margin: -14px 0 0 -16px; }
+.ro[data-id="camera"] img { width: 105px; margin: -11px 0 0 -11px; }
+.ro--notebook img { width: 174px; margin: -11px 0 0 -11px; }
 .window__sky { position: absolute; inset: -2px; width: calc(100% + 4px); height: calc(100% + 4px); border-radius: 50%; }
 .pcard__face img { width: 100%; height: 100%; object-fit: cover; }
 .piece img { width: 100%; height: auto; display: block; filter: drop-shadow(0 3px 5px rgba(30,22,10,.14)); }

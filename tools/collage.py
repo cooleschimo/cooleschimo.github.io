@@ -1,6 +1,8 @@
 """
-Collage-style stand-in art for the igloo, written to public/art/ by the names in docs/ART-BRIEF.md.
-Paper cut-outs with torn edges, grain, a second off-register layer and a soft shadow.
+Collage-style stand-ins for the POSTCARD side of the site (postcard fronts, the draggable pieces, the
+stickers), written to public/art/ by the names in docs/ART-BRIEF.md. Paper cut-outs with torn edges,
+grain, a second off-register layer and a soft shadow. The room and its objects are painted volumes
+from tools/render.py, not collage (the room functions below are kept for reference, unused).
 Run: python3 tools/collage.py   (needs Pillow). Chimin's generated art replaces these files by name.
 """
 import math, os, random, json
@@ -399,13 +401,6 @@ def sticker(n):
     return with_shadow(img, 2, 4, 4, 0.2)
 
 if __name__ == '__main__':
-    save(wall(), 'room/wall.png'); save(floor(), 'room/floor.png'); save(entrance(), 'room/entrance.png')
-    save(exterior(), 'room/exterior.png'); save(string_line(), 'room/string.png'); save(peg(), 'objects/peg.png')
-    save(sky(False), 'sky/day.png'); save(sky(True), 'sky/night.png')
-    save(fridge(), 'objects/fridge-closed.png'); save(table(), 'objects/table.png'); save(camera(), 'objects/camera.png')
-    save(vase(), 'objects/vase-empty.png'); save(candle(), 'objects/candle.png'); save(notebook(), 'objects/notebook.png')
-    save(fox(False), 'objects/fox-asleep.png'); save(fox(True), 'objects/fox-sitting.png')
-    for n in range(1, 7): save(flower(n), f'objects/flowers/{n}.png')
     photos = {'venice': '_placeholder/photos/venice.jpg', 'chicago': '_placeholder/photos/chicago.jpg', 'singapore': '_placeholder/photos/singapore.jpg', 'dubrovnik': '_placeholder/photos/dubrovnik.jpg', 'como': '_placeholder/photos/venice2.jpg'}
     slugs = ['budapest', 'cinque-terre', 'split', 'mostar', 'dubrovnik', 'malta', 'mallorca', 'venice', 'verona', 'lake-garda', 'como', 'slovenia', 'singapore', 'chicago']
     for slug in slugs:

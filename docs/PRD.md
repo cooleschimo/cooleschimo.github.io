@@ -208,7 +208,7 @@ type Toy = { slug: string; name: string; status: 'shipped' | 'building';
 
 The full list, sizes and style spec are in `docs/ART-BRIEF.md` (room layers, objects, fox frames, flowers, sky, string and pegs, the exterior shot for the arrival, one set per place, photographs, stickers). The site loads every image by name from `public/art/` (`src/room/art.ts`), as WebP; `tools/optimize-art.py` converts exported PNGs. Swapping art must require zero code changes.
 
-**Until Chimin's art exists, `tools/collage.py` generates collage-style stand-ins for every slot** (currently in `public/art/`, ~3MB WebP). CC0 photos used inside the stand-in postcards are credited in `public/art/_placeholder/CREDITS.md`.
+**Until Chimin's art exists, `tools/render.py` paints the room and objects as shaded volumes and `tools/collage.py` makes the collage postcards and stickers** (currently in `public/art/`, WebP). CC0 photos used inside the stand-in postcards are credited in `public/art/_placeholder/CREDITS.md`.
 
 ---
 
@@ -239,7 +239,7 @@ After each milestone run impeccable `critique` against DESIGN.md and list findin
 ---
 
 ## 8. Decisions made (2026-09-17; change here if needed)
-- v5 direction: the illustrated igloo, 2.5D with a real camera (parallax + dolly), Chimin's own idea; not realistic; one collage style for all artefacts (the cocktail-collage look); art generated from Chimin's photos via the skills Chimin found. Hybrid: one real 3D hero object (vase or bag) may be added later inside its window (three.js then, not before). Postcards hang on a string; the fridge is furniture.
+- v5 direction: the illustrated igloo, 2.5D with a real camera (parallax + dolly), Chimin's own idea; not realistic; two registers: the room and its objects as painted volumes (2D pictures of solid things, one camera, one light; reference Chimin's temple-on-sand frames), the postcards and stickers as cocktail-collage; art generated from Chimin's photos via the skills Chimin found. Hybrid: one real 3D hero object (vase or bag) may be added later inside its window (three.js then, not before). Postcards hang on a string; the fridge is furniture.
 - The bag idea is shelved. The design lab, bear and owl are dropped for now.
 - Fonts: Instrument Serif (name, headings), JetBrains Mono (labels, one-liner), Geist (window body), Newsreader (long-form, M4).
 - One fixed room on desktop, sheets for content; the room scales to width on phones.

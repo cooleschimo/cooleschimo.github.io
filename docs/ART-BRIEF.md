@@ -5,12 +5,11 @@ Run the collage skill (the "C'est la vie" cocktail-collage look) with the **styl
 prepended to each prompt so all outputs match. Test on 3–5 photos first; send me those before
 generating the rest.
 
-## Style spec (prepend to every prompt)
+## Style spec: the room (prepend to every room and object prompt)
+*A painted illustration of a solid object, seen from slightly above (about 20° down) and a touch from the right, in perspective. One soft key light from the upper left and front; faces shaded, a soft cast shadow on the ground toward the lower right; a faint warm ink line at the silhouette; watercolour weight, high key, warm paper tone, fine paper grain. Muted palette: cream, pale blue-white ice, warm wood, stoneware, one rust accent. No gloss, no outlines heavier than a pencil, no flat sticker look, no photoreal render, no text, no people.* (Reference: the painted temple-on-sand frames Chimin shared: red walls, green tile, stone guardians, warm sky.)
 
-> Paper collage illustration on cream paper (#f4efe6). Torn paper and washi-tape layers, soft translucent
-> muted colour, slightly off-register edges, visible paper fibre, no outlines heavier than a pencil line,
-> no gloss, no gradients, no 3D shading, no photorealism. Flat, quiet, sophisticated, like a page from a
-> good travel sketchbook. Even soft daylight. Plenty of empty paper around the subject.
+## Style spec: the postcards (prepend to every place, photo and sticker prompt)
+*Paper collage: torn paper and washi-tape layers, soft translucent colour, edges slightly off-register, a typewriter caption on cream. Muted palette, no gloss.* (Reference: the cocktail collage.)
 
 ## A. The room (one illustration, layered)
 
@@ -55,7 +54,7 @@ Slugs: budapest, cinque-terre, split, mostar, dubrovnik, malta, mallorca, venice
 
 ## Export rules
 - Export PNGs by the names above into `public/art/`, then run `python3 tools/optimize-art.py` (needs Pillow): it converts everything to WebP, which is what the site loads, and deletes the PNGs.
-- Until your art exists, `python3 tools/collage.py` regenerates the code-made collage stand-ins for every slot.
+- Until your art exists: `python3 tools/render.py` regenerates the painted room and objects (needs numpy + Pillow; prints the CSS sizes for the slots), `python3 tools/collage.py` the collage postcards and stickers.
 - PNG with transparency for everything except originals. sRGB. No drop shadows baked in (the site adds a paper lift).
 - Keep the same light direction (soft, from the upper left) and the same paper tone in every image.
 - File names exactly as above; the site loads them by name from `public/art/`.
