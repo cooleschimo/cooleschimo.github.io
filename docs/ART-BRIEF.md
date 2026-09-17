@@ -1,0 +1,55 @@
+# Art brief — the igloo (v5)
+
+What to generate, in which style, at what size. Every image on the site comes from this list.
+Run the collage skill (the "C'est la vie" cocktail-collage look) with the **style spec** below
+prepended to each prompt so all outputs match. Test on 3–5 photos first; send me those before
+generating the rest.
+
+## Style spec (prepend to every prompt)
+
+> Paper collage illustration on cream paper (#f4efe6). Torn paper and washi-tape layers, soft translucent
+> muted colour, slightly off-register edges, visible paper fibre, no outlines heavier than a pencil line,
+> no gloss, no gradients, no 3D shading, no photorealism. Flat, quiet, sophisticated, like a page from a
+> good travel sketchbook. Even soft daylight. Plenty of empty paper around the subject.
+
+## A. The room (one illustration, layered)
+
+Prompt: *inside a small igloo, seen from the entrance, slightly from above (a 20° top-down angle). Curved
+wall of pale blue-white ice blocks with a round window on the back wall showing a strip of sky. A low
+wooden table centre-right with a small film camera and a stoneware vase. A small cream fridge on the left
+wall. A round woven rug on the floor with a closed notebook on it. An arctic fox curled asleep beside the
+fridge. Candle on the table. No people.*
+
+Export the room as separate transparent PNG layers at 2880×1800 (2× of 1440×900):
+1. `room/wall.png` — ice wall and window frame, sky area transparent.
+2. `room/floor.png` — floor and rug.
+3. `room/entrance.png` — the foreground arc of the entrance tunnel (dark, soft edge), everything else transparent.
+Plus each object on its own, transparent, same camera angle, at the size it appears in the room ×2:
+4. `objects/fridge-closed.png` (the fridge, door closed, plain front for the magnets)
+5. `objects/table.png`, `objects/camera.png`, `objects/vase-empty.png`, `objects/candle.png`
+6. `objects/notebook.png`
+7. `objects/fox-asleep.png`, `objects/fox-sitting.png`, `objects/fox-walking-1.png`, `objects/fox-walking-2.png` (same size, same feet position)
+8. `objects/flowers/{1..6}.png` — six single stems, different heights and muted colours
+9. `sky/day.png`, `sky/night.png` — the window's sky, night with a faint aurora
+
+## B. Places (one set per place; 14 places)
+
+For each place, from 2–4 of Chimin's photos of it:
+1. `places/{slug}/magnet.png` — 240×240, the fridge magnet: the place's most iconic subject as a small collage badge with a torn edge.
+2. `places/{slug}/postcard-front.png` — 1280×840, the collage of the place with a typewriter caption (the place name, lower left).
+3. `places/{slug}/pieces/{1..8}.png` — transparent collage pieces for the postcard back: torn paper shapes cut from the photos (2–3), washi strips (2), one stamp-style badge, one small caption strip, one doodle mark. Each ≤ 480px on its long side.
+
+Slugs: budapest, cinque-terre, split, mostar, dubrovnik, malta, mallorca, venice, verona, lake-garda, como, slovenia, singapore, chicago.
+
+## C. Photographs
+
+`photos/{n}.jpg` — the originals, ≤ 2000px long side, plus `photos/{n}-collage.png` (1280 long side) as the translated version shown first. 12 to start.
+
+## D. Stickers for the notebook
+
+`stickers/{1..8}.png` — 200×200 transparent, in the same collage style: a star, a heart, a small fox, a snowflake, "good", "read", a coffee cup, a moon. Visitors give these to essays.
+
+## Export rules
+- PNG with transparency for everything except originals. sRGB. No drop shadows baked in (the site adds a paper lift).
+- Keep the same light direction (soft, from the upper left) and the same paper tone in every image.
+- File names exactly as above; the site loads them by name from `public/art/`.

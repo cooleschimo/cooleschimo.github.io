@@ -1,60 +1,51 @@
 # DESIGN.md — Chimin Liu, personal site
 
 Single source of truth for look and feel. Overrides any installed design skill, component library default, or agent instinct. If something here conflicts with PRD.md, ask.
-Revision: 2026-09-17 (v4.1, "the desk" with the arctic twist). Modelled directly on jesspaik.com and jackiehu.design after Chimin rejected both the sketchbook build (childish) and the typographic rebuild (further from the references). Warm paper ground, per Chimin.
+Revision: 2026-09-17 (v5, "the igloo"). Chimin's own direction after three attempts: a 2.5D illustrated igloo room, simple but sophisticated, an aesthetic rather than realism. Art is generated from Chimin's photographs in one collage style (see `docs/ART-BRIEF.md`).
 
 ## Feel
-A photographed desk. Real objects, cut out and laid on warm paper: a camera, an open travel sketchbook, a letter, a folder, polaroids, a palette, a cup, tape, pencils, today's date. The name sits in the middle in a sharp serif. Everything can be picked up and moved; the objects that matter open a small window. It should feel like Jess Paik's and Jackie Hu's desks: playful, tactile, and polished because the objects are real.
+One illustrated room inside an igloo, drawn like a page from a good travel sketchbook: warm, low-contrast, quiet, with a lot of space around a few objects. The arctic is told through light, not props: blue-white daylight through the ice blocks by day; candle glow and a faint aurora through the window by night. Nothing is rendered or glossy. Depth comes from three or four parallax layers and from objects lifting toward you, never from 3D geometry.
 
-Test: would this pass as one of the reference sites with the name changed? If any object looks drawn by code, it fails.
+Test: does it look like one person's sketchbook page, with the calm of the stamp-archive posts and the softness of the cocktail collages? If it looks like a game, a render, or a children's book, it fails.
 
-## The arctic twist
-Chimin's world (igloo, arctic fox, polar bear, snowy owl, snow) lives on the desk as **die-cut stickers**: photographs of the real animals and a real igloo, cut out with a white sticker border, the way Jackie Hu's desk has stickers. The igloo is home (About); the fox is the guide (Travel); the bear is the maker (Work); the owl is the writer (Writing). Each sits near the object it belongs to. A very sparse, slow snowfall drifts over the desk, and at night a faint aurora glows along the top edge. That is the whole twist: no drawn characters, no wobble, nothing that reacts to the cursor beyond lifting like any other object.
-
-## Materials
-- **Objects are photographs**, cut out with transparent backgrounds, lit from above, with a soft real shadow. Until Chimin supplies their own (their camera, prints, sketchbook, paints), the stand-ins are CC0 photographs listed in `public/art/_placeholder/CREDITS.md`.
-- Paper objects that carry text (polaroid, date card, folder tab) are built in CSS/SVG but must read as physical: white stock, slight warmth, the same shadow as the photos.
-- Stickers: real photographs (CC0 stand-ins now; Chimin's own animal photos or paintings later) with a 12–16px off-white die-cut border and a light shadow.
-- No vector doodles, no line-art mascots, no generated textures.
+## The one style: paper collage
+Every place and every photograph on the site is translated into the **cocktail-collage style**: torn paper and washi-tape layers, soft translucent colour, edges slightly off-register, a typewriter caption. The room itself, its objects and the fox are illustrated in the same hand (flat colour, torn-paper edges, paper texture, no outlines heavier than a pencil). One style, everywhere, generated from Chimin's photos and a written room description with a fixed style spec, so every output matches.
 
 ## Ground and colour
-- Ground is flat warm paper `#fbf7ef` by day, warm near-black `#1d1b18` by night. Windows are cream stock `#fdfbf6` in both modes.
-- Type is near-black ink; secondary text warm grey. One accent, coral `#d9603f`, for the window close dot and links only. Colour otherwise comes from the objects.
-
-```css
-:root[data-mode="day"]   { --bg:#fbf7ef; --win-bg:#fdfbf6; --ink:#1c1a17; --ink-2:#6f6a62; --line:#e6dfd3; --accent:#d9603f; }
-:root[data-mode="night"] { --bg:#1d1b18; --win-bg:#f6f1e7; --ink:#f1ece2; --ink-2:#a9a298; --line:#3a3630; --accent:#e9744f; }
-```
+- Paper: cream `#f4efe6`. Ink: warm near-black `#2a2622`. Secondary: `#7a7369`. Accent: one, taken from Chimin's photos once the artefacts exist; placeholder rust `#c7694a`.
+- Day light: cool blue-white `#dfe9ee` on the ice wall. Night: navy `#1e2733` room, warm candle `#f0c07a` pools, aurora `#7fd6b5` / `#9a8fd9` at low opacity through the window only.
+- Colour lives in the artefacts and the photographs. The room stays within the paper, ink and two light tints.
 
 ## Type
-- **Instrument Serif** for the name (80px) and window headings (20–22px). One weight.
-- **JetBrains Mono** for everything small: role line, one-liner, object labels, window titles, tags, captions. 11–13px, labels uppercase with 0.08em tracking. This is the Jackie Hu voice.
-- **Geist** for window body copy (14–16px).
-- No handwriting fonts. No gradient or shadowed text.
+- **Instrument Serif** for the name and sheet headings, one weight.
+- **JetBrains Mono** (typewriter voice) for captions, labels, magnet names, postcard text, 11–13px. This is the voice of the collages and the stamp archive.
+- **Geist** for reading text inside sheets, 15–16px. Newsreader for long essays (M4).
+- No handwriting fonts, no bold, no gradient text.
 
-## Layout
-- Desktop: one fixed viewport, no page scroll. A 1440×820 "world" scaled to fit. Objects are absolutely placed by `content/desk.json` (x, y from centre; rotation; width). Big things at the edges, small things near the name, nothing touching the name block.
-- Two layouts, toggled bottom-centre: **Messy** (the authored scatter) and **Tidy** (a 6-column grid, rotation 0, wide objects scaled down). Objects animate between them.
-- Windows: 560px, cream, 1.5px ink border, 10px radius, title bar with a coral close dot, body scrolls. Draggable by the title bar. Several can be open; the last touched is on top. Escape closes the top one.
-- Phones and small touch screens: the same objects in a two-column grid under the name; a tap opens a bottom sheet instead of a window. No pan, no drag.
+## The room (2.5D)
+- A fixed viewport; a 1440×900 world scaled to fit. Layers, back to front: ice wall + window (sky), floor + rug, objects, foreground entrance arc. Pointer parallax of ±6/±10/±14px per layer, eased; none under reduced motion.
+- Objects, and what they open: the **fridge** (the magnets on its door are the places; a magnet opens that place's postcard), the **camera** on the table (photographs), the **vase** (arrange flowers from the table, in the room, no sheet), the **notebook** on the rug (essays; readers can leave a sticker), the **fox** (asleep by the fridge; wakes and follows the cursor, which becomes a fish, inside its zone), the **window** (day/night). At most seven interactive things.
+- Hover: lift 4px, a soft shadow deepens, a mono label appears. Click: a sheet rises over the room (cream card, ink hairline, close dot), the room dims 20%.
+- Phones: the room scales to width; tall sheets become full-height; the fox chase is off.
 
-## Interaction
-- **Deal-in** on load: objects fly from under the name to their places, 1.1s `expo.out`, 45ms stagger.
-- **Drag**: every object, `dragMomentum: false`, stays where dropped, lifts (scale 1.05, deeper shadow) while held.
-- **Alpha hit-testing**: only opaque pixels of a cut-out are hot. Hot = pointer cursor, slight lift, and the object's label appears beneath it.
-- **Open**: a press under 400ms that moved under 10px opens the object's window; anything else was a drag.
-- Day/night: a small sun/moon icon top-right; 350ms token crossfade.
-- Reduced motion: no deal-in, no lift; windows fade.
-- The snow is the one ambient loop: ~40 flakes per 1440px, 1–2.5px, faint, off under reduced motion. No sounds. No cursor replacement.
+## The postcard (signature)
+Front: the place's collage artefact and a typewriter caption. Back: a cream postcard with address lines and a stamp box, holding Chimin's default arrangement of that place's collage pieces (torn paper, washi, a stamp, a caption). Every piece can be dragged; the visitor's arrangement is kept in their browser; Reset restores Chimin's. This is the one interaction that must be perfect.
+
+## Motion
+Verbs: **lift**, **settle**, **drift**.
+- Room fades and settles in on load (layers slide 10px into place, 0.8s). No deal-in, no bounce.
+- Sheets: rise 24px + fade, 0.35s. Magnets lift 3px on hover.
+- Fox: follows the cursor with a lag inside its zone; sits when the cursor leaves. Blinks occasionally. Nothing else idles except candle flicker at night (opacity ±4%).
+- Reduced motion: no parallax, no fox chase, sheets fade.
 
 ## Never
-Code-drawn illustrations or mascots, textures and grain, hand-drawn boxes, wobble filters, watercolour effects, handwriting fonts, pastel palettes, gradients (other than shading inside an object), glass, blocking loaders, scroll pinning, iframes as content, invented facts in the copy.
+Realistic rendering, 3D geometry, glossy or glassy materials, drop shadows heavier than a paper lift, hand-drawn boxes, wobble filters, code-drawn characters, more than one artefact style, handwriting fonts, bright saturated UI colour, loaders, sound without a mute, scroll pinning, invented facts in the copy.
 
 ## Always
-- Real `<button>`/`<a>` for anything that opens or links; windows are `role="dialog"` with a labelled close.
-- Every object that opens something has a visible label on hover and is reachable on mobile as a tile.
-- Alt text on photographs; decorative object images are `alt=""`.
-- Copy is Chimin's. Placeholder copy is marked in the source.
+- Every interactive object has a keyboard path (a focusable button with the same label) and a tap path.
+- Sheets are `role="dialog"`, labelled, Escape closes, focus returns.
+- Alt text on photographs and artefacts, in Chimin's voice.
+- Copy is Chimin's; placeholder copy is marked in the source.
 
 ## When unsure
-Look at jesspaik.com. If it isn't there, don't add it.
+Take something out of the room.

@@ -1,79 +1,77 @@
-# Handoff notes — Chimin Liu, personal site (v4, "the desk")
+# Handoff notes — Chimin Liu, personal site (v5, "the igloo")
 
-Updated 2026-09-17 at the end of the second session. Read this, then `docs/PRD.md` and
-`docs/DESIGN.md` (v4), before writing any code.
+Updated 2026-09-17 at the end of the second session. Read this, then `docs/PRD.md`,
+`docs/DESIGN.md` (v5) and `docs/ART-BRIEF.md`, before writing any code.
 
 ## 1. What happened, in order
 
-1. Reference sites torn down live → `docs/refs/teardowns.md` (still valid; its §1.4 maps onto old decisions).
-2. Sketchbook M1 built → Chimin: "very childish, unprofessional". (commits c0af973…1802542)
-3. Clean typographic M1 built → Chimin: "even further from what I wanted… you would have given me something similar to [the references]". (commit e44782f)
-4. **The desk** built (then the arctic twist added as stickers, snow and aurora at Chimin's request), modelled directly on jesspaik.com / jackiehu.design, on warm paper:
-   photographed objects (CC0 stand-ins cut out with rembg), deal-in, drag, alpha hit-testing,
-   Messy/Tidy, five windows, mobile grid + sheet. DESIGN.md v4 and PRD updated to match.
+1. Reference sites torn down live → `docs/refs/teardowns.md`.
+2. Sketchbook build → "childish". Typographic build → "further from what I wanted". Desk build
+   (jesspaik/jackiehu model, CC0 photo cut-outs) → "too similar to the example websites".
+   All three are in git history (c0af973, e44782f, 88f85d3…fddeafb).
+3. Chimin set the direction: a 2.5D illustrated igloo room, not realistic, simple but sophisticated,
+   with every photo and place translated into the **cocktail-collage style** (torn paper, washi,
+   typewriter captions on cream), generated from Chimin's photos with the skills they found.
+4. Built: the **igloo blockout**. Grey flat shapes in the right proportions, every interaction
+   working, every image an `<Art>` slot that swaps to the real file by name (`src/room/art.ts`).
 
 **Nothing is deployed.** The workflow runs only on pushes to `main`.
 
 ## 2. What exists
 
 ```
-content/desk.json                 the objects: kind, image, x/y from centre, rotation, width, which window they open
-content/projects.json             four projects
-public/art/_placeholder/objects/  camera, sketchbook, letter(2), paints, coffee, tape, pencils (.webp cut-outs, ≤760px); fox, owl, igloo, bear (sticker cut-outs with white border)
-src/desk/Snow.tsx                 sparse canvas snow over the desk; aurora is CSS in base.css (night only)
-public/art/_placeholder/photos/   venice, venice2, chicago, singapore, dubrovnik (.jpg ≤900px)
-public/art/_placeholder/CREDITS.md  source, creator and license for every stand-in
-src/desk/Desk.tsx                 world scaling, deal-in (GSAP), z-order, windows state, Messy/Tidy
-src/desk/DeskObject.tsx           motion drag, hot state, click-vs-drag (400ms / 10px)
-src/desk/useAlphaHit.ts           offscreen-canvas alpha sampling for cut-outs
-src/desk/objects.tsx              renders image / polaroid / folder (SVG) / calendar (live date + moon) / name
-src/desk/MobileDesk.tsx           two-column grid + bottom sheet
-src/windows/WindowFrame.tsx       draggable window (title-bar drag via dragControls)
-src/windows/WindowManager.tsx     AnimatePresence over open windows
-src/windows/contents.tsx          About, Work, Photos, Writing (links to /essays/*.html), Travel
-src/shell/ModeToggle.tsx          sun/moon
-src/styles/tokens.css, base.css   warm paper tokens; all desk/window/mobile styles
+content/places.json          the fourteen places (slug, name, country)
+content/projects.json        four projects (shown in About for now)
+docs/ART-BRIEF.md            style spec + numbered shot list + export specs for Chimin's generation run
+public/art/                  EMPTY except _placeholder/; the room loads art by the brief's names when present
+src/room/art.ts              every image slot, by name
+src/room/useArt.tsx          useArt(src) probes whether a file exists; <Art> renders it or the blockout placeholder
+src/room/Room.tsx            world scaling, four parallax layers (data-depth), objects, sheets state, window = day/night
+src/room/RoomObject.tsx      interactive object = real <button> with hover lift + label; Block = grey placeholder
+src/room/Fridge.tsx          magnets on the door from places.json; a magnet opens the postcard
+src/room/Vase.tsx            six stems; click to put in / take out; kept in localStorage
+src/room/Fox.tsx             zone-based chase: cursor becomes a fish, fox lerps toward it; off on touch / reduced motion
+src/sheets/Sheet.tsx         modal card over the dimmed room; Escape closes; focus in and back
+src/sheets/Postcard.tsx      front (collage slot) / back (drag-and-drop pieces, seeded default, localStorage, Reset, arrow keys)
+src/sheets/contents.tsx      About (+Work list), Photos (contact sheet, CC0 stand-ins), Writing (essays + reader stickers)
+src/shell/ModeToggle.tsx     sun/moon (also triggered by clicking the window)
+src/styles/tokens.css        paper / ice / sky / ink tokens for day and night
+src/styles/base.css          all room, blockout and sheet styles
 ```
-
-Removed in v4: everything from the sketchbook and typographic builds (in git history).
-`src/lib/lenis.ts`, `seed.ts` and the rough-notation/roughjs packages are unused now; remove
-them from package.json when convenient.
 
 ## 3. How the pieces work
 
-- **World scaling**: `.desk__world` is 1440×820 and is scaled by
-  `min(1, (vw-32)/1440, (vh-120)/820)`; object positions are `calc(50% + Xpx)` inside it.
-- **Deal-in**: GSAP `from` per object using `data-x/data-y` (stored on a hidden span) so each
-  object starts near the centre; `clearProps` afterwards so motion's drag owns transforms.
-- **Hit-testing**: `useAlphaHit(src)` draws the cut-out into a 256px canvas once; on pointer
-  move the pointer is un-rotated into the object's box (cos/sin of `item.r`) and alpha is read.
-  Non-image objects are always hot.
-- **Click vs drag**: `pointerdown` records time/position only if the pixel is hot; `pointerup`
-  opens if <400ms and <10px.
-- **Tidy**: positions/scales are recomputed in `placed` and tweened with GSAP (`left/top/rotate/scale`).
-  Drag offsets from motion are not reset, so a moved object tidies relative to where it was left.
-- **Windows**: fixed, offset 28px per open window, z from a counter, `dragConstraints` = body.
-- **Mobile**: `matchMedia('(max-width: 760px), (pointer: coarse) and (max-width: 1024px)')`.
+- **Art slots**: `ART.*` in `src/room/art.ts` are the paths from the brief. `useArt` loads each once via
+  an `Image` probe; missing files fall back to the placeholder. Drop files in `public/art/` and reload.
+  Nothing else changes. (The 404s for missing art are expected in the console until the art exists.)
+- **World**: `.room__world` is 1440×900 scaled by `min(vw/1440, vh/900)`; layers carry `data-depth`
+  (6/10/14/22) and are translated by pointer position on gsap.ticker.
+- **Postcard back**: pieces are absolutely positioned in a 640×420 space and scaled with
+  `scale: calc(100cqw / 640)` so the card can be any width; motion `drag` with `dragConstraints` on
+  the card; positions saved per place under `postcard:<slug>`; `defaultPieces(slug)` is a seeded
+  arrangement standing in for Chimin's authored one.
+- **Fox**: zone `{x:120,y:560,w:520,h:300}` in world units, home `{330,700}`; the world gets
+  `.room__world--fish` (cursor: none) and a fish element follows the pointer.
+- **Sheets**: one open at a time (`open` state in Room); `role="dialog"`, Escape closes.
 
 ## 4. Verified (headless Chromium against `vite preview`)
 
-Deal-in, hover hot on the camera body and not on its transparent corner, drag moves an object,
-click opens Photos, name opens About, folder opens Work, Tidy/Messy, night, mobile grid and
-sheet. Zero console errors, zero failed requests, 61fps. JS ≈ 475 KB raw / 162 KB gzip.
+Room renders; magnet → postcard; turn over; a piece drags and the
+new position persists across reload; camera → photos; notebook → sticker given to an essay; vase
+stem in; fox wakes and the fish cursor appears in its zone; window click → night; mobile taps.
+Console: only the expected 404s for not-yet-existing art. See the verify script list in §4 of
+this file's git history if the scratchpad is gone.
 
 ## 5. Known gaps and follow-ups
 
-1. **Stand-in objects and photos** (CC0) everywhere. The site becomes Chimin's when their own
-   camera, sketchbook, paints, prints and photographs replace the files in `public/art/_placeholder/`
-   (same names, or edit `content/desk.json`).
-2. **Placeholder copy**: role line, one-liner, About paragraph, project summaries.
-3. Tidy mode leaves objects where they were dragged (relative). Consider resetting motion's
-   drag offset on Tidy.
-4. The folder is an SVG; a photographed folder would match the others better.
-5. Windows are not keyboard-focus-trapped; Escape closes the top one.
-6. Desk objects are not reachable by keyboard on desktop (they are on mobile via tiles). Add a
-   hidden list of "open X" buttons or make hot objects focusable.
-7. Photos window needs a lightbox; Travel needs real spreads; Work needs per-project windows.
+1. **No art yet.** Everything is grey on purpose. Chimin runs the collage skill per the brief;
+   test 3–5 photos first to lock the style.
+2. Chimin's authored default postcard arrangements (replace `defaultPieces`) once pieces exist.
+3. Work has no object in the room (it's listed in About). Decide: a laptop on the table or a shelf.
+4. Phones: the room scales to width and is small; a dedicated phone composition (objects stacked
+   vertically) should follow once the art exists.
+5. Copy is placeholder everywhere it says so.
+6. The fox does not blink or walk (needs the walking frames from the brief).
 
 ## 6. Deployment (see PRD §11)
 
@@ -84,9 +82,8 @@ sheet. Zero console errors, zero failed requests, 61fps. JS ≈ 475 KB raw / 162
 ## 7. Kickoff prompt for the next session
 
 ```
-Read docs/HANDOFF.md, docs/PRD.md and docs/DESIGN.md (v4, "the desk").
-Branch claude/new-session-kjcz7d has the desk. Run it, compare it against jesspaik.com and
-jackiehu.design, list what still reads as less polished than them, fix those first. Then M2:
-swap in Chimin's objects and photographs when supplied, and build the Photos lightbox.
-Do not deploy; publish a preview. Ask before adding any dependency.
+Read docs/HANDOFF.md, docs/PRD.md, docs/DESIGN.md (v5) and docs/ART-BRIEF.md.
+Branch claude/new-session-kjcz7d has the igloo blockout. If Chimin has supplied art, drop it into
+public/art/ by the brief's names and tune light, shadow and parallax to it (M2). If not, refine the
+postcard collage interaction and the fox until they feel finished. Do not deploy; publish a preview.
 ```

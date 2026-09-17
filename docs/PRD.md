@@ -10,21 +10,19 @@ decisions recorded in §8.
 
 ## 1. What this is
 
-> **Direction change, 2026-09-17 (v4, "the desk").** Chimin rejected the sketchbook build
-> (childish) and then the clean typographic rebuild (further from the references). The site is
-> now modelled directly on jesspaik.com and jackiehu.design: a photographed desk of real objects
-> on warm paper, each draggable, the important ones opening a small window with that section's
-> content. See `DESIGN.md` v4. The content plan below still stands; every section is now a
-> **window** opened from an object on the desk, not a scroll section. Sections written in
-> sketchbook language are kept for their content only.
+> **Direction change, 2026-09-17 (v5, "the igloo").** Chimin found the desk too close to the reference
+> sites and set their own direction: a 2.5D illustrated igloo room, simple but sophisticated, an
+> aesthetic rather than realism, with every photo and place translated into one paper-collage style
+> generated from Chimin's photographs (`docs/ART-BRIEF.md`). See `DESIGN.md` v5. The desk and the two
+> earlier builds are in git history. Until the art exists the room is an honest grey blockout.
 
 
 A personal site that feels like a hand-made travel sketchbook set in a small illustrated arctic world (igloos, a polar bear, an arctic fox, a snowy owl). It shows technical projects and writing, plus photography, travel notes and a design lab of tiny desktop/browser toys.
 
-It is a playful, tactile portfolio in the manner of jesspaik.com and jackiehu.design: photographed objects on a desk, a serif name in the middle, small windows for content. The polish comes from the objects being real photographs.
+It is a single illustrated igloo room. Few objects, each opening one sheet. The polish comes from one consistent collage style applied to everything, and from restraint.
 
-### The one signature: the desk
-Everything on the desk is a real object you can pick up. Hover lights only its actual pixels and shows its label; a click opens its window; the Tidy button sweeps the desk into a grid. That tactility is the site.
+### The one signature: the postcard
+A magnet on the fridge opens a place. The front is its collage; the back is a postcard holding Chimin's arrangement of that place's collage pieces, which the visitor can rearrange into their own and keep. Everything else in the room is quiet.
 
 ### Goals
 1. One continuous, fluid vertical scroll through the world. Zero navigation friction: every piece of content reachable by scrolling or one click on the mini-map.
@@ -109,27 +107,24 @@ Do NOT run `polish`, `normalize`, `quieter`, or any minimalist/high-end/brutalis
 
 ---
 
-## 3. Site structure (one desk, windows on top)
+## 3. Site structure (one room, sheets on top)
 
-Global:
-- **The desk** (desktop): a fixed viewport, objects from `content/desk.json`, Messy/Tidy toggle bottom-centre, name top-left, day/night icon top-right. No scroll.
-- **Phones**: the same objects as a two-column grid under the name; taps open a bottom sheet.
-- **Windows**: About (the name), Work (folder), Photos (camera, polaroids), Writing (letter), Travel (sketchbook). Draggable, stackable, Escape closes.
+- **The room**: fixed viewport, 1440×900 world scaled to fit, four parallax layers. Objects: fridge with magnets (places), camera (photographs), vase (flower arranging, in-room), notebook (essays + reader stickers), fox (cursor chase in its zone), window (day/night). Name and role line sit top-left as a small typewriter label; About is a sheet from the name.
+- **Sheets**: rise over the dimmed room; Escape closes.
+- **Phones**: the room scales to width; sheets go full height; the fox chase is off.
 
 ### 3.0 Day / night
 - Day: white ground, near-black ink. Night: near-black ground, off-white ink, lighter accent.
 - CSS custom properties on `:root[data-mode]`, persisted in `localStorage`, applied before first paint. Switching is a 350ms token crossfade.
 
-### 3.1 The name and the About window
-- "Chimin Liu" in Instrument Serif, a mono role line, a mono one-liner (all placeholder copy, marked). Clicking the name opens About: a short paragraph and links (GitHub, Instagram, email).
+### 3.1 Name and About
+- "Chimin Liu" and a role line as a typewriter label top-left; clicking opens About (short paragraph, links). Copy is placeholder until Chimin writes it.
 
-### 3.2 Work window (the folder)
-- A list of projects: serif title, mono tags, one-line summary, links. Projects without a link are tagged `draft`.
-- Projects: NeuroScan, Political Bias Detection, Patent Classification (summary only), Bayesian Estimation of Informed Trading (paper + slides from `public/essays/bayes/`).
-- Later: each project gets its own window with images.
+### 3.2 Work
+- Not an object in the room yet. Decide: a laptop on the table, or a shelf. Until then Work is reachable from About.
 
-### 3.3 Writing window (the letter)
-- Built: a list of the ten essays linking to their existing pages under `/essays/`. Later: essays rendered inside the window (MDX, M4).
+### 3.3 Writing (the notebook)
+- The notebook opens a sheet listing the ten essays (links to `/essays/` for now, MDX in M4). Each essay has a sticker slot; a reader picks a sticker from a small tray and it stays on that essay in their browser. Blockout built.
 
 #### Original plan, kept for content
 - List of essays/poems as torn-paper slips (torn edge = rough.js clip path, not an image). Hover = rough-notation underline + slip lifts.
@@ -137,8 +132,8 @@ Global:
 - All ten essays from the old site go live in v1: august, catullus, howardsend, hume, induction, lostfound, salesman, selflove, smith, whitman. Old URLs under `/essays/` keep working until each is converted.
 - Snowy owl perched on the igloo; blinks by day, eyes open and head turns at night.
 
-### 3.4 Photos window (the camera and the polaroids)
-- Built: a two-column grid of photographs with mono captions; CC0 stand-ins until Chimin's own. Later: a lightbox, camera/place filters, more polaroids on the desk.
+### 3.4 Photographs (the camera)
+- The camera opens a contact sheet: each photo shown first as its collage translation, revealing the original on hover or tap. Blockout built with CC0 stand-ins.
 
 #### Original plan, kept for content
 - Photos laid out as a loose contact sheet on a lightbox table, slightly rotated. **One draggable per section**: the photos are draggable (motion `drag`, constrained); nothing else in the hut is.
@@ -148,8 +143,8 @@ Global:
 - Touch: no viewfinder; photos sharpen as they cross viewport centre (ScrollTrigger).
 - Images: responsive `srcset`, AVIF/WebP, lazy, blurhash or dominant-colour placeholder.
 
-### 3.5 Travel window (the sketchbook)
-- Built: an intro line and the list of places. Later: one spread per place (sketch, photo, note) paged inside the window; the open sketchbook on the desk shows the latest spread.
+### 3.5 Travel (the fridge)
+- The fridge door carries a grid of magnets, one per place. A magnet opens the postcard: front = collage; back = the drag-and-drop collage canvas with Chimin's default arrangement, the visitor's changes kept in localStorage, Reset restores. Blockout built with grey pieces.
 
 #### Original plan, kept for content (the snow-globe shelf is dropped)
 - A hand-drawn shelf (rough.js) runs down the section with one **snow globe per place**. Inside each globe: the place's linework doodle (supplied by Chimin), a base with the place name in handwriting and the date. Globes sit at seeded tilts and sizes.
@@ -160,8 +155,8 @@ Global:
 - Index: an unfolded hand-drawn map (d3-geo → path data → roughjs) at the top of the section with a pin per place; clicking a pin scrolls to that globe. The map is the only pinned element on the site (short, skippable via the mini-map). The fox walks the dotted route between pins as the map is scrolled through.
 - Initial places: Budapest, Cinque Terre, Split, Mostar, Dubrovnik, Malta, Mallorca, Venice, Verona, Lake Garda, Como, Slovenia, Singapore, Chicago. Ship v1 with whichever 3 have art; the rest render as pencil-only "not painted yet" globes.
 
-### 3.6 Design lab (not on the desk yet)
-- Later: a small object (a toy) that opens a window listing the toys. The physics sandbox is dropped unless it can live inside a window.
+### 3.6 The vase
+- Six flower stems lie on the table; clicking one puts it in the vase, clicking a stem in the vase returns it. Arrangement kept in localStorage. Blockout built. The design lab is dropped.
 
 #### Original plan, kept for content
 - Matter-js world the width of the section, floor at the bottom. When the section enters, items drop from above (60 ms stagger, gravity scale ~0.0014, restitution ~0.12, friction ~0.55, chamfered bodies at 84–92% of the sprite, sleeping on): each design toy is a body with its icon; empty slots are wooden crates labelled "still building".
@@ -171,11 +166,11 @@ Global:
 - Pause the engine when the section is off-screen. Below the physics area render a plain accessible list of the same items. Reduced motion: items are placed at rest, no drop.
 - Polar bear sits at a workbench beside it; glances at whatever you throw (v1: static).
 
-### 3.7 Footer
-- None. Links live in the About window.
+### 3.7 The fox
+- Asleep by the fridge. When the cursor enters its zone the cursor becomes a fish and the fox wakes and follows with a lag; it sits when the cursor leaves. Off on touch and under reduced motion. Blockout built.
 
-### The animals
-Dropped. The arctic thread survives only in Chimin's own photographs and paintings once they replace the stand-ins.
+### The bear and the owl
+Not in the room. Reconsider only once the fox works.
 
 ---
 
@@ -239,12 +234,11 @@ Generated in code (Claude Code builds these): paper grain tile, watercolor filte
 
 ## 7. Milestones (vertical slices — each one is built and previewed on the branch; deploy is a separate, manual decision, see §11)
 
-**M1 — The desk** (built, v4)
-Desk with 13 objects (CC0 stand-ins), deal-in, drag, alpha hit-testing, Messy/Tidy, five windows with real content (essay links, PDFs, project list), mobile grid + sheet, day/night, GH Actions workflow.
-Done: verified headless (hit-testing, drag, open, tidy, night, mobile), no console errors, 61fps.
+**M1 — The igloo blockout** (built, v5)
+Room shell with parallax layers, grey objects with labels, fridge with magnets, postcard collage with drag-and-drop and persistence, camera contact sheet, notebook with reader stickers, vase arranging, fox chase, day/night, sheets, keyboard paths. Every image slot named per `docs/ART-BRIEF.md`.
 
-**M2 — Chimin's own objects and photos** replace the stand-ins; Photos window gets a lightbox and filters.
-**M3 — Travel spreads** inside the sketchbook window.
+**M2 — Art in.** Chimin generates the room layers, objects and the first three places per the art brief; the blockout images are swapped for them with no code changes; tune light, shadow and parallax to the art.
+**M3 — All fourteen places, twelve photographs, essays as MDX.**
 **M4 — Work scatter complete + Writing igloo** with all ten essays in MDX.
 **M5 — Workshop physics + footer.**
 **M6 — Day/night wash polish, aurora shader, Rive animals, optional wet-paint shader, mini-map polish.**
@@ -255,28 +249,27 @@ After each milestone run impeccable `critique` against DESIGN.md and list findin
 ---
 
 ## 8. Decisions made (2026-09-17; change here if needed)
-- v4 direction: the desk, modelled on jesspaik.com / jackiehu.design, warm paper ground. Chimin: the sketchbook build was "childish, unprofessional"; the typographic rebuild was "even further from what I wanted".
-- Objects are photographs (CC0 stand-ins for now). No code-drawn illustration, no handwriting font, no grain, no line-art mascots.
+- v5 direction: the illustrated igloo, 2.5D, Chimin's own idea; not realistic; one collage style for all artefacts (the cocktail-collage look); art generated from Chimin's photos via the skills Chimin found.
+- The bag idea is shelved. The design lab, bear and owl are dropped for now.
 - Fonts: Instrument Serif (name, headings), JetBrains Mono (labels, one-liner), Geist (window body), Newsreader (long-form, M4).
-- One fixed desk on desktop, windows for content; a scrolling grid on phones. Lenis is no longer used on the desk.
+- One fixed room on desktop, sheets for content; the room scales to width on phones.
 - Deploy from `main` only; preview on the branch first. Stay on cooleschimo.github.io.
 - All ten old essays go live in v1 (M4). Old essay URLs keep working from `public/essays/`.
 - `react`/`react-dom` pinned to 19.2.x; `react-pageflip` and `wired-elements` are not used. three.js not before a shader is actually needed.
 - Copy: Claude may write placeholder copy only when marked as such in the source; Chimin writes the real copy.
 
 ## 9. Open questions for Chimin
-- Photos of your own objects on a plain background (camera, sketchbook, prints, paints) to replace the CC0 stand-ins; and 8–12 of your photographs.
-- Real copy: role line, one-liner, About paragraph, project summaries.
-- Which project gets its own window first.
+- 3–5 test photos run through the collage skill with the style spec, so the style can be locked.
+- Then the room layers and objects per `docs/ART-BRIEF.md` §A, and three places per §B.
+- Real copy: name label, About paragraph. Which object should carry Work.
 
 ## 10. Kickoff prompt for the next session
 
 ```
-Read docs/HANDOFF.md, docs/PRD.md and docs/DESIGN.md (v4, "the desk").
-Branch claude/new-session-kjcz7d has the desk. Run it, compare it against jesspaik.com and
-jackiehu.design, list what still reads as less polished than them, fix those first. Then M2:
-swap in Chimin's objects and photographs when supplied, and build the Photos lightbox.
-Do not deploy; publish a preview. Ask before adding any dependency.
+Read docs/HANDOFF.md, docs/PRD.md, docs/DESIGN.md (v5) and docs/ART-BRIEF.md.
+Branch claude/new-session-kjcz7d has the igloo blockout. If Chimin has supplied art, drop it into
+public/art/ by the brief's names and tune light, shadow and parallax to it (M2). If not, refine the
+postcard collage interaction and the fox until they feel finished. Do not deploy; publish a preview.
 ```
 
 ## 11. Deployment

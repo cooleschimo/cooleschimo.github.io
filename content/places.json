@@ -1,0 +1,16 @@
+[
+  { "slug": "budapest", "name": "Budapest", "country": "Hungary" },
+  { "slug": "cinque-terre", "name": "Cinque Terre", "country": "Italy" },
+  { "slug": "split", "name": "Split", "country": "Croatia" },
+  { "slug": "mostar", "name": "Mostar", "country": "Bosnia" },
+  { "slug": "dubrovnik", "name": "Dubrovnik", "country": "Croatia" },
+  { "slug": "malta", "name": "Malta", "country": "Malta" },
+  { "slug": "mallorca", "name": "Mallorca", "country": "Spain" },
+  { "slug": "venice", "name": "Venice", "country": "Italy" },
+  { "slug": "verona", "name": "Verona", "country": "Italy" },
+  { "slug": "lake-garda", "name": "Lake Garda", "country": "Italy" },
+  { "slug": "como", "name": "Como", "country": "Italy" },
+  { "slug": "slovenia", "name": "Slovenia", "country": "Slovenia" },
+  { "slug": "singapore", "name": "Singapore", "country": "Singapore" },
+  { "slug": "chicago", "name": "Chicago", "country": "USA" }
+]

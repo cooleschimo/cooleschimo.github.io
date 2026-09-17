@@ -1,25 +1,33 @@
 /* Design tokens. White gallery ground, near-black ink, one cobalt accent. */
 :root,
 :root[data-mode='day'] {
-  --bg: #fbf7ef;         /* warm paper */
-  --win-bg: #fdfbf6;
-  --ink: #1c1a17;
-  --ink-2: #6f6a62;
-  --ink-3: #a8a29a;
-  --line: #e6dfd3;
-  --accent: #d9603f;     /* coral, used for the close dot and links */
-  --accent-soft: #f6e4dc;
+  --bg: #f4efe6;         /* cream paper */
+  --room: #ece6da;
+  --ice: #dfe9ee;
+  --ice-2: #cfdde5;
+  --sky: #cfe0ea;
+  --ink: #2a2622;
+  --ink-2: #7a7369;
+  --ink-3: #b1aa9f;
+  --line: #e2dbcf;
+  --accent: #c7694a;
+  --sheet: #faf6ee;
+  --candle: transparent;
   color-scheme: light;
 }
 :root[data-mode='night'] {
-  --bg: #1d1b18;
-  --win-bg: #f6f1e7;
-  --ink: #f1ece2;
-  --ink-2: #a9a298;
-  --ink-3: #6a655d;
-  --line: #3a3630;
-  --accent: #e9744f;
-  --accent-soft: #3a2a24;
+  --bg: #171d26;
+  --room: #1e2733;
+  --ice: #2b3847;
+  --ice-2: #24303d;
+  --sky: #0f1520;
+  --ink: #efe8db;
+  --ink-2: #a39d92;
+  --ink-3: #5f5a52;
+  --line: #2f3946;
+  --accent: #e08a6a;
+  --sheet: #f4efe6;
+  --candle: #f0c07a;
   color-scheme: dark;
 }
 
