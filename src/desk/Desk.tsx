@@ -64,8 +64,11 @@ export function Desk() {
     if (!w) return
     placed.forEach((i) => {
       const el = w.querySelector<HTMLElement>(`.desk-object[data-id="${i.id}"]`)
-      if (!el) return
-      gsap.to(el, { left: `calc(50% + ${i.x}px)`, top: `calc(50% + ${i.y}px)`, rotate: i.r, scale: i.s ?? 1, duration: prefersReducedMotion() ? 0 : 0.7, ease: 'power3.inOut', overwrite: 'auto' })
+      const box = el?.querySelector<HTMLElement>('.desk-object__inner')
+      if (!el || !box) return
+      const d = prefersReducedMotion() ? 0 : 0.7
+      gsap.to(el, { left: `calc(50% + ${i.x}px)`, top: `calc(50% + ${i.y}px)`, duration: d, ease: 'power3.inOut', overwrite: 'auto' })
+      gsap.to(box, { '--r': `${i.r}deg`, '--s': i.s ?? 1, duration: d, ease: 'power3.inOut', overwrite: 'auto' })
     })
   }, [placed])
 
