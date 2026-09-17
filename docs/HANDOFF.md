@@ -1,195 +1,101 @@
 # Handoff notes — arctic sketchbook v2
 
-Written 2026-09-17 at the end of the first planning session. Read this, then
-`docs/PRD.md` and `docs/DESIGN.md`, before writing any code. Nothing has been
-scaffolded yet; the repo still contains the old static site.
+Updated 2026-09-17 at the end of the second session (teardowns, decisions, M1 build).
+Read this, then `docs/PRD.md` and `docs/DESIGN.md`, before writing any code.
 
 ---
 
 ## 1. Status
 
-- Branch: `claude/new-session-kjcz7d`
-- Repo state: old site only (`index.html`, `index-old.html`, `essays/` with 11
-  essay HTML pages, `essays/bayes/` with 2 PDFs). No package.json, no workflow.
-- PRD kickoff steps 1 and 2 are done (package check, M1 structure). Step 3
-  (build M1) is waiting on the decisions in §3.
-- The first session could NOT open any of the reference sites in §5 because the
-  cloud environment's network access was set to Trusted. See §6 to fix that.
+- Branch: `claude/new-session-kjcz7d`. **Nothing is deployed.** The workflow only runs on
+  pushes to `main`; Chimin wants to review a preview before anything goes live.
+- M1 is built and verified headless (see §4). Run it with `npm install && npm run dev`.
+- `docs/refs/teardowns.md` has the full teardown of every reference site plus a synthesis
+  (§1 of that file) mapping findings onto the decisions.
+- All HANDOFF §3 decisions from the first session are answered and folded into PRD §8 and
+  DESIGN.md. The travel section is no longer a sketchbook: it is a **snow-globe shelf**
+  (PRD §3.5).
 
-## 2. Decisions Chimin has already approved
-
-- Pin `react` and `react-dom` to **19.2.x** (currently 19.2.8). Reason:
-  `@react-three/fiber` 9.7.0 declares peer `react >=19 <19.3`, so 19.3 fails
-  peer resolution. Bump when R3F widens the range.
-- **Drop `react-pageflip`.** Last published May 2022, no declared React peer,
-  depends on an unpinned `page-flip@latest`. Build page turns with GSAP
-  (rotateY on a split page), as PRD §2 already allows.
-- Old site: move `essays/*.html`, `essays/essay.css` and `essays/bayes/*.pdf`
-  into `public/essays/` so existing URLs keep working until M4 converts them to
-  MDX. Delete `index.html` and `index-old.html` (they stay in git history).
-- Vite project lives at the repo root (user site, `base: '/'`).
-- After the first Actions deploy, Chimin must set GitHub Settings → Pages →
-  Source to "GitHub Actions". Cannot be done from a session.
-
-## 3. Decisions still open (ask Chimin, then build)
-
-1. **Ink-to-colour as the site-wide grammar**, with an SVG-mask reveal
-   replacing the WebGL ice-melt for M1. Everything starts as pencil/ink
-   linework and gains watercolour on hover, focus or scroll-into-view.
-   Keeps three.js out of the initial bundle. Upgrade to a shader in M6 only if
-   the SVG version feels flat.
-2. **Travel sketchbook: pin only the index map spread.** Place spreads scroll
-   naturally as a loose stack of tilted, taped pages. Page flip becomes a
-   hover/click affordance, not a scroll mechanic. Reason: 14 pinned spreads
-   would be the scroll-jacking DESIGN.md forbids.
-3. **Sun as the day/night toggle** (sits in the hero sky; click and it arcs
-   below the horizon on a GSAP motion path while the moon rises) and
-   **mini-map as a folded map corner** that unfolds on hover.
-4. **Shantell Sans** as the placeholder handwriting font until the Calligraphr
-   `chimin-hand.woff2` exists. It is variable with bounce and informality axes.
-5. From the reference review (§5), proposed additions:
-   - Three stroke-width tokens: heavy marker for hero-scale drawings and
-     igloos, medium for frames, fine for dividers and map lines.
-   - Work section as a **scatter** of different-sized ice blocks, not a grid
-     (see the textjar screenshot in `docs/refs/`).
-   - **Hold-to-reveal** on a place spread: press and hold the doodle and the
-     real photo of the place fades in underneath (from davidwhyte.com).
-   - The fox travels the whole page and does one small thing per section.
-   - One draggable thing per section, no more.
-   - Wet-paint cursor effect on real watercolours deferred to M6 (needs three).
-   - A fixed type scale: handwriting 22/28/40/64, serif 17/19, mono 13.
-
-## 4. Package verification (npm registry, 2026-09-17)
-
-| Package | Latest | React 19 | Note |
-|---|---|---|---|
-| react / react-dom | 19.3.0 | — | pin to 19.2.8, see §2 |
-| vite | 8.3.0 | — | rolldown-based |
-| @vitejs/plugin-react | 6.1.1 | yes | |
-| tailwindcss / @tailwindcss/vite | 4.3.3 | yes | |
-| gsap | 3.15.0 | yes | DrawSVG, MorphSVG, SplitText confirmed in tarball |
-| @gsap/react | 2.1.2 | yes | |
-| lenis | 1.3.26 | yes | |
-| motion | 13.4.0 | yes | |
-| three | 0.186.0 | — | |
-| @react-three/fiber | 9.7.0 | 19.0–19.2 only | 10.0 alpha has the same range |
-| @react-three/drei | 10.7.8 | yes | needs fiber ^9 |
-| roughjs | 4.6.6 | n/a | |
-| rough-notation | 0.5.1 | n/a | 2022 but tiny and stable |
-| perfect-freehand | 1.2.3 | n/a | |
-| matter-js / @types | 0.20.0 / 0.20.2 | n/a | |
-| d3-geo / topojson-client / world-atlas | 3.1.1 / 3.1.0 / 2.0.2 | n/a | |
-| react-pageflip | 2.0.3 | not declared | dropped, see §2 |
-| @mdx-js/rollup | 3.1.1 | n/a | targets rollup plugin API; verify under Vite 8 in M4 |
-| @rive-app/react-canvas | 4.34.3 | yes | M6 only |
-| wired-elements | 3.0.0-rc.6 | no | **do not add**: 2022, Lit 2, React wrapper pinned to React 17, shapes re-jitter on render. Build own rough.js primitives instead. |
-
-## 5. Reference sites and inspiration
-
-None of these could be fetched from the first session (proxy 403). What is
-recorded below comes from Chimin's own notes, one screenshot, and third-party
-write-ups. **Each one still needs a real teardown: fetch the HTML, CSS and JS
-bundles and record how the effects are built.**
-
-| Site | Chimin's note | What is known so far | To investigate |
-|---|---|---|---|
-| https://www.familiatipo.com/ | doodle art goes from black-and-white to colour on hover | Confirmed by Simplified's write-up (https://simplified.com/blog/design/10-ways-to-use-doodle-art-in-web-design). Reference image: https://siteimages.simplified.com/blog/Familia-Tipo-Art2-1.png | How the colour layer is masked/revealed; is it SVG, CSS filter, or image swap |
-| https://textjar.app | screenshot in `docs/refs/textjar-app-mobile.png` | Thick marker linework, one jar motif repeated at varied sizes and tilts, scattered off-grid, small serif labels, warm paper, one solid button | Do the jars move or animate; how the scatter is laid out (absolute vs physics) |
-| https://jackiezhang.co.za | "this person's site is amazing" | Scrapbook feel; scribble hover states in the menu; torn paper from hero travels into work on scroll; a "cutting board" where you drag images; bio photo you drag out from under the work (https://www.landing.love/sites/jackiezhang/, https://www.killerportfolio.com/by/jackie-zhang). Fonts Inter + JetBrains Mono, green/white | How the scribble hover is implemented; how the torn paper is scroll-linked; drag implementation |
-| https://yashf.in | listed | nothing found | full teardown |
-| https://jackiehu.design | listed | Typographic restraint, decorative symbols as punctuation (https://ilovecreatives.com/internet-gem-websites/jackie-hu-design) | full teardown |
-| https://jesspaik.com | listed | "interactive case studies, desktop-optimised" | full teardown |
-| https://taliahhh.com | listed | nothing found | full teardown |
-| https://davidwhyte.com/experience/ | "has watercolor elements" | Real watercolours by painter Matthew Phinn; wet-paint distortion follows the cursor; long-press on a painting reveals video of the real place; WebGL + custom sound; by Immersive Garden (https://www.awwwards.com/case-study-david-whyte-experience-by-immersive-garden.html, https://immersive-g.com/projects/david-whyte-experience/) | The cursor distortion shader; how long-press is handled on touch; how paintings are loaded |
-| https://www.sutera.ch | "cool 3D elements rotating" | Portfolio of Stella Mühlhaus by Okey Studio; WebGL, GSAP, Nuxt; blueprint-to-reality transition; Awwwards SOTD (https://www.awwwards.com/sites/sutera) | The blueprint-to-reality transition (same idea as ink-to-colour); decide if any 3D belongs in v2 |
-| https://scottmilton.com | listed | Framer site; clean layouts carried by a type system (https://www.scottmilton.com/) | full teardown, mainly type scale |
-
-Other references named in the PRD/DESIGN, not yet examined: React Bits
-`FallingText`, `SplashCursor`, `ImageTrail`, `Ballpit` (reactbits.dev);
-impeccable and taste-skill agent skills.
-
-## 6. Network access for the next session
-
-The reference sites are blocked under the default Trusted policy. To read
-their source:
-
-1. Open https://claude.ai/code in a phone or desktop browser (not the app).
-2. Tap the cloud icon showing the environment name, in the row above the
-   message box.
-3. Open that environment's settings (gear icon) and set **Network access** to
-   **Full**, or **Custom** with the list below and "Also include default list
-   of common package managers" ticked.
-4. Save and start a **new** session. Running sessions keep their old policy.
+## 2. What exists in the repo
 
 ```
-familiatipo.com
-www.familiatipo.com
-siteimages.simplified.com
-textjar.app
-jackiezhang.co.za
-yashf.in
-jackiehu.design
-jesspaik.com
-taliahhh.com
-davidwhyte.com
-*.davidwhyte.com
-sutera.ch
-www.sutera.ch
-scottmilton.com
-www.scottmilton.com
-reactbits.dev
+.github/workflows/deploy.yml   build + deploy to Pages on push to main / manual dispatch
+index.html, vite.config.ts     Vite 8, React 19.2, Tailwind 4; optional chimin-hand font check
+content/projects.json          NeuroScan only (placeholder image + summary)
+public/art/_placeholder/       name-signature.svg, fox-idle.svg, fox-peek.svg, project-neuroscan.svg
+public/art/grain.png           tiled paper grain
+public/fonts/                  Shantell Sans, Newsreader (+italic), JetBrains Mono, all variable woff2
+public/essays/                 the old site's essays + Bayes PDFs, URLs unchanged
+src/lib/                       gsap (plugins registered), lenis, seed, mode, motion-prefs, inline-svg
+src/primitives/                RoughBox, RoughFocusRing, Watercolor (shared filter defs), SketchWobble, PaperGrain
+src/shell/                     SkyBand (fixed sky + snow + aurora), ModeToggle (the sun), MiniMap (folded corner)
+src/sections/                  Hero, Work
+src/work/                      IceBlock, InkReveal (the signature reveal)
+src/world/                     Snow, Fox, ScrollCue
+src/styles/                    tokens.css (colours, strokes, type scale, @font-face), paper.css (everything else)
 ```
 
-Sites on Webflow, Framer or Nuxt load scripts from other CDNs; if Custom
-blocks one, add the host the error names.
+## 3. How the signature pieces work (so you don't re-derive them)
 
-## 7. Proposed M1 layout (approved in principle, build after §3 is answered)
+- **InkReveal**: the project image sits in an inline `<svg>` as `<image mask="url(#…)">`. The mask
+  is six `<circle>`s filtered by `#wc-edge` (feTurbulence + feDisplacementMap). A gsap.ticker loop
+  lerps the first circle to the pointer and chains the rest behind it; radius tweens in with
+  `back.out` and out over 1.2 s. `revealed` (focus / tap) tweens the radius past the diagonal.
+  Reduced motion drops the mask and crossfades opacity. The hit `<button>` is passed in as
+  `overlay` so pointer events bubble through the component.
+- **ModeToggle**: sun and moon are `<g>`s in one SVG; `MotionPathPlugin` moves the leaving one down
+  a hidden arc and the arriving one up the mirrored arc. A `.mode-wash` div in the new paper colour
+  grows as a `clip-path: circle()` from the sun, `setMode()` fires when it covers the page, and
+  `html.no-transition` stops the CSS colour transitions from flashing underneath.
+- **SketchWobble**: one filter per instance; seed re-rolled at `fps` (default 8) via gsap.ticker,
+  only while an IntersectionObserver says it is visible. The wrapper needs a layout box
+  (`display:block` / positioned) or the filter clips absolutely positioned children.
+- **Hero ground**: the hero has an opaque paper ground from 48% down (54% on phones) with the
+  wobbly horizon on its top edge, so scrolling covers the fixed sky band.
+- **RoughBox / RoughFocusRing**: rough.js into an absolutely positioned SVG, redrawn on resize,
+  seed from `hashSeed(key)`. The focus ring shows via `:focus-visible > .rough-focus`.
+
+## 4. Verified this session (headless Chromium, `vite preview`)
+
+Hero draw-in, fox peek, hover reveal + recede, keyboard focus full reveal, Enter opens the
+detail, tap-to-melt then tap-to-open on a touch viewport, night toggle (mode persisted in
+localStorage), mini-map unfold + scrollTo, reduced-motion crossfade. Zero console errors,
+zero failed requests, 61 fps sampled while scrolling. Bundle: 325 KB raw / 110 KB gzip JS.
+The verification script lived in the session scratchpad; recreate it from this list if needed.
+
+## 5. Known gaps and follow-ups (in rough priority)
+
+1. Only one project block. The scatter and deal-in are wired for N blocks; add the other
+   three to `content/projects.json` with real images and summaries (M4).
+2. The day/night wash is a clip-path circle, not the watercolour-masked sweep PRD §3.0 asks
+   for. Upgrade in M6 with the same blot-mask technique as InkReveal.
+3. The aurora is two radial gradients under `#wc-wash` + blur, visible only at night. It reads
+   fine but is a gradient; M6 replaces it with a shader or a painted SVG wash.
+4. Placeholder art everywhere. The fox is a doodle; `name-signature.svg` is a fake signature.
+   Real files drop into the same paths with no code changes (`chimin-hand.woff2` too).
+5. The full reveal (focus/open) ends with hard image edges because the mask circle exceeds
+   the box. Acceptable; a torn-paper clip on the image would be nicer.
+6. Run impeccable `critique` against DESIGN.md before M2 (skills not installed in this session).
+7. Mobile: the sun scales to 0.8 and sits top-right; check it doesn't collide with the name on
+   very short viewports.
+
+## 6. Deployment (unchanged, see PRD §11)
+
+- Merge to `main` to deploy. First deploy replaces the old static site.
+- One manual step, once: GitHub → Settings → Pages → Source = **GitHub Actions**.
+- Preview without deploying: `npm run build && npm run preview`, or publish `dist/` built with
+  `--base=./` as a private artifact page (that is what this session did).
+
+## 7. Open questions for Chimin (PRD §9)
+
+- Which 3 places get art first? (M2)
+- Real images and one-liners for the four projects (M4)
+
+## 8. Kickoff prompt for the next session
 
 ```
-/
-  .github/workflows/deploy.yml     build + deploy to Pages
-  index.html                       Vite entry
-  vite.config.ts                   react, tailwind, base '/'
-  content/projects.json            one project for M1 (NeuroScan)
-  public/art/_placeholder/         name-signature.svg, fox-idle.svg, ice.png
-  public/fonts/                    empty until chimin-hand.woff2 exists
-  public/essays/                   old essays + PDFs, moved
-  src/
-    main.tsx, App.tsx
-    styles/tokens.css              DESIGN.md colour tokens on :root[data-mode]
-    styles/paper.css               grain overlay, base type, type scale
-    lib/lenis.ts                   single Lenis instance driven by gsap.ticker
-    lib/seed.ts                    seeded random so wobble is stable
-    lib/motion-prefs.ts            prefers-reduced-motion hook
-    primitives/RoughBox.tsx        rough.js frame with fixed seed
-    primitives/RoughFocusRing.tsx
-    primitives/Watercolor.tsx      SVG feTurbulence + displacement filter defs
-    primitives/PaperGrain.tsx      fixed, pointer-events none
-    sections/Hero.tsx              DrawSVG name, intro, snow, fox, scroll cue
-    sections/Work.tsx              one ice block for M1
-    work/IceBlock.tsx              DOM card; tap and reduced-motion paths
-    work/InkReveal.tsx             SVG mask reveal (or MeltReveal.tsx if WebGL)
-    world/Snow.tsx                 2D canvas flakes, capped on mobile
-    world/Fox.tsx                  two-pose sprite swap, cursor tracking
-    world/ScrollCue.tsx            wobbling doodled arrow
-    shell/ModeToggle.tsx           sun/moon, localStorage
-    shell/MiniMap.tsx              stub with hero and work landmarks
-```
-
-## 8. Content already in the repo to carry over (M4)
-
-Essays in `essays/`: august, catullus, howardsend, hume, induction, lostfound,
-salesman, selflove, smith, whitman. Bayes project PDFs in `essays/bayes/`.
-PRD §9 still asks which essays go live in v1 and which 3 places get art first.
-
-## 9. Suggested kickoff prompt for the next session
-
-```
-Read docs/HANDOFF.md, docs/PRD.md and docs/DESIGN.md.
-1. If network access is open, fetch each site in HANDOFF §5 and write a
-   per-site teardown into docs/refs/teardowns.md: what technique each effect
-   uses and which to adopt.
-2. Answer the open decisions in HANDOFF §3 with me.
-3. Fold agreed changes into docs/PRD.md and docs/DESIGN.md.
-4. Build M1 per HANDOFF §7 and deploy to GitHub Pages.
+Read docs/HANDOFF.md, docs/PRD.md, docs/DESIGN.md and docs/refs/teardowns.md §1.
+Branch claude/new-session-kjcz7d has M1. Run it, critique it against DESIGN.md, list findings,
+then build M2 (PRD §3.5, the snow-globe shelf) as a vertical slice with 3 placeholder globes.
+Do not deploy; publish a preview. Ask before adding any dependency not in PRD §2.
 ```

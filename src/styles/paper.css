@@ -114,7 +114,7 @@ html.no-transition, html.no-transition body, html.no-transition * { transition: 
 .mini-map__pin:hover { color: var(--rust); }
 
 /* ---------- hero ---------- */
-.hero { position: relative; min-height: 100dvh; display: grid; align-content: center; padding: 14vh clamp(20px, 8vw, 140px) 22vh; overflow: hidden; }
+.hero { position: relative; min-height: 100dvh; display: grid; align-content: start; padding: 13vh clamp(20px, 8vw, 140px) 22vh; overflow: hidden; }
 .hero__inner, .hero .hero__fox, .hero__cue { z-index: 1; }
 .hero__inner { position: relative; max-width: 720px; }
 .hero__name { position: relative; margin: 0 0 0.6em -0.02em; width: min(520px, 78vw); }
@@ -127,15 +127,19 @@ html.no-transition, html.no-transition body, html.no-transition * { transition: 
 }
 :root[data-mode='night'] .hero__blot { mix-blend-mode: screen; opacity: 0.5; }
 .hero__intro { margin: 0 0 0.5em; max-width: 26ch; color: var(--ink); }
-.hero__note { margin: 0; color: var(--ink-soft); max-width: 44ch; }
+.hero__note { margin: 2.6em 0 0; color: var(--ink-soft); max-width: 44ch; }
 .hero .hero__fox { position: absolute; right: clamp(4vw, 12vw, 220px); bottom: 12vh; width: clamp(140px, 18vw, 240px); z-index: 2; }
 .hero__cue { position: absolute; left: 50%; bottom: 7vh; translate: -50% 0; z-index: 2; }
-.hero__ground { position: absolute; left: 0; right: 0; top: 42%; bottom: 0; z-index: 0; background: var(--paper); transition: background-color 600ms ease; }
+.hero__ground { position: absolute; left: 0; right: 0; top: 48%; bottom: 0; z-index: 0; background: var(--paper); transition: background-color 600ms ease; }
 .hero__horizon { position: absolute; left: 0; right: 0; top: -100px; width: 100%; height: 101px; display: block; }
 .hero__drift { position: absolute; left: 0; right: 0; bottom: 12px; width: 100%; height: 60px; display: block; }
 @media (max-width: 720px) {
-  .hero { padding-top: 22vh; padding-bottom: 30vh; }
-  .hero__ground { top: 46%; }
+  .hero { padding-top: 20vh; padding-bottom: 30vh; }
+  .hero__ground { top: 54%; }
+  .hero__note { margin-top: 2em; }
+  .hero__horizon { top: -44px; height: 45px; }
+  .hero__drift { height: 30px; }
+  .hero__cue { left: clamp(20px, 8vw, 140px); translate: 0 0; }
   .hero__fox { right: 4vw; bottom: 16vh; width: 132px; }
   .hero__cue { bottom: 8vh; }
 }
