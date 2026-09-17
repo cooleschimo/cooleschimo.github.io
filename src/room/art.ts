@@ -4,15 +4,15 @@
  * Swap art in by dropping files with these names; no code changes.
  */
 export const ART = {
-  wall: '/art/room/wall.png', floor: '/art/room/floor.png', entrance: '/art/room/entrance.png',
-  skyDay: '/art/sky/day.png', skyNight: '/art/sky/night.png',
-  fridgeClosed: '/art/objects/fridge-closed.png',
-  table: '/art/objects/table.png', camera: '/art/objects/camera.png', vase: '/art/objects/vase-empty.png', candle: '/art/objects/candle.png',
-  notebook: '/art/objects/notebook.png',
-  foxAsleep: '/art/objects/fox-asleep.png', foxSitting: '/art/objects/fox-sitting.png', foxWalk1: '/art/objects/fox-walking-1.png', foxWalk2: '/art/objects/fox-walking-2.png',
-  flower: (n: number) => `/art/objects/flowers/${n}.png`,
-  magnet: (slug: string) => `/art/places/${slug}/magnet.png`,
-  postcardFront: (slug: string) => `/art/places/${slug}/postcard-front.png`,
-  piece: (slug: string, n: number) => `/art/places/${slug}/pieces/${n}.png`,
-  sticker: (n: number) => `/art/stickers/${n}.png`,
+  wall: '/art/room/wall.webp', floor: '/art/room/floor.webp', entrance: '/art/room/entrance.webp',
+  skyDay: '/art/sky/day.webp', skyNight: '/art/sky/night.webp',
+  fridgeClosed: '/art/objects/fridge-closed.webp',
+  table: '/art/objects/table.webp', camera: '/art/objects/camera.webp', vase: '/art/objects/vase-empty.webp', candle: '/art/objects/candle.webp',
+  notebook: '/art/objects/notebook.webp',
+  foxAsleep: '/art/objects/fox-asleep.webp', foxSitting: '/art/objects/fox-sitting.webp', foxWalk1: '/art/objects/fox-walking-1.webp', foxWalk2: '/art/objects/fox-walking-2.webp',
+  flower: (n: number) => `/art/objects/flowers/${n}.webp`,
+  magnet: (slug: string) => `/art/places/${slug}/magnet.webp`,
+  postcardFront: (slug: string) => `/art/places/${slug}/postcard-front.webp`,
+  piece: (slug: string, n: number) => `/art/places/${slug}/pieces/${n}.webp`,
+  sticker: (n: number) => `/art/stickers/${n}.webp`,
 }

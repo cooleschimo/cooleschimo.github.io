@@ -1,7 +1,7 @@
 # DESIGN.md — Chimin Liu, personal site
 
 Single source of truth for look and feel. Overrides any installed design skill, component library default, or agent instinct. If something here conflicts with PRD.md, ask.
-Revision: 2026-09-17 (v5.1, "the igloo" with a real camera). Hybrid: 2.5D room plus one real 3D hero object later. Chimin's own direction after three attempts: a 2.5D illustrated igloo room, simple but sophisticated, an aesthetic rather than realism. Art is generated from Chimin's photographs in one collage style (see `docs/ART-BRIEF.md`).
+Revision: 2026-09-17 (v5.2, "the igloo": arrival shot, camera, generated stand-in art). Hybrid: 2.5D room plus one real 3D hero object later. Chimin's own direction after three attempts: a 2.5D illustrated igloo room, simple but sophisticated, an aesthetic rather than realism. Art is generated from Chimin's photographs in one collage style (see `docs/ART-BRIEF.md`).
 
 ## Feel
 One illustrated room inside an igloo, drawn like a page from a good travel sketchbook: warm, low-contrast, quiet, with a lot of space around a few objects. The arctic is told through light, not props: blue-white daylight through the ice blocks by day; candle glow and a faint aurora through the window by night. Nothing is rendered or glossy. **Depth is felt, not implied**: a camera that slides with the pointer and dollies toward whatever you open, layers that occlude and grow at different rates, surfaces in perspective. One real 3D object (the vase or the bag) may live inside its own window later; the room itself never becomes 3D geometry.
@@ -10,6 +10,8 @@ Test: does it look like one person's sketchbook page, with the calm of the stamp
 
 ## The one style: paper collage
 Every place and every photograph on the site is translated into the **cocktail-collage style**: torn paper and washi-tape layers, soft translucent colour, edges slightly off-register, a typewriter caption. The room itself, its objects and the fox are illustrated in the same hand (flat colour, torn-paper edges, paper texture, no outlines heavier than a pencil). One style, everywhere, generated from Chimin's photos and a written room description with a fixed style spec, so every output matches.
+
+Until that art exists, `tools/collage.py` generates code-made stand-ins in the same language (torn edges, grain, off-register second sheet, kraft and washi, muted palette) into every slot, so the room can be judged with texture on. They are a sketch of the style, not the style: Chimin's generated art replaces them file by file.
 
 ## Ground and colour
 - Paper: cream `#f4efe6`. Ink: warm near-black `#2a2622`. Secondary: `#7a7369`. Accent: one, taken from Chimin's photos once the artefacts exist; placeholder rust `#c7694a`.
@@ -21,6 +23,9 @@ Every place and every photograph on the site is translated into the **cocktail-c
 - **JetBrains Mono** (typewriter voice) for captions, labels, magnet names, postcard text, 11–13px. This is the voice of the collages and the stamp archive.
 - **Geist** for reading text inside sheets, 15–16px. Newsreader for long essays (M4).
 - No handwriting fonts, no bold, no gradient text.
+
+## Arrival (once per session)
+The site opens **above the igloo**: a near top-down collage of the dome in snow with **Chimin** set large in Instrument Serif over it. After a beat the shot tilts forward and drifts down to the front door (1.7s, `power2.inOut`), the name fading as it goes; then the camera pushes through the door (1.4s, `power3.in`) into dark. The room then **assembles from a clump**: every object starts pulled toward the centre, small, turned and faint, and settles into place (`expo.out`, 1.2s, random stagger), the way Jess Paik's opening scatters. Click anywhere skips it; it plays once per session; under reduced motion it is a 0.6s fade. Copy on this screen is the name only.
 
 ## The room (2.5D with a camera)
 - A fixed viewport; a 1440×900 world scaled to fit. Layers by depth 0→1: ice wall + window (0), the postcard string (0.25), floor + rug (0.45), furniture and objects (0.7), the notebook and the entrance arc (1).
@@ -35,8 +40,8 @@ Every place and every photograph on the site is translated into the **cocktail-c
 Front: the place's collage artefact and a typewriter caption. Back: a cream postcard with address lines and a stamp box, holding Chimin's default arrangement of that place's collage pieces (torn paper, washi, a stamp, a caption). Every piece can be dragged; the visitor's arrangement is kept in their browser; Reset restores Chimin's. This is the one interaction that must be perfect.
 
 ## Motion
-Verbs: **dolly**, **lift**, **pull down**, **settle**, **sway**.
-- Room fades in by layer on load (0.9s). Dolly 0.9s `power3.inOut`; the pulled card springs from its place on the string to the centre (bounce 0.12, 0.7s).
+Verbs: **descend**, **dolly**, **lift**, **pull down**, **settle**, **sway**.
+- Arrival as above; on later loads in the session the room fades in by layer (0.9s). Dolly 0.9s `power3.inOut`; the pulled card springs from its place on the string to the centre (bounce 0.12, 0.7s).
 - Sheets: rise 24px + fade, 0.35s. Magnets lift 3px on hover.
 - Fox: follows the cursor with a lag inside its zone; sits when the cursor leaves. The postcards sway; the candle flickers at night. Nothing else idles.
 - Reduced motion: no parallax, no fox chase, sheets fade.

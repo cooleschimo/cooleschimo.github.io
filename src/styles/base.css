@@ -207,3 +207,38 @@ button { font: inherit; color: inherit; }
 .postcard .piece { scale: calc(100cqw / 640); transform-origin: top left; }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+
+/* ---------- arrival ---------- */
+.arrival { position: fixed; inset: 0; z-index: 80; background: var(--bg); cursor: pointer; overflow: hidden; }
+.room--arriving .room__world { visibility: hidden; }
+.arrival__stage { position: absolute; inset: 0; perspective: 1600px; perspective-origin: 50% 30%; }
+.arrival__scene { position: absolute; left: 50%; top: 50%; width: 1440px; height: 900px; margin: -450px 0 0 -720px; transform-origin: 50% 60%; transform: rotateX(58deg) scale(0.9); transform-style: preserve-3d; }
+.arrival__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.arrival__block { position: absolute; inset: 0; background: #f0ece3; }
+.arrival__dome { position: absolute; left: 50%; top: 52%; width: 760px; height: 460px; translate: -50% -50%; border-radius: 50%; background: var(--ice); box-shadow: 0 30px 40px rgba(30,22,10,.12); }
+.arrival__door { position: absolute; left: 50%; top: 84%; width: 120px; height: 110px; translate: -50% -50%; border-radius: 60px 60px 8px 8px; background: #3a3e46; }
+.arrival__name { position: absolute; left: 50%; top: 14%; margin: 0; translate: -50% 0; font-size: clamp(64px, 12vw, 160px); letter-spacing: -0.02em; color: var(--ink); pointer-events: none; }
+.arrival__hint { position: absolute; right: 22px; bottom: 20px; margin: 0; color: var(--ink-3); }
+.arrival__dark { position: absolute; inset: 0; background: #1a1c22; opacity: 0; pointer-events: none; }
+@media (max-width: 760px) { .arrival__scene { scale: 0.5; } }
+
+/* ---------- real art in the slots (2x images with shadow padding) ---------- */
+.obj--fridge img { display: block; width: 236px; height: auto; margin: -20px 0 0 -24px; }
+.obj--table img { display: block; width: 580px; height: auto; margin: -34px 0 0 -30px; }
+.obj--table:has(img) .table-legs { display: none; }
+.obj--candle img { display: block; width: 44px; height: auto; margin: -8px 0 0 -12px; }
+.obj--vase { z-index: 2; }
+.vase > img { position: absolute; left: 6px; bottom: 6px; width: 110px; height: auto; }
+.stem img { display: block; width: 62px; height: auto; margin-left: -22px; }
+.stem--in img { position: absolute; bottom: -6px; left: 0; }
+.stem--out img { width: 48px; margin-left: -15px; }
+.fox img { width: 160px; height: auto; margin: -20px 0 0 -20px; }
+.ro img { width: 100%; }
+.ro[data-id="camera"] img { width: 136px; margin: -10px 0 0 -13px; }
+.ro--notebook img { width: 180px; margin: -14px 0 0 -16px; }
+.window__sky { position: absolute; inset: -2px; width: calc(100% + 4px); height: calc(100% + 4px); border-radius: 50%; }
+.pcard__face img { width: 100%; height: 100%; object-fit: cover; }
+.piece img { width: 100%; height: auto; display: block; filter: drop-shadow(0 3px 5px rgba(30,22,10,.14)); }
+.piece:has(img) .piece__block { display: none; }
+.sticker img, .essay__slot img { width: 100%; height: 100%; object-fit: contain; }
+.magnet img { display: none; }

@@ -32,6 +32,7 @@ Plus each object on its own, transparent, same camera angle, at the size it appe
 8. `objects/flowers/{1..6}.png` — six single stems, different heights and muted colours
 9. `sky/day.png`, `sky/night.png` — the window's sky, night with a faint aurora
 10. `room/string.png` — the postcard string with its two pegs, no cards, transparent (spans the room at 2880 wide); and `objects/peg.png`, one small wooden peg
+11. `room/exterior.png` — the igloo from **above** (a near top-down shot, 2880×1800, snow ground filling the frame), dome centred, the entrance tunnel toward the bottom of the frame. This is the opening shot: the name sits over it, then the camera tilts down to the door and pushes through. Same collage hand as the room.
 
 Camera note: the room is viewed from the entrance at a 20° top-down angle; keep that angle in every object so the layered parallax reads correctly. Leave generous transparent margins around the wall and floor layers (they move up to 60px).
 
@@ -53,6 +54,8 @@ Slugs: budapest, cinque-terre, split, mostar, dubrovnik, malta, mallorca, venice
 `stickers/{1..8}.png` — 200×200 transparent, in the same collage style: a star, a heart, a small fox, a snowflake, "good", "read", a coffee cup, a moon. Visitors give these to essays.
 
 ## Export rules
+- Export PNGs by the names above into `public/art/`, then run `python3 tools/optimize-art.py` (needs Pillow): it converts everything to WebP, which is what the site loads, and deletes the PNGs.
+- Until your art exists, `python3 tools/collage.py` regenerates the code-made collage stand-ins for every slot.
 - PNG with transparency for everything except originals. sRGB. No drop shadows baked in (the site adds a paper lift).
 - Keep the same light direction (soft, from the upper left) and the same paper tone in every image.
 - File names exactly as above; the site loads them by name from `public/art/`.

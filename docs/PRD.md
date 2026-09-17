@@ -109,6 +109,7 @@ Do NOT run `polish`, `normalize`, `quieter`, or any minimalist/high-end/brutalis
 
 ## 3. Site structure (one room, sheets on top)
 
+- **Arrival**: once per session the site opens above the igloo with the name over it, tilts down to the door, pushes through, and the room assembles from a clump (DESIGN.md, "Arrival"). Click skips; `sessionStorage` remembers.
 - **The room**: fixed viewport, 1440×900 world scaled to fit, five depth layers under a 2.5D camera (pointer parallax + dolly on open). Objects: the postcard string (places), camera (photographs), vase (flower arranging, in-room), notebook (essays + reader stickers), fox (cursor chase in its zone), window (day/night). The fridge is furniture. Name and role line sit top-left; About is a sheet from the name.
 - **Sheets**: rise over the dimmed room; Escape closes.
 - **Phones**: the room scales to width; sheets go full height; the fox chase is off.
@@ -205,21 +206,9 @@ type Toy = { slug: string; name: string; status: 'shipped' | 'building';
 
 ## 5. Asset manifest
 
-Chimin supplies (hand-drawn; transparent PNG @2x or SVG; **linework and fill as separate files**, or one SVG with `.line` and `.colour` groups):
-| File | Notes |
-|---|---|
-| `art/name-signature.svg` | name as single-stroke paths (for DrawSVG); one `<path>` per stroke |
-| `art/fox-{idle,peek,walk1,walk2}` | |
-| `art/bear-{sit,glance}` | |
-| `art/owl-{asleep,awake}` | |
-| `art/igloo-{work,writing,photo,footer}` | |
-| `art/places/{slug}-line`, `{slug}-fill` (fill optional) | one per place, drawn to fit inside a globe |
-| `art/viewfinder.png` | cutout photo of the actual Ricoh back/frame |
-| `fonts/chimin-hand.woff2` | made with Calligraphr; drop in to replace Shantell Sans |
+The full list, sizes and style spec are in `docs/ART-BRIEF.md` (room layers, objects, fox frames, flowers, sky, string and pegs, the exterior shot for the arrival, one set per place, photographs, stickers). The site loads every image by name from `public/art/` (`src/room/art.ts`), as WebP; `tools/optimize-art.py` converts exported PNGs. Swapping art must require zero code changes.
 
-Generated in code (Claude Code builds these): paper grain tile, watercolor filters, wobble filter, ice texture, snow, aurora, map, shelf, globes, tape, all rough.js shapes, mini-map.
-
-**Until real art exists, use the clearly-named placeholders** in `public/art/_placeholder/` so no milestone is blocked. Swapping art must require zero code changes.
+**Until Chimin's art exists, `tools/collage.py` generates collage-style stand-ins for every slot** (currently in `public/art/`, ~3MB WebP). CC0 photos used inside the stand-in postcards are credited in `public/art/_placeholder/CREDITS.md`.
 
 ---
 
@@ -234,8 +223,8 @@ Generated in code (Claude Code builds these): paper grain tile, watercolor filte
 
 ## 7. Milestones (vertical slices — each one is built and previewed on the branch; deploy is a separate, manual decision, see §11)
 
-**M1 — The igloo blockout** (built, v5)
-Room shell with parallax layers, grey objects with labels, fridge with magnets, postcard collage with drag-and-drop and persistence, camera contact sheet, notebook with reader stickers, vase arranging, fox chase, day/night, sheets, keyboard paths. Every image slot named per `docs/ART-BRIEF.md`.
+**M1 — The igloo** (built, v5.2)
+Arrival shot (above the igloo, name, tilt to the door, push through, room assembles), room with the visitor camera (parallax, zoom, pan, dolly), postcard string, postcard collage with drag-and-drop and persistence, camera contact sheet, notebook with reader stickers, vase arranging, fox chase, day/night, sheets, keyboard paths. Every image slot named per `docs/ART-BRIEF.md` and filled with generated collage stand-ins.
 
 **M2 — Art in.** Chimin generates the room layers, objects and the first three places per the art brief; the blockout images are swapped for them with no code changes; tune light, shadow, parallax and dolly to the art.
 **M2b — The 3D hero object** (vase or bag) as a generated model inside its window, lazy-loaded three.js.
@@ -268,9 +257,10 @@ After each milestone run impeccable `critique` against DESIGN.md and list findin
 
 ```
 Read docs/HANDOFF.md, docs/PRD.md, docs/DESIGN.md (v5) and docs/ART-BRIEF.md.
-Branch claude/new-session-kjcz7d has the igloo blockout. If Chimin has supplied art, drop it into
-public/art/ by the brief's names and tune light, shadow and parallax to it (M2). If not, refine the
-postcard collage interaction and the fox until they feel finished. Do not deploy; publish a preview.
+Branch claude/new-session-kjcz7d has the igloo with the arrival shot and generated stand-in art.
+If Chimin has supplied art, drop it into public/art/ by the brief's names (run tools/optimize-art.py)
+and tune light, shadow and parallax to it (M2). If not, refine the stand-ins in tools/collage.py,
+the fox and the postcard collage until they feel finished. Do not deploy; publish a preview.
 ```
 
 ## 11. Deployment

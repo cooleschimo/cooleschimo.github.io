@@ -1,4 +1,4 @@
-# Handoff notes — Chimin Liu, personal site (v5, "the igloo")
+# Handoff notes — Chimin Liu, personal site (v5.2, "the igloo")
 
 Updated 2026-09-17 at the end of the second session. Read this, then `docs/PRD.md`,
 `docs/DESIGN.md` (v5) and `docs/ART-BRIEF.md`, before writing any code.
@@ -14,6 +14,11 @@ Updated 2026-09-17 at the end of the second session. Read this, then `docs/PRD.m
    typewriter captions on cream), generated from Chimin's photos with the skills they found.
 4. Built: the **igloo blockout**. Grey flat shapes in the right proportions, every interaction
    working, every image an `<Art>` slot that swaps to the real file by name (`src/room/art.ts`).
+5. "There's no interactive depth" → the visitor camera (`camera.ts`: zoom, pan, dolly) and the postcard string.
+6. "The igloo feels off … start above the igloo with my name … like Jess Paik's opening" and "try working
+   on the assets yourself" → `Arrival.tsx` (above-igloo shot, tilt to the door, push through, room assembles
+   from a clump) and **generated collage stand-in art** for every slot (`tools/collage.py`, WebP via
+   `tools/optimize-art.py`). Chimin has not yet judged this build.
 
 **Nothing is deployed.** The workflow runs only on pushes to `main`.
 
@@ -23,10 +28,13 @@ Updated 2026-09-17 at the end of the second session. Read this, then `docs/PRD.m
 content/places.json          the fourteen places (slug, name, country)
 content/projects.json        four projects (shown in About for now)
 docs/ART-BRIEF.md            style spec + numbered shot list + export specs for Chimin's generation run
-public/art/                  EMPTY except _placeholder/; the room loads art by the brief's names when present
+public/art/                  generated collage stand-ins (WebP) in every slot named by the brief; _placeholder/ holds CC0 photos + CREDITS.md
+tools/collage.py             generates the stand-ins (Pillow); edit palettes/shapes here to change the look
+tools/optimize-art.py        PNG/JPG under public/art → WebP q82, deletes sources
 src/room/art.ts              every image slot, by name
 src/room/useArt.tsx          useArt(src) probes whether a file exists; <Art> renders it or the blockout placeholder
-src/room/Room.tsx            world scaling, five depth layers (data-depth 0..1), camera dolly on open, the pulled postcard, sheets
+src/room/Arrival.tsx         once-per-session opening: exterior shot + name, tilt/descend, push through, then Room assembles
+src/room/Room.tsx            world scaling, five depth layers (data-depth 0..1), camera dolly on open, the pulled postcard, sheets, assemble-on-arrival
 src/room/camera.ts           the 2.5D camera: pointer parallax + dolly, applied per layer by depth on gsap.ticker
 src/room/PostcardString.tsx  the string and its fourteen cards (positions from stringPoint)
 src/room/RoomObject.tsx      interactive object = real <button> with hover lift + label; Block = grey placeholder
@@ -60,19 +68,31 @@ src/styles/base.css          all room, blockout and sheet styles
 - **Fox**: zone `{x:120,y:560,w:520,h:300}` in world units, home `{330,700}`; the world gets
   `.room__world--fish` (cursor: none) and a fish element follows the pointer.
 - **Sheets**: one open at a time (`open` state in Room); `role="dialog"`, Escape closes.
+- **Arrival**: `Room` reads `sessionStorage 'arrived'`; if unset it renders `<Arrival>` over a hidden world
+  (`.room--arriving`). Arrival is one GSAP timeline on `.arrival__scene` (rotateX 58°→0, y, scale, then
+  scale 5.5 through the door, dark, fade) and calls `onDone`; Room then runs `gsap.from` on
+  `.obj, .ro, .fox, .pcard` (toward centre, scale .6, rotation ±25, expo.out, random stagger) and fades
+  the layers in. Click skips. Reduced motion: 0.6s.
+- **Stand-in art**: `tools/collage.py` writes every slot (wall, floor, entrance, exterior, sky, objects,
+  flowers, string, peg, 5 places' postcard fronts + pieces, stickers) with torn-paper edges, grain, an
+  off-register second sheet and a soft shadow. Sizing of real art inside the slots is the "real art in
+  the slots" block at the end of `base.css` (`.obj--fridge img`, `.obj--table img`, `.fox img`, …).
 
 ## 4. Verified (headless Chromium against `vite preview`)
 
-Room renders; parallax moves layers at different rates; a string card → dolly + pulled card; turn over; a piece drags and the
+Arrival plays and clears (skipped on reload in the same session); every art file loads; 61 fps at rest; no console errors. Room renders; parallax moves layers at different rates; a string card → dolly + pulled card; turn over; a piece drags and the
 new position persists across reload; camera → photos; notebook → sticker given to an essay; vase
 stem in; fox wakes and the fish cursor appears in its zone; window click → night; mobile taps.
-Console: only the expected 404s for not-yet-existing art. See the verify script list in §4 of
-this file's git history if the scratchpad is gone.
+Console: clean (art exists for every slot now). The verify scripts lived in the session scratchpad (verify6.cjs was the last); rewrite from this list if needed.
 
 ## 5. Known gaps and follow-ups
 
-1. **No art yet.** Everything is grey on purpose. Chimin runs the collage skill per the brief;
-   test 3–5 photos first to lock the style.
+1. **Stand-in art only.** `tools/collage.py` output is a sketch of the collage style so the room can be
+   judged with texture on; Chimin runs the collage skill per the brief (test 3–5 photos first) and drops
+   the files in by name. Known weak stand-ins: the fox (blobby), the window cloud, the exterior's snow ground.
+1b. Arrival is a first cut: the exterior shot is generated, the tilt is CSS perspective on a flat image.
+   If Chimin wants the real "rotate down into the door", the exterior needs 2–3 layered plates (ground,
+   dome, entrance) or a short pre-rendered sequence; see the MCP notes in the last session recap.
 2. Chimin's authored default postcard arrangements (replace `defaultPieces`) once pieces exist.
 3. Work has no object in the room (it's listed in About). Decide: a laptop on the table or a shelf. The fridge is furniture now; it could carry Work.
 3b. The 3D hero object (vase or bag) is planned for M2b with lazy three.js; not added yet.
@@ -80,6 +100,7 @@ this file's git history if the scratchpad is gone.
    vertically) should follow once the art exists.
 5. Copy is placeholder everywhere it says so.
 6. The fox does not blink or walk (needs the walking frames from the brief).
+7. `_placeholder/objects/` still holds the v4 desk cut-outs (unused); delete once nobody wants them back.
 
 ## 6. Deployment (see PRD §11)
 
@@ -91,7 +112,8 @@ this file's git history if the scratchpad is gone.
 
 ```
 Read docs/HANDOFF.md, docs/PRD.md, docs/DESIGN.md (v5) and docs/ART-BRIEF.md.
-Branch claude/new-session-kjcz7d has the igloo blockout. If Chimin has supplied art, drop it into
-public/art/ by the brief's names and tune light, shadow and parallax to it (M2). If not, refine the
-postcard collage interaction and the fox until they feel finished. Do not deploy; publish a preview.
+Branch claude/new-session-kjcz7d has the igloo with the arrival shot and generated stand-in art.
+If Chimin has supplied art, drop it into public/art/ by the brief's names (run tools/optimize-art.py)
+and tune light, shadow and parallax to it (M2). If not, refine the stand-ins in tools/collage.py,
+the fox and the postcard collage until they feel finished. Do not deploy; publish a preview.
 ```
