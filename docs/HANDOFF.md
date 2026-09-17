@@ -26,9 +26,10 @@ docs/ART-BRIEF.md            style spec + numbered shot list + export specs for 
 public/art/                  EMPTY except _placeholder/; the room loads art by the brief's names when present
 src/room/art.ts              every image slot, by name
 src/room/useArt.tsx          useArt(src) probes whether a file exists; <Art> renders it or the blockout placeholder
-src/room/Room.tsx            world scaling, four parallax layers (data-depth), objects, sheets state, window = day/night
+src/room/Room.tsx            world scaling, five depth layers (data-depth 0..1), camera dolly on open, the pulled postcard, sheets
+src/room/camera.ts           the 2.5D camera: pointer parallax + dolly, applied per layer by depth on gsap.ticker
+src/room/PostcardString.tsx  the string and its fourteen cards (positions from stringPoint)
 src/room/RoomObject.tsx      interactive object = real <button> with hover lift + label; Block = grey placeholder
-src/room/Fridge.tsx          magnets on the door from places.json; a magnet opens the postcard
 src/room/Vase.tsx            six stems; click to put in / take out; kept in localStorage
 src/room/Fox.tsx             zone-based chase: cursor becomes a fish, fox lerps toward it; off on touch / reduced motion
 src/sheets/Sheet.tsx         modal card over the dimmed room; Escape closes; focus in and back
@@ -44,8 +45,12 @@ src/styles/base.css          all room, blockout and sheet styles
 - **Art slots**: `ART.*` in `src/room/art.ts` are the paths from the brief. `useArt` loads each once via
   an `Image` probe; missing files fall back to the placeholder. Drop files in `public/art/` and reload.
   Nothing else changes. (The 404s for missing art are expected in the console until the art exists.)
-- **World**: `.room__world` is 1440×900 scaled by `min(vw/1440, vh/900)`; layers carry `data-depth`
-  (6/10/14/22) and are translated by pointer position on gsap.ticker.
+- **Camera** (`camera.ts`): layers carry `data-depth` 0..1. Each frame: translate by pointer parallax
+  (56px at depth 1, ~7px at 0) plus the dolly offset, and scale by `1 + (zoom-1)*(0.55+0.45d)`, so near
+  layers grow more. `dolly(x, y, zoom)` moves toward a world point relative to centre; `reset()` returns.
+  `goTo()` in Room dollies then opens.
+- **Postcard string**: `stringPoint(i, n)` gives x, sag y and a perspective tilt; cards are buttons with
+  a CSS sway; the picked card fades on the string and a `.pulled` card springs from its position to the centre.
 - **Postcard back**: pieces are absolutely positioned in a 640×420 space and scaled with
   `scale: calc(100cqw / 640)` so the card can be any width; motion `drag` with `dragConstraints` on
   the card; positions saved per place under `postcard:<slug>`; `defaultPieces(slug)` is a seeded
@@ -56,7 +61,7 @@ src/styles/base.css          all room, blockout and sheet styles
 
 ## 4. Verified (headless Chromium against `vite preview`)
 
-Room renders; magnet → postcard; turn over; a piece drags and the
+Room renders; parallax moves layers at different rates; a string card → dolly + pulled card; turn over; a piece drags and the
 new position persists across reload; camera → photos; notebook → sticker given to an essay; vase
 stem in; fox wakes and the fish cursor appears in its zone; window click → night; mobile taps.
 Console: only the expected 404s for not-yet-existing art. See the verify script list in §4 of
@@ -67,7 +72,8 @@ this file's git history if the scratchpad is gone.
 1. **No art yet.** Everything is grey on purpose. Chimin runs the collage skill per the brief;
    test 3–5 photos first to lock the style.
 2. Chimin's authored default postcard arrangements (replace `defaultPieces`) once pieces exist.
-3. Work has no object in the room (it's listed in About). Decide: a laptop on the table or a shelf.
+3. Work has no object in the room (it's listed in About). Decide: a laptop on the table or a shelf. The fridge is furniture now; it could carry Work.
+3b. The 3D hero object (vase or bag) is planned for M2b with lazy three.js; not added yet.
 4. Phones: the room scales to width and is small; a dedicated phone composition (objects stacked
    vertically) should follow once the art exists.
 5. Copy is placeholder everywhere it says so.

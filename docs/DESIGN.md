@@ -1,10 +1,10 @@
 # DESIGN.md — Chimin Liu, personal site
 
 Single source of truth for look and feel. Overrides any installed design skill, component library default, or agent instinct. If something here conflicts with PRD.md, ask.
-Revision: 2026-09-17 (v5, "the igloo"). Chimin's own direction after three attempts: a 2.5D illustrated igloo room, simple but sophisticated, an aesthetic rather than realism. Art is generated from Chimin's photographs in one collage style (see `docs/ART-BRIEF.md`).
+Revision: 2026-09-17 (v5.1, "the igloo" with a real camera). Hybrid: 2.5D room plus one real 3D hero object later. Chimin's own direction after three attempts: a 2.5D illustrated igloo room, simple but sophisticated, an aesthetic rather than realism. Art is generated from Chimin's photographs in one collage style (see `docs/ART-BRIEF.md`).
 
 ## Feel
-One illustrated room inside an igloo, drawn like a page from a good travel sketchbook: warm, low-contrast, quiet, with a lot of space around a few objects. The arctic is told through light, not props: blue-white daylight through the ice blocks by day; candle glow and a faint aurora through the window by night. Nothing is rendered or glossy. Depth comes from three or four parallax layers and from objects lifting toward you, never from 3D geometry.
+One illustrated room inside an igloo, drawn like a page from a good travel sketchbook: warm, low-contrast, quiet, with a lot of space around a few objects. The arctic is told through light, not props: blue-white daylight through the ice blocks by day; candle glow and a faint aurora through the window by night. Nothing is rendered or glossy. **Depth is felt, not implied**: a camera that slides with the pointer and dollies toward whatever you open, layers that occlude and grow at different rates, surfaces in perspective. One real 3D object (the vase or the bag) may live inside its own window later; the room itself never becomes 3D geometry.
 
 Test: does it look like one person's sketchbook page, with the calm of the stamp-archive posts and the softness of the cocktail collages? If it looks like a game, a render, or a children's book, it fails.
 
@@ -22,24 +22,27 @@ Every place and every photograph on the site is translated into the **cocktail-c
 - **Geist** for reading text inside sheets, 15–16px. Newsreader for long essays (M4).
 - No handwriting fonts, no bold, no gradient text.
 
-## The room (2.5D)
-- A fixed viewport; a 1440×900 world scaled to fit. Layers, back to front: ice wall + window (sky), floor + rug, objects, foreground entrance arc. Pointer parallax of ±6/±10/±14px per layer, eased; none under reduced motion.
-- Objects, and what they open: the **fridge** (the magnets on its door are the places; a magnet opens that place's postcard), the **camera** on the table (photographs), the **vase** (arrange flowers from the table, in the room, no sheet), the **notebook** on the rug (essays; readers can leave a sticker), the **fox** (asleep by the fridge; wakes and follows the cursor, which becomes a fish, inside its zone), the **window** (day/night). At most seven interactive things.
-- Hover: lift 4px, a soft shadow deepens, a mono label appears. Click: a sheet rises over the room (cream card, ink hairline, close dot), the room dims 20%.
-- Phones: the room scales to width; tall sheets become full-height; the fox chase is off.
+## The room (2.5D with a camera)
+- A fixed viewport; a 1440×900 world scaled to fit. Layers by depth 0→1: ice wall + window (0), the postcard string (0.25), floor + rug (0.45), furniture and objects (0.7), the notebook and the entrance arc (1).
+- **Camera**: pointer parallax of up to 56px at depth 1 and ~7px at depth 0, eased; a **dolly** on every open (zoom 1.3–1.6 toward the object, near layers growing more than far ones), reversed on close. Under reduced motion the camera is still.
+- **Postcard string**: a line sagging between two pegs across the upper room, fourteen cards clipped to it, each turned slightly in perspective by its position, swaying ±1.6° slowly. Hover tilts a card toward you and lifts it; click dollies to it and pulls it down into your hand, where it turns over to the collage canvas. Putting it back reverses both.
+- Objects, and what they open: the **camera** on the table (photographs), the **vase** (arrange flowers in the room), the **notebook** on the rug (essays; readers leave a sticker), the **fox** (asleep by the fridge; wakes and follows a fish cursor in its zone), the **window** (day/night). The **fridge** is furniture for now. At most seven interactive things.
+- Depth cues in the drawing: far layers slightly desaturated and lower-contrast, the entrance arc soft, near things crisp with deeper shadows.
+- Hover: lift 4px, shadow deepens, mono label. Click: dolly, then a sheet (cream card, ink hairline, close dot) over the dimmed room.
+- Phones: the room scales to width; sheets go full height; parallax off; the fox chase off.
 
 ## The postcard (signature)
 Front: the place's collage artefact and a typewriter caption. Back: a cream postcard with address lines and a stamp box, holding Chimin's default arrangement of that place's collage pieces (torn paper, washi, a stamp, a caption). Every piece can be dragged; the visitor's arrangement is kept in their browser; Reset restores Chimin's. This is the one interaction that must be perfect.
 
 ## Motion
-Verbs: **lift**, **settle**, **drift**.
-- Room fades and settles in on load (layers slide 10px into place, 0.8s). No deal-in, no bounce.
+Verbs: **dolly**, **lift**, **pull down**, **settle**, **sway**.
+- Room fades in by layer on load (0.9s). Dolly 0.9s `power3.inOut`; the pulled card springs from its place on the string to the centre (bounce 0.12, 0.7s).
 - Sheets: rise 24px + fade, 0.35s. Magnets lift 3px on hover.
-- Fox: follows the cursor with a lag inside its zone; sits when the cursor leaves. Blinks occasionally. Nothing else idles except candle flicker at night (opacity ±4%).
+- Fox: follows the cursor with a lag inside its zone; sits when the cursor leaves. The postcards sway; the candle flickers at night. Nothing else idles.
 - Reduced motion: no parallax, no fox chase, sheets fade.
 
 ## Never
-Realistic rendering, 3D geometry, glossy or glassy materials, drop shadows heavier than a paper lift, hand-drawn boxes, wobble filters, code-drawn characters, more than one artefact style, handwriting fonts, bright saturated UI colour, loaders, sound without a mute, scroll pinning, invented facts in the copy.
+Realistic rendering, 3D geometry for the room (one hero object inside a window is the exception), glossy or glassy materials, drop shadows heavier than a paper lift, hand-drawn boxes, wobble filters, code-drawn characters, more than one artefact style, handwriting fonts, bright saturated UI colour, loaders, sound without a mute, scroll pinning, invented facts in the copy.
 
 ## Always
 - Every interactive object has a keyboard path (a focusable button with the same label) and a tap path.

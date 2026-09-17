@@ -109,7 +109,7 @@ Do NOT run `polish`, `normalize`, `quieter`, or any minimalist/high-end/brutalis
 
 ## 3. Site structure (one room, sheets on top)
 
-- **The room**: fixed viewport, 1440×900 world scaled to fit, four parallax layers. Objects: fridge with magnets (places), camera (photographs), vase (flower arranging, in-room), notebook (essays + reader stickers), fox (cursor chase in its zone), window (day/night). Name and role line sit top-left as a small typewriter label; About is a sheet from the name.
+- **The room**: fixed viewport, 1440×900 world scaled to fit, five depth layers under a 2.5D camera (pointer parallax + dolly on open). Objects: the postcard string (places), camera (photographs), vase (flower arranging, in-room), notebook (essays + reader stickers), fox (cursor chase in its zone), window (day/night). The fridge is furniture. Name and role line sit top-left; About is a sheet from the name.
 - **Sheets**: rise over the dimmed room; Escape closes.
 - **Phones**: the room scales to width; sheets go full height; the fox chase is off.
 
@@ -143,8 +143,8 @@ Do NOT run `polish`, `normalize`, `quieter`, or any minimalist/high-end/brutalis
 - Touch: no viewfinder; photos sharpen as they cross viewport centre (ScrollTrigger).
 - Images: responsive `srcset`, AVIF/WebP, lazy, blurhash or dominant-colour placeholder.
 
-### 3.5 Travel (the fridge)
-- The fridge door carries a grid of magnets, one per place. A magnet opens the postcard: front = collage; back = the drag-and-drop collage canvas with Chimin's default arrangement, the visitor's changes kept in localStorage, Reset restores. Blockout built with grey pieces.
+### 3.5 Travel (the postcard string)
+- Fourteen postcards clipped to a string across the room. Click one: the camera dollies to it and the card pulls down into your hand; front = collage, back = the drag-and-drop collage canvas with Chimin's default arrangement, the visitor's changes kept in localStorage, Reset restores. Blockout built.
 
 #### Original plan, kept for content (the snow-globe shelf is dropped)
 - A hand-drawn shelf (rough.js) runs down the section with one **snow globe per place**. Inside each globe: the place's linework doodle (supplied by Chimin), a base with the place name in handwriting and the date. Globes sit at seeded tilts and sizes.
@@ -237,7 +237,8 @@ Generated in code (Claude Code builds these): paper grain tile, watercolor filte
 **M1 — The igloo blockout** (built, v5)
 Room shell with parallax layers, grey objects with labels, fridge with magnets, postcard collage with drag-and-drop and persistence, camera contact sheet, notebook with reader stickers, vase arranging, fox chase, day/night, sheets, keyboard paths. Every image slot named per `docs/ART-BRIEF.md`.
 
-**M2 — Art in.** Chimin generates the room layers, objects and the first three places per the art brief; the blockout images are swapped for them with no code changes; tune light, shadow and parallax to the art.
+**M2 — Art in.** Chimin generates the room layers, objects and the first three places per the art brief; the blockout images are swapped for them with no code changes; tune light, shadow, parallax and dolly to the art.
+**M2b — The 3D hero object** (vase or bag) as a generated model inside its window, lazy-loaded three.js.
 **M3 — All fourteen places, twelve photographs, essays as MDX.**
 **M4 — Work scatter complete + Writing igloo** with all ten essays in MDX.
 **M5 — Workshop physics + footer.**
@@ -249,7 +250,7 @@ After each milestone run impeccable `critique` against DESIGN.md and list findin
 ---
 
 ## 8. Decisions made (2026-09-17; change here if needed)
-- v5 direction: the illustrated igloo, 2.5D, Chimin's own idea; not realistic; one collage style for all artefacts (the cocktail-collage look); art generated from Chimin's photos via the skills Chimin found.
+- v5 direction: the illustrated igloo, 2.5D with a real camera (parallax + dolly), Chimin's own idea; not realistic; one collage style for all artefacts (the cocktail-collage look); art generated from Chimin's photos via the skills Chimin found. Hybrid: one real 3D hero object (vase or bag) may be added later inside its window (three.js then, not before). Postcards hang on a string; the fridge is furniture.
 - The bag idea is shelved. The design lab, bear and owl are dropped for now.
 - Fonts: Instrument Serif (name, headings), JetBrains Mono (labels, one-liner), Geist (window body), Newsreader (long-form, M4).
 - One fixed room on desktop, sheets for content; the room scales to width on phones.

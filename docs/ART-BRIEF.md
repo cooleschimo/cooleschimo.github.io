@@ -25,18 +25,21 @@ Export the room as separate transparent PNG layers at 2880×1800 (2× of 1440×9
 2. `room/floor.png` — floor and rug.
 3. `room/entrance.png` — the foreground arc of the entrance tunnel (dark, soft edge), everything else transparent.
 Plus each object on its own, transparent, same camera angle, at the size it appears in the room ×2:
-4. `objects/fridge-closed.png` (the fridge, door closed, plain front for the magnets)
+4. `objects/fridge-closed.png` (the fridge, door closed, two or three magnets on it)
 5. `objects/table.png`, `objects/camera.png`, `objects/vase-empty.png`, `objects/candle.png`
 6. `objects/notebook.png`
 7. `objects/fox-asleep.png`, `objects/fox-sitting.png`, `objects/fox-walking-1.png`, `objects/fox-walking-2.png` (same size, same feet position)
 8. `objects/flowers/{1..6}.png` — six single stems, different heights and muted colours
 9. `sky/day.png`, `sky/night.png` — the window's sky, night with a faint aurora
+10. `room/string.png` — the postcard string with its two pegs, no cards, transparent (spans the room at 2880 wide); and `objects/peg.png`, one small wooden peg
+
+Camera note: the room is viewed from the entrance at a 20° top-down angle; keep that angle in every object so the layered parallax reads correctly. Leave generous transparent margins around the wall and floor layers (they move up to 60px).
 
 ## B. Places (one set per place; 14 places)
 
 For each place, from 2–4 of Chimin's photos of it:
-1. `places/{slug}/magnet.png` — 240×240, the fridge magnet: the place's most iconic subject as a small collage badge with a torn edge.
-2. `places/{slug}/postcard-front.png` — 1280×840, the collage of the place with a typewriter caption (the place name, lower left).
+1. `places/{slug}/magnet.png` — optional now (the fridge is furniture); keep for later.
+2. `places/{slug}/postcard-front.png` — 1280×840, the collage of the place with a typewriter caption (the place name, lower left). This is what hangs on the string, so it must read at 96px wide too: one clear subject, calm background.
 3. `places/{slug}/pieces/{1..8}.png` — transparent collage pieces for the postcard back: torn paper shapes cut from the photos (2–3), washi strips (2), one stamp-style badge, one small caption strip, one doodle mark. Each ≤ 480px on its long side.
 
 Slugs: budapest, cinque-terre, split, mostar, dubrovnik, malta, mallorca, venice, verona, lake-garda, como, slovenia, singapore, chicago.

@@ -5,7 +5,7 @@
 
 html { background: var(--bg); color: var(--ink); font-family: var(--font-sans); font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
 body { margin: 0; min-height: 100dvh; overflow: clip; }
-html, body, .room, .block, .wall-brick, .floor-block, .rug-block { transition: background-color 500ms ease, color 500ms ease, border-color 500ms ease; }
+html, body, .room, .block, .floor-block, .rug-block, .wall-block { transition: background-color 500ms ease, color 500ms ease, border-color 500ms ease; }
 a { color: inherit; text-decoration: none; }
 button { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
@@ -29,15 +29,15 @@ button { font: inherit; color: inherit; }
 .room__world { position: absolute; left: 50%; top: 50%; width: 1440px; height: 900px; transform-origin: center; }
 .room__world--fish, .room__world--fish * { cursor: none !important; }
 .room--dim .room__world { filter: brightness(0.86); transition: filter 300ms ease; }
-.layer { position: absolute; inset: 0; will-change: transform; }
-.layer { pointer-events: none; }
-.layer--wall .window, .layer--objects > * { pointer-events: auto; }
+.layer { position: absolute; inset: 0; will-change: transform; transform-origin: 50% 50%; pointer-events: none; }
+.layer--wall .window, .layer--objects > *, .layer--near > .ro { pointer-events: auto; }
+.entrance { position: absolute; inset: 0; pointer-events: none; }
 .layer__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 
 /* blockout: wall */
-.wall-block { position: absolute; left: -40px; right: -40px; top: -20px; height: 560px; overflow: hidden; border-radius: 0 0 50% 50% / 0 0 24% 24%; background: var(--ice-2); }
+.wall-block { position: absolute; left: -120px; right: -120px; top: -60px; height: 600px; overflow: hidden; border-radius: 0 0 50% 50% / 0 0 24% 24%; background: var(--ice-2); }
 .wall-row { display: flex; gap: 6px; margin-bottom: 6px; }
-.wall-brick { flex: none; width: 92px; height: 66px; border-radius: 10px; background: var(--ice); opacity: 0.9; }
+.wall-brick { flex: none; width: 92px; height: 66px; border-radius: 10px; background: var(--ice); opacity: 0.75; }
 .window { position: absolute; left: 50%; top: 96px; width: 210px; height: 210px; translate: -50% 0; padding: 0; border: 10px solid var(--ice); border-radius: 50%; background: var(--sky); cursor: pointer; overflow: hidden; }
 .window__sky { width: 100%; height: 100%; object-fit: cover; }
 .window__block { position: absolute; inset: 0; background: var(--sky); }
@@ -46,7 +46,7 @@ button { font: inherit; color: inherit; }
 .window .ro__label { top: 100%; }
 
 /* blockout: floor */
-.floor-block { position: absolute; left: -60px; right: -60px; top: 520px; bottom: -40px; background: var(--room); border-radius: 50% 50% 0 0 / 30% 30% 0 0; }
+.floor-block { position: absolute; left: -160px; right: -160px; top: 520px; bottom: -120px; background: var(--room); border-radius: 50% 50% 0 0 / 30% 30% 0 0; }
 .rug-block { position: absolute; left: 470px; top: 640px; width: 520px; height: 210px; border-radius: 50%; background: color-mix(in srgb, var(--ink) 8%, var(--room)); }
 
 /* blockout primitives */
@@ -76,18 +76,33 @@ button { font: inherit; color: inherit; }
 .candle-flame.is-lit { opacity: 1; animation: flicker 1.6s ease-in-out infinite alternate; box-shadow: 0 0 40px 18px rgba(240, 192, 122, 0.35); }
 @keyframes flicker { from { transform: scale(1); opacity: .92 } to { transform: scale(1.06) translateY(-1px); opacity: 1 } }
 
-/* fridge */
+/* fridge (decor for now) */
 .obj--fridge { left: 150px; top: 330px; }
-.fridge { position: relative; width: 190px; height: 330px; }
-.fridge__body img { display: block; width: 100%; height: auto; }
-.fridge__block { width: 190px; height: 330px; border-radius: 14px 14px 10px 10px; }
+.fridge__block { position: relative; width: 190px; height: 330px; border-radius: 14px 14px 10px 10px; }
 .fridge__handle { position: absolute; right: 16px; top: 120px; width: 6px; height: 70px; border-radius: 3px; background: color-mix(in srgb, var(--ink) 22%, var(--bg)); }
-.fridge__magnets { position: absolute; left: 14px; right: 26px; top: 22px; margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 4px; }
-.magnet { display: grid; justify-items: center; gap: 3px; width: 100%; padding: 3px 0; border: 0; background: none; cursor: pointer; color: var(--ink); border-radius: 6px; transition: transform 200ms cubic-bezier(.2,.8,.2,1); }
-.magnet:hover, .magnet:focus-visible { transform: translateY(-3px); }
-.magnet img { width: 38px; height: 38px; object-fit: contain; filter: drop-shadow(0 2px 3px rgba(30,22,10,.18)); }
-.magnet__block { display: block; width: 32px; height: 32px; border-radius: 8px 8px 8px 3px; background: color-mix(in srgb, var(--ink) 22%, var(--bg)); box-shadow: 0 2px 3px rgba(30,22,10,.14); }
-.magnet__name { font-size: 8.5px; letter-spacing: 0.03em; text-align: center; line-height: 1.1; color: var(--ink-2); }
+.fridge__magnet { position: absolute; width: 26px; height: 26px; border-radius: 8px 8px 8px 3px; background: color-mix(in srgb, var(--ink) 28%, var(--bg)); }
+
+/* postcard string */
+.layer--string { pointer-events: none; }
+.pstring { position: absolute; inset: 0; perspective: 1400px; }
+.pstring__line { position: absolute; left: 0; top: 0; width: 1440px; height: 300px; }
+.pcard { position: absolute; width: 96px; height: 64px; margin: 0; padding: 0; border: 0; background: none; cursor: pointer; pointer-events: auto; transform-style: preserve-3d;
+  transform: translate(-50%, 0) rotateY(var(--tilt)) rotate(-1.5deg); transform-origin: 50% 0; animation: sway 6s ease-in-out var(--delay) infinite alternate; transition: transform 300ms cubic-bezier(.2,.8,.2,1), filter 300ms ease; }
+@keyframes sway { from { rotate: -1.6deg } to { rotate: 1.6deg } }
+.pcard:hover, .pcard:focus-visible { transform: translate(-50%, 6px) rotateY(calc(var(--tilt) * 0.3)) rotateX(-10deg) scale(1.12); z-index: 5; filter: drop-shadow(0 16px 18px rgba(30,22,10,.22)); animation-play-state: paused; }
+.pcard.is-active { opacity: 0; }
+.pcard__peg { position: absolute; left: 50%; top: -6px; width: 6px; height: 16px; translate: -50% 0; background: color-mix(in srgb, var(--ink) 40%, var(--bg)); border-radius: 2px; }
+.pcard__face { display: block; width: 100%; height: 100%; background: #fdfaf3; border: 1px solid #d8d0c2; box-shadow: 0 6px 10px rgba(30,22,10,.14); overflow: hidden; position: relative; }
+.pcard__face img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pcard__block { position: absolute; inset: 0; background: repeating-linear-gradient(45deg, #ece5d8 0 8px, #e6dfd1 8px 16px); }
+.pcard__name { position: absolute; left: 6px; bottom: 4px; font-size: 8.5px; color: #5a5147; background: #fdfaf3; padding: 1px 4px; }
+@media (prefers-reduced-motion: reduce) { .pcard { animation: none; } }
+
+/* the pulled-down postcard */
+.pulled { position: fixed; left: 50%; top: 50%; z-index: 60; width: min(760px, calc(100vw - 32px)); translate: -50% -50%; background: var(--sheet); color: #2a2622; border: 1px solid #2a2622; border-radius: 12px; padding: 18px 20px 22px; box-shadow: 0 40px 80px rgba(30,22,10,.28); max-height: 88vh; overflow: auto; }
+.pulled__close { position: absolute; right: 16px; top: 16px; width: 14px; height: 14px; border: 1.5px solid #2a2622; border-radius: 50%; background: var(--accent); cursor: pointer; z-index: 2; }
+.pulled__close:hover { background: #2a2622; }
+.scrim-btn { position: fixed; inset: 0; z-index: 55; border: 0; background: rgba(30,22,10,.12); cursor: default; }
 
 /* vase */
 .obj--vase { left: 700px; top: 470px; }
@@ -121,7 +136,7 @@ button { font: inherit; color: inherit; }
 .room__world--fish .fish { opacity: 1; }
 
 /* entrance */
-.entrance-block { position: absolute; inset: -60px; border: 90px solid var(--bg); border-radius: 50% 50% 0 0 / 40% 40% 0 0; box-sizing: border-box; pointer-events: none; opacity: 0.9; }
+.entrance-block { position: absolute; inset: -140px; border: 170px solid var(--bg); border-radius: 50% 50% 0 0 / 42% 42% 0 0; box-sizing: border-box; pointer-events: none; opacity: 0.96; }
 
 /* ---------- sheets ---------- */
 .sheet-scrim { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 24px; background: rgba(30, 22, 10, 0.18); }
