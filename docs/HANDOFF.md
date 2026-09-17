@@ -1,4 +1,4 @@
-# Handoff notes — Chimin Liu, personal site (v5.5, "the igloo")
+# Handoff notes — Chimin Liu, personal site (v6, "the paper diorama")
 
 Updated 2026-09-17 at the end of the second session. Read this, then `docs/PRD.md`,
 `docs/DESIGN.md` (v5) and `docs/ART-BRIEF.md`, before writing any code.
@@ -31,7 +31,11 @@ Updated 2026-09-17 at the end of the second session. Read this, then `docs/PRD.m
    the window should be interactive, if you close it the light goes out" → translucent ice blocks outside
    (MeshPhysicalMaterial transmission, glow inside at night), crystal-gradient blocks inside (render.py),
    three modes (day / evening / night, by clock first), the light layers in the room, the window shutter.
-   Chimin has not yet judged this build.
+   Chimin judged it: "the figures are basic and odd … too detailed and too 3D … not like the first image".
+10. Chimin wants 2D art in 3D space, watercolour that runs in and dissolves out, the cursor shifting the
+    snow, the fox pushing through it; asked whether to go textured 3D or flat textured patches in 2.5D.
+    Recommended the flat patches (the paper diorama); Chimin: "that's what i want, make the design first".
+    Built: `src/snow/Diorama.tsx` (React Three Fiber) + `src/snow/paint.ts` + `tools/paper.py`.
 
 **Nothing is deployed.** The workflow runs only on pushes to `main`.
 
@@ -47,7 +51,9 @@ tools/collage.py             the postcard fronts, pieces and stickers (collage);
 tools/optimize-art.py        PNG/JPG under public/art → WebP q82, deletes sources
 src/room/art.ts              every image slot, by name
 src/room/useArt.tsx          useArt(src) probes whether a file exists; <Art> renders it or the blockout placeholder
-src/snow/Snowfield.tsx       outside (three.js): letter-snow ground, sparkles, block igloo, fox chase, Chimin in the snow, camera descent
+src/snow/Diorama.tsx         outside (R3F): the paper diorama. Trail render target, snow shader, Piece (paint material), fox, Chimin, igloo plates, object test, post
+src/snow/paint.ts            the paint material: ink line → watercolour fill with a wet edge (uReveal), dissolve into drifting pigment (uDissolve)
+tools/paper.py               stand-in paper pieces: stylise(cut-out) → few tones + fibre + torn edge + rim; drawn igloo plates, drifts, Chimin, fox side view
 src/room/Room.tsx            world scaling, five depth layers (data-depth 0..1), camera dolly on open, the pulled postcard, sheets, assemble-on-arrival
 src/room/camera.ts           the 2.5D camera: pointer parallax + dolly, applied per layer by depth on gsap.ticker
 src/room/PostcardString.tsx  the string and its fourteen cards (positions from stringPoint)
@@ -82,8 +88,19 @@ src/styles/base.css          all room, blockout and sheet styles
 - **Fox**: zone `{x:120,y:560,w:520,h:300}` in world units, home `{330,700}`; the world gets
   `.room__world--fish` (cursor: none) and a fish element follows the pointer.
 - **Sheets**: one open at a time (`open` state in Room); `role="dialog"`, Escape closes.
-- **Outside** (`Snowfield.tsx`): `Room` reads `sessionStorage 'arrived'`; if unset it renders the lazy
-  `<Snowfield>` (z-index 58, under the sheets) over a hidden world. Ground = a 2048 canvas of ~30k letters
+- **Outside** (`Diorama.tsx`, lazy, ~270KB gzip with R3F + drei + postprocessing): `Room` reads
+  `sessionStorage 'arrived'`; if unset it renders it (z-index 58, under the sheets) over a hidden world.
+  `useTrail` ping-pongs two 512² render targets: each frame `h = prev*decay` max'd with soft stamps
+  (cursor r.7 s.38, fox r.95 s.7, Chimin r2.7 s.45 fixed) in ground uv (x/G+.5, .5-z/G). The snow shader
+  reads the trail for depth (darker trough, lit lip, letters pushed sideways by the slope) and lights the
+  letters by mode (uTint/uLight, aurora bands at night). `Piece` = plane + `makePaintMaterial(texture)`;
+  `uReveal` tweens 0→1 on mount (staggered `delay`), `control` ref exposes reveal/dissolve for the object
+  test (the camera on the table: click → dissolve → paints back). The fox is a Piece in a group that
+  faces the camera, y = -0.55 (+bob) so its lower part is under the snow plane, flipped by heading, with
+  a 90-particle spray. Chimin is a Piece lying flat. Igloo = three Pieces leaning back (-0.42/-0.3/-0.18
+  rad) over a blob shadow; `enterRef` runs the camera between them into the door. Post = Bloom + Noise
+  + Vignette. Modes ease `LOOKS` (tint, light, sky, horizon, sparkle, aurora, door glow).
+- The old three.js Snowfield (v5.4–5.5) is in git history if needed. Ground = a 2048 canvas of ~30k letters
   as a repeating texture (5.5×) + one non-repeating drift overlay; sparkles = `Points` with a twinkle
   shader (additive); igloo = one `InstancedMesh` of boxes on a sphere + tunnel, a joint sphere, a dark
   mouth, a blob shadow, `scale.y .86`; fox = capsules/spheres, `stepFox` moves it toward the cursor's
@@ -123,10 +140,11 @@ Console: clean (art exists for every slot now). The verify scripts lived in the 
    and light on; Chimin generates the real art per the brief and drops files in by name. Known weak
    stand-ins (room): the sleeping fox (reads as a curled shape, not quite a fox), the loose flower stems (thin),
    the day sky's clouds.
-1b. Outside is a first cut: the fox and Chimin are primitive figures (fine as a sketch; a modelled fox and
-   a figure from Tripo/Meshy or Blender would replace them as GLB files); the letters are one repeating
-   tile (seams are hidden by the drifts but visible if you look); no night version of the snowfield yet;
-   touch: the fox follows the finger but there is no hover hint.
+1b. The paper pieces are stand-ins from `tools/paper.py` (posterised CC0 cut-outs, drawn shapes). Chimin's
+   generated art replaces them by name in `public/art/paper/`. The fox side view and Chimin are drawn
+   shapes: charming, not finished. Only the outside is in the diorama language; the room inside is still
+   the v5 painted-volume build and must be rebuilt in the same language (a table close up, few objects).
+1c. Headless screenshots of the diorama are unreliable (frames captured mid-render); judge it in a browser.
 2. Chimin's authored default postcard arrangements (replace `defaultPieces`) once pieces exist.
 3. Work has no object in the room (it's listed in About). Decide: a laptop on the table or a shelf. The fridge is furniture now; it could carry Work.
 3b. The 3D hero object (vase or bag) is planned for M2b with lazy three.js; not added yet.

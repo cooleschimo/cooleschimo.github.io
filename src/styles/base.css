@@ -252,7 +252,7 @@ button { font: inherit; color: inherit; }
 .snow__canvas { position: absolute; inset: 0; } .snow__canvas canvas { display: block; width: 100% !important; height: 100% !important; }
 .snow--hover-igloo .snow__canvas, .snow--hover-chimin .snow__canvas { cursor: pointer; }
 .snow--entering .snow__canvas { cursor: default; }
-.snow__name { position: absolute; left: 50%; top: 8vh; margin: 0; translate: -50% 0; font-size: clamp(64px, 12vw, 160px); letter-spacing: -0.02em; color: #fbfaff; text-shadow: 0 4px 40px rgba(110, 120, 210, 0.55); pointer-events: none; transition: opacity 900ms ease; }
+.snow__name { position: absolute; left: 50%; top: 6vh; margin: 0; translate: -50% 0; font-size: clamp(56px, 9vw, 128px); letter-spacing: -0.02em; color: #fbfaff; text-shadow: 0 4px 40px rgba(110, 120, 210, 0.55); pointer-events: none; transition: opacity 900ms ease; }
 .snow--entering .snow__name, .snow--entering .snow__go, .snow--entering .snow__hint { opacity: 0; }
 .snow__hint { position: absolute; left: 24px; bottom: 22px; margin: 0; color: rgba(255,255,255,.82); pointer-events: none; }
 .snow__go { position: absolute; right: 22px; bottom: 18px; padding: 8px 12px; border: 1px solid rgba(255,255,255,.7); border-radius: 999px; background: rgba(255,255,255,.14); color: #fff; cursor: pointer; }

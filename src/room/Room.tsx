@@ -17,7 +17,7 @@ import places from '../../content/places.json'
 
 type Open = { kind: 'about' } | { kind: 'photos' } | { kind: 'writing' } | { kind: 'place'; slug: string; i: number } | null
 
-const Snowfield = lazy(() => import('../snow/Snowfield').then(m => ({ default: m.Snowfield })))
+const Snowfield = lazy(() => import('../snow/Diorama').then(m => ({ default: m.Diorama })))
 
 /** The igloo room: a 2.5D camera over four layers, a postcard string, six things to touch. Generated collage stand-ins fill every art slot until Chimin's art replaces them by name. */
 export function Room() {
