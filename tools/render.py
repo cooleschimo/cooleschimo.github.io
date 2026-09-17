@@ -19,7 +19,7 @@ random.seed(11); np.random.seed(11)
 
 # ------------------------------------------------------------------ palette (paper, ice, wood, stone)
 CREAM = (240, 234, 222); CREAM_D = (214, 204, 190)
-ICE = (226, 234, 238); ICE_2 = (214, 226, 232); ICE_JOINT = (178, 198, 210)
+ICE = (236, 246, 250); ICE_2 = (206, 234, 242); ICE_DEEP = (166, 216, 232); ICE_JOINT = (128, 186, 208)
 WOOD = (176, 138, 98); WOOD_D = (140, 106, 72)
 STONE = (198, 186, 166); GLAZE = (208, 196, 178)
 INK = (78, 62, 50); DARK = (84, 76, 68); SILVER = (196, 194, 188)
@@ -205,6 +205,8 @@ def shade(col, nrm, spc, mask, cam, key=0.55, amb=0.52, warm=True):
     view = np.array([0, 0.35, 1.0]); view /= np.linalg.norm(view); hv = LIGHT + view; hv /= np.linalg.norm(hv)
     sp = np.clip(nrm @ hv, 0, 1) ** 28 * spc
     out += sp[..., None] * 0.55
+    rim = np.clip(1.0 - np.abs(nrm[..., 2]), 0, 1) ** 3.0 * 0.18  # cool rim where the surface turns away
+    out += rim[..., None] * np.array([0.75, 0.9, 1.0])
     out[~mask] = 0
     return np.clip(out, 0, 1)
 
@@ -233,10 +235,10 @@ def ink_lines(depth, nrm, mask, strength=0.5, thick=1.0):
     crease = np.clip((nx + ny) * 0.9 - 0.25, 0, 1)
     sil = mask.astype(float) - np.asarray(Image.fromarray((mask * 255).astype(np.uint8)).filter(ImageFilter.MinFilter(3))).astype(float) / 255
     line = np.clip(dep + crease + sil, 0, 1) * strength
-    img = Image.fromarray((line * 255).astype(np.uint8)).filter(ImageFilter.MaxFilter(3)).filter(ImageFilter.GaussianBlur(thick * 0.9))
+    img = Image.fromarray((line * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(thick * 0.7))
     return np.asarray(img).astype(float) / 255
 
-def paint(col, nrm, depth, mask, shadow=None, ink=0.55, edge=0.84, wash=1.6, grain_amt=8, soft=0.8):
+def paint(col, nrm, depth, mask, shadow=None, ink=0.5, edge=0.84, wash=0.9, grain_amt=6, soft=0.6):
     """Turn a shaded render into a painted sprite: soft wash inside, darker edges, ink line, grain, shadow."""
     H, W = mask.shape
     rgb = to_rgba(col, mask)
@@ -417,7 +419,7 @@ ROOM_R = 3.2
 def room_camera(W=1440, H=900):
     return Camera((0.0, 1.35, 1.75), (0.0, 0.95, -1.6), W, H, fov=58)
 
-def dome_blocks(radius, inner=True, window=None, courses=13, gap=0.035, jitter=0.02, base_y=0.0, top_frac=1.0, colours=(ICE, ICE_2)):
+def dome_blocks(radius, inner=True, window=None, courses=13, gap=0.035, jitter=0.02, base_y=0.0, top_frac=1.0, colours=(ICE, ICE_2), gradient=False):
     """Courses of ice blocks on a sphere of the given radius (centre at origin, floor at y=0)."""
     m = Mesh()
     lat0 = 0.0; lat1 = math.pi / 2 * top_frac
@@ -431,7 +433,11 @@ def dome_blocks(radius, inner=True, window=None, courses=13, gap=0.035, jitter=0
             ga = gap / max(r_mid, 0.3); gl = gap / radius
             tt0, tt1 = t0 + ga / 2, t1 - ga / 2; aa0, aa1 = a0 + gl / 2, a1 - gl / 2
             rr = radius + (random.uniform(-jitter, jitter) if inner else random.uniform(-jitter, jitter))
-            k = random.uniform(0.965, 1.02); c = tuple(min(255, int(v * k)) for v in random.choice(colours))
+            k = random.uniform(0.965, 1.02)
+            if gradient:  # deeper cyan low down, whiter toward the top, like a block of ice lit from above
+                f = ci / max(1, courses - 1); base = tuple(ICE_DEEP[j] * (1 - f) + ICE[j] * f for j in range(3))
+                c = tuple(min(255, int(v * k)) for v in base)
+            else: c = tuple(min(255, int(v * k)) for v in random.choice(colours))
             def P(t, a): return (rr * math.cos(a) * math.sin(t), base_y + rr * math.sin(a), rr * math.cos(a) * math.cos(t))
             quad = [P(tt0, aa0), P(tt1, aa0), P(tt1, aa1), P(tt0, aa1)]
             if window is not None:
@@ -441,9 +447,12 @@ def dome_blocks(radius, inner=True, window=None, courses=13, gap=0.035, jitter=0
             # bevel: a slightly smaller, brighter face in the centre to catch the light
             centre = np.mean(quad, axis=0); nvec = centre - np.array([0, base_y, 0]); nvec /= np.linalg.norm(nvec)
             if inner: nvec = -nvec
-            m.add(quad, [tuple(nvec)] * 4, [(0, 1, 2), (0, 2, 3)] if not inner else [(0, 2, 1), (0, 3, 2)], c, 0.08)
-            inner_q = [tuple(np.array(q) * 0.0 + centre + (np.array(q) - centre) * 0.72 + (nvec * 0.012)) for q in quad]
-            m.add(inner_q, [tuple(nvec)] * 4, [(0, 1, 2), (0, 2, 3)] if not inner else [(0, 2, 1), (0, 3, 2)], tuple(min(255, int(v * 1.03)) for v in c), 0.12)
+            wind = [(0, 1, 2), (0, 2, 3)] if not inner else [(0, 2, 1), (0, 3, 2)]
+            m.add(quad, [tuple(nvec)] * 4, wind, c, 0.32)
+            inner_q = [tuple(centre + (np.array(q) - centre) * 0.78 + (nvec * 0.012)) for q in quad]
+            m.add(inner_q, [tuple(nvec)] * 4, wind, tuple(min(255, int(v * 1.04)) for v in c), 0.45)
+            core_q = [tuple(centre + (np.array(q) - centre) * 0.45 + (nvec * 0.02)) for q in quad]  # light caught inside the ice
+            m.add(core_q, [tuple(nvec)] * 4, wind, tuple(min(255, int(v * 1.08 + 8)) for v in c), 0.6)
     return m
 
 def render_env(mesh, cam, key=0.55, amb=0.5, two_sided=True):
@@ -461,7 +470,7 @@ def wall():
     theta = 0.0
     for _ in range(1):
         m = Mesh()
-        m.merge(dome_blocks(ROOM_R, inner=True, window=None, courses=14, jitter=0.02))
+        m.merge(dome_blocks(ROOM_R, inner=True, window=None, courses=14, jitter=0.02, gradient=True))
         RJ = ROOM_R + 0.06
         joint = lathe([(RJ * math.cos(a) + 1e-3, RJ * math.sin(a)) for a in np.linspace(0, math.pi / 2, 20)], ICE_JOINT, 0.0, 48, cap=False)
         # cut the hole in the joint sphere too: remove faces whose centre is inside the window
@@ -478,8 +487,8 @@ def wall():
     yy, xx = np.mgrid[0:H, 0:W]; dist = np.hypot(xx - 720, yy - 201) / 900
     glow = np.clip(1.12 - dist * 0.45, 0.82, 1.12)
     col = np.clip(col * glow[..., None] * np.array([0.99, 1.0, 1.02]), 0, 1)
-    col = col * 0.86 + np.array([244, 239, 230]) / 255 * 0.14  # keep the ice within the paper
-    img = paint(col, nrm, depth, mask, None, ink=0.18, edge=0.9, wash=1.6, grain_amt=7, soft=0.6)
+    col = col * 0.93 + np.array([246, 250, 252]) / 255 * 0.07
+    img = paint(col, nrm, depth, mask, None, ink=0.3, edge=0.8, wash=0.7, grain_amt=4, soft=0.4)
     # the round window: cut per pixel where the .window element sits (centre 720,201; radius 100 + a soft edge)
     r, g, b, a = img.split(); A = np.asarray(a).astype(float)
     cut = np.clip((np.hypot(xx - 720, yy - 201) - 99) / 2.5, 0, 1); a = Image.fromarray((A * cut).astype(np.uint8))
@@ -525,7 +534,7 @@ def entrance():
         for j in range(k):
             a = i * (k + 1) + j; b = (i + 1) * (k + 1) + j
             faces += [(a, b, a + 1), (b, b + 1, a + 1)]
-    m.add(verts, norms, faces, ICE_2, 0.05)
+    m.add(verts, norms, faces, ICE_2, 0.3)
     for sx in (-1, 1): m.merge(box(2 * r, cy + 0.4, 2 * r, ICE_2, 0.05, cx=sx * R, cy=-0.4, cz=cz))
     col, nrm, depth, spc, mask = render_env(m, cam, key=0.2, amb=0.62, two_sided=True)
     col *= np.array([0.92, 0.95, 1.0])
@@ -588,7 +597,9 @@ def sky(night):
     """Painted sky for the window: a soft gradient and a few loose washes of cloud; night gets stars and an aurora."""
     S = 600
     yy, xx = np.mgrid[0:S, 0:S] / S
-    if not night:
+    if night == 'evening':
+        top = np.array([176, 150, 196]) / 255; bot = np.array([250, 196, 150]) / 255
+    elif not night:
         top = np.array([176, 198, 214]) / 255; bot = np.array([222, 230, 232]) / 255
     else:
         top = np.array([22, 30, 46]) / 255; bot = np.array([44, 56, 78]) / 255
@@ -597,10 +608,14 @@ def sky(night):
     # clouds: thresholded blurred noise, brushed horizontally
     n = Image.effect_noise((S // 40, S // 90), 90).resize((S, S), Image.BICUBIC).filter(ImageFilter.GaussianBlur(10))
     c = np.asarray(n).astype(float) / 255; c = np.clip((c - 0.50) * 3.2, 0, 1) * np.clip(1.25 - yy * 1.5, 0, 1)
-    cloud = Image.fromarray((c * (200 if not night else 60)).astype(np.uint8))
-    layer = Image.new('RGBA', (S, S), (246, 242, 236, 0) if not night else (90, 100, 120, 0)); layer.putalpha(cloud)
+    cloud = Image.fromarray((c * (200 if night != True else 60)).astype(np.uint8))
+    layer = Image.new('RGBA', (S, S), (246, 242, 236, 0) if not night else (255, 214, 190, 0) if night == 'evening' else (90, 100, 120, 0)); layer.putalpha(cloud)
     img = Image.alpha_composite(img, layer)
-    if night:
+    if night == 'evening':
+        d = ImageDraw.Draw(img, 'RGBA')
+        sun = Image.new('RGBA', (S, S), (0, 0, 0, 0)); sd = ImageDraw.Draw(sun); sd.ellipse((S * 0.32, S * 0.58, S * 0.68, S * 0.94), fill=(255, 228, 190, 200))
+        img = Image.alpha_composite(img, sun.filter(ImageFilter.GaussianBlur(40)))
+    if night is True:
         d = ImageDraw.Draw(img, 'RGBA')
         for _ in range(60):
             x, y = random.uniform(0, S), random.uniform(0, S * 0.7); r = random.uniform(0.6, 1.8)
@@ -632,4 +647,4 @@ if __name__ == '__main__':
     if 'room' in which or 'entrance' in which: save(entrance(), 'room/entrance.png')
     if 'exterior' in which: save(exterior(), 'room/exterior.png')  # unused since the outside went 3D (Snowfield.tsx)
     if 'room' in which or 'sky' in which:
-        save(string_line(), 'room/string.png'); save(sky(False), 'sky/day.png'); save(sky(True), 'sky/night.png')
+        save(string_line(), 'room/string.png'); save(sky(False), 'sky/day.png'); save(sky('evening'), 'sky/evening.png'); save(sky(True), 'sky/night.png')

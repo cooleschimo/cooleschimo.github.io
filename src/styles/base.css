@@ -39,9 +39,44 @@ button { font: inherit; color: inherit; }
 .layer { position: absolute; inset: 0; will-change: transform; transform-origin: 50% 50%; pointer-events: none; }
 .layer--wall .window, .layer--objects > *, .layer--near > .ro { pointer-events: auto; }
 .entrance { position: absolute; inset: 0; pointer-events: none; }
-.room__night { position: absolute; inset: 0; z-index: 20; pointer-events: none; opacity: 0; mix-blend-mode: multiply; transition: opacity 700ms ease;
-  background: radial-gradient(60% 46% at 58% 66%, #f4d9a8 0%, #c9b8a6 32%, #8b93a8 62%, #5f6a86 100%); }
-:root[data-mode="night"] .room__night { opacity: 0.82; }
+/* ---------- light: what comes in through the window, by time of day; the window can be shut ---------- */
+.light { position: absolute; inset: 0; z-index: 20; pointer-events: none; }
+.light > * { position: absolute; transition: opacity 900ms ease; }
+.light { --beam-a: rgba(255,250,236,.42); --beam-b: rgba(255,250,236,.14); }
+.light__beam { left: 300px; top: 180px; width: 840px; height: 700px; mix-blend-mode: screen; opacity: 0; overflow: visible; }
+.light__pool { left: 330px; top: 560px; width: 780px; height: 360px; border-radius: 50%; mix-blend-mode: screen; opacity: 0; filter: blur(18px);
+  background: radial-gradient(closest-side, rgba(255,246,224,.4), rgba(255,246,224,0)); }
+.light__tint { inset: 0; mix-blend-mode: multiply; opacity: 0; }
+.light__wash { inset: 0; mix-blend-mode: screen; opacity: 0; background: radial-gradient(60% 50% at 50% 25%, rgba(214,236,255,.18), rgba(236,222,255,.06) 55%, rgba(236,222,255,0) 100%); }
+.light__lamp { left: 640px; top: 430px; width: 440px; height: 320px; border-radius: 50%; mix-blend-mode: screen; opacity: 0; filter: blur(10px);
+  background: radial-gradient(closest-side, rgba(255,196,120,.55), rgba(255,196,120,0)); }
+/* day: dreamy pastel, light in from the window */
+:root[data-mode="day"] .light__beam { opacity: 1; }
+:root[data-mode="day"] .light__pool { opacity: 1; }
+:root[data-mode="day"] .light__wash { opacity: 1; }
+:root[data-mode="day"] .light__tint { opacity: .14; background: radial-gradient(70% 60% at 50% 35%, #ffffff 0%, #d9dcf0 100%); }
+/* evening: sunset through the window, warm near it, lilac far from it */
+:root[data-mode="evening"] .light { --beam-a: rgba(255,178,120,.5); --beam-b: rgba(255,150,120,.18); }
+:root[data-mode="evening"] .light__beam { opacity: 1; }
+:root[data-mode="evening"] .light__pool { opacity: 1; background: radial-gradient(closest-side, rgba(255,190,140,.45), rgba(255,190,140,0)); }
+:root[data-mode="evening"] .light__tint { opacity: .46; background: radial-gradient(62% 56% at 50% 28%, #ffe0c0 0%, #f1c3ad 42%, #b5a3c9 100%); }
+:root[data-mode="evening"] .light__lamp { opacity: .6; }
+/* night: aurora through the window, the candle as the lamp */
+:root[data-mode="night"] .light { --beam-a: rgba(120,220,180,.36); --beam-b: rgba(150,140,220,.16); }
+:root[data-mode="night"] .light__beam { opacity: .3; animation: aurora-shift 9s ease-in-out infinite alternate; }
+:root[data-mode="night"] .light__pool { opacity: .3; background: radial-gradient(closest-side, rgba(120,220,180,.28), rgba(150,140,220,.14) 60%, rgba(150,140,220,0)); }
+:root[data-mode="night"] .light__tint { opacity: .86; background: radial-gradient(40% 30% at 58% 66%, #cdb48c 0%, #7f7d86 32%, #4a5784 62%, #2c355c 100%); }
+:root[data-mode="night"] .light__lamp { opacity: .5; width: 320px; height: 220px; left: 700px; top: 470px; filter: blur(16px); }
+@keyframes aurora-shift { from { filter: hue-rotate(0deg) brightness(1); transform: skewX(0deg); } to { filter: hue-rotate(-35deg) brightness(1.15); transform: skewX(-3deg); } }
+/* the window shut: the light from outside goes out, the room falls back on the paper and the lamp */
+.room--shut .light__beam, .room--shut .light__pool, .room--shut .light__wash { opacity: 0 !important; }
+:root[data-mode="day"] .room--shut .light__tint { opacity: .42; background: radial-gradient(70% 60% at 50% 40%, #ece9e2 0%, #bdbbc4 100%); }
+:root[data-mode="evening"] .room--shut .light__tint { opacity: .6; background: radial-gradient(60% 55% at 60% 60%, #f1d7bd 0%, #c9b3a8 45%, #8f86a0 100%); }
+:root[data-mode="night"] .room--shut .light__tint { opacity: .9; background: radial-gradient(52% 40% at 58% 66%, #f0d4a0 0%, #b9a690 30%, #5c6478 60%, #353c52 100%); }
+.window__shutter { position: absolute; inset: 0; background: linear-gradient(180deg, var(--ice) 0%, var(--ice-2) 100%); translate: 0 -102%; transition: translate 650ms cubic-bezier(.2,.8,.2,1); }
+.window__shutter::after { content: ''; position: absolute; left: 12%; right: 12%; top: 48%; height: 2px; background: color-mix(in srgb, var(--ink) 25%, transparent); border-radius: 2px; }
+.window.is-shut .window__shutter { translate: 0 0; }
+.window.is-shut { cursor: pointer; }
 .layer__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 
 /* blockout: wall */

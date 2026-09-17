@@ -5,7 +5,7 @@
  */
 export const ART = {
   wall: '/art/room/wall.webp', floor: '/art/room/floor.webp', entrance: '/art/room/entrance.webp',
-  skyDay: '/art/sky/day.webp', skyNight: '/art/sky/night.webp',
+  skyDay: '/art/sky/day.webp', skyEvening: '/art/sky/evening.webp', skyNight: '/art/sky/night.webp',
   fridgeClosed: '/art/objects/fridge-closed.webp',
   table: '/art/objects/table.webp', camera: '/art/objects/camera.webp', vase: '/art/objects/vase-empty.webp', candle: '/art/objects/candle.webp',
   notebook: '/art/objects/notebook.webp',

@@ -1,4 +1,4 @@
-# Handoff notes — Chimin Liu, personal site (v5.4, "the igloo")
+# Handoff notes — Chimin Liu, personal site (v5.5, "the igloo")
 
 Updated 2026-09-17 at the end of the second session. Read this, then `docs/PRD.md`,
 `docs/DESIGN.md` (v5) and `docs/ART-BRIEF.md`, before writing any code.
@@ -25,7 +25,13 @@ Updated 2026-09-17 at the end of the second session. Read this, then `docs/PRD.m
    postcards and stickers.
 8. Chimin sent a "snow made of letters" image: "imagine an igloo centre of this, 3d, and an arctic fox that
    runs around it wherever cursor is. i'll be the eskimo lying in the snow" → `src/snow/Snowfield.tsx`
-   (three.js, lazy): the outside. It replaces Arrival.tsx. Chimin has not yet judged this build.
+   (three.js, lazy): the outside. It replaces Arrival.tsx.
+9. "3D elements that clearly look painted but clean crisp crystal like … everything looks too plain and
+   3D-clay-model like … lighting at different times of the day should filter into the room differently …
+   the window should be interactive, if you close it the light goes out" → translucent ice blocks outside
+   (MeshPhysicalMaterial transmission, glow inside at night), crystal-gradient blocks inside (render.py),
+   three modes (day / evening / night, by clock first), the light layers in the room, the window shutter.
+   Chimin has not yet judged this build.
 
 **Nothing is deployed.** The workflow runs only on pushes to `main`.
 
@@ -51,7 +57,7 @@ src/room/Fox.tsx             zone-based chase: cursor becomes a fish, fox lerps 
 src/sheets/Sheet.tsx         modal card over the dimmed room; Escape closes; focus in and back
 src/sheets/Postcard.tsx      front (collage slot) / back (drag-and-drop pieces, seeded default, localStorage, Reset, arrow keys)
 src/sheets/contents.tsx      About (+Work list), Photos (contact sheet, CC0 stand-ins), Writing (essays + reader stickers)
-src/shell/ModeToggle.tsx     sun/moon (also triggered by clicking the window)
+src/shell/ModeToggle.tsx     cycles day → evening → night (src/lib/mode.ts: modeByClock, nextMode)
 src/styles/tokens.css        paper / ice / sky / ink tokens for day and night
 src/styles/base.css          all room, blockout and sheet styles
 ```
@@ -96,7 +102,13 @@ src/styles/base.css          all room, blockout and sheet styles
   (arrival shot) is the same dome from above with a tunnel. Slot sizing is the "real art in the slots"
   block at the end of `base.css`.
 - **Stand-in art, postcard register** (`tools/collage.py`): torn paper, washi, off-register sheets, grain.
-- **Night** is `.room__night`, one multiply-blend overlay (navy edges, warm pool at the candle).
+- **Light** is `.light` inside `.room__world`: `.light__tint` (multiply), `.light__wash` (screen), the beam
+  (an SVG polygon with an feGaussianBlur, gradient stops from `--beam-a/--beam-b`), `.light__pool` and
+  `.light__lamp` (screen radials). Everything is chosen per mode in CSS (`:root[data-mode] .light…`);
+  `.room--shut` (window shutter, `shut` state in Room) turns the beam, pool and wash off and swaps the tint.
+- **Outside by mode**: `LOOKS` in Snowfield.tsx (ground tint, sky, horizon/fog, lights, glow, sparkle gain,
+  aurora) eased every frame in `applyLook`; the igloo's `lamp` PointLight, joint emissive, door `mouthMat` and
+  `spill` plane are the night glow. `renderer.transmissionResolutionScale = 0.5` keeps the translucent blocks cheap.
 
 ## 4. Verified (headless Chromium against `vite preview`)
 
@@ -118,6 +130,8 @@ Console: clean (art exists for every slot now). The verify scripts lived in the 
 2. Chimin's authored default postcard arrangements (replace `defaultPieces`) once pieces exist.
 3. Work has no object in the room (it's listed in About). Decide: a laptop on the table or a shelf. The fridge is furniture now; it could carry Work.
 3b. The 3D hero object (vase or bag) is planned for M2b with lazy three.js; not added yet.
+3c. The evening/night light layers are CSS blends over the painted room; the objects themselves keep their
+   daylight shading. If that reads wrong, render per-mode object sprites (render.py takes a light colour) and swap by mode.
 4. Phones: the room scales to width and is small; a dedicated phone composition (objects stacked
    vertically) should follow once the art exists.
 5. Copy is placeholder everywhere it says so.

@@ -11,7 +11,7 @@
       // Apply the saved mode before first paint so the paper never flashes.
       try {
         var m = localStorage.getItem('mode');
-        if (m === 'day' || m === 'night') document.documentElement.dataset.mode = m;
+        if (m === 'day' || m === 'evening' || m === 'night') document.documentElement.dataset.mode = m;
       } catch (e) {}
     </script>
   </head>

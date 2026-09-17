@@ -114,9 +114,9 @@ Do NOT run `polish`, `normalize`, `quieter`, or any minimalist/high-end/brutalis
 - **Sheets**: rise over the dimmed room; Escape closes.
 - **Phones**: the room scales to width; sheets go full height; the fox chase is off.
 
-### 3.0 Day / night
-- Day: white ground, near-black ink. Night: near-black ground, off-white ink, lighter accent.
-- CSS custom properties on `:root[data-mode]`, persisted in `localStorage`, applied before first paint. Switching is a 350ms token crossfade.
+### 3.0 Day / evening / night
+- Three modes (`src/lib/mode.ts`): chosen by the visitor's clock on first visit (7–16 day, 16–20 evening, else night), then by the toggle top-right, persisted in `localStorage`, applied before first paint. Tokens per mode on `:root[data-mode]`.
+- Inside, the mode drives the light layers (DESIGN.md, "Light, by time of day"); outside it drives the sky, snow, sun and the igloo's glow. The window shutter (click the window) turns the outside light off inside.
 
 ### 3.1 Name and About
 - "Chimin Liu" and a role line as a typewriter label top-left; clicking opens About (short paragraph, links). Copy is placeholder until Chimin writes it.

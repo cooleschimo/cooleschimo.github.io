@@ -68,18 +68,30 @@ export function Room() {
   }, [])
 
   const night = mode === 'night'
+  const [shut, setShut] = useState(false)
+  const sky = mode === 'night' ? ART.skyNight : mode === 'evening' ? ART.skyEvening : ART.skyDay
   const pick = places.find((p) => open?.kind === 'place' && p.slug === open.slug)
   const pickPt = open?.kind === 'place' ? stringPoint(open.i, places.length) : null
 
   return (
-    <div ref={roomEl} className={`room ${open ? 'room--dim' : ''} ${zoom > 1.01 ? 'room--zoomed' : ''} ${arrived ? '' : 'room--arriving'}`}>
+    <div ref={roomEl} className={`room ${open ? 'room--dim' : ''} ${zoom > 1.01 ? 'room--zoomed' : ''} ${arrived ? '' : 'room--arriving'} ${shut ? 'room--shut' : ''}`}>
       {!arrived && (
         <Suspense fallback={<div className="snow" aria-hidden="true" />}>
           <Snowfield onEnter={() => setArrived(true)} onAbout={() => setOpen({ kind: 'about' })} />
         </Suspense>
       )}
       <div ref={world} className="room__world" style={{ transform: `translate(-50%, -50%) scale(${scale})` }}>
-        <div className="room__night" aria-hidden="true" />
+        <div className="light" aria-hidden="true">
+          <i className="light__tint" /><i className="light__wash" />
+          <svg className="light__beam" viewBox="0 0 840 700" preserveAspectRatio="none">
+            <defs>
+              <filter id="beam-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="26" /></filter>
+              <linearGradient id="beam-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style={{ stopColor: 'var(--beam-a)' }} /><stop offset="0.5" style={{ stopColor: 'var(--beam-b)' }} /><stop offset="1" style={{ stopColor: 'var(--beam-b)', stopOpacity: 0 }} /></linearGradient>
+            </defs>
+            <polygon points="330,0 510,0 840,700 0,700" fill="url(#beam-fill)" filter="url(#beam-soft)" />
+          </svg>
+          <i className="light__pool" /><i className="light__lamp" />
+        </div>
         {/* depth 0: ice wall and window */}
         <div className="layer layer--wall" data-depth="0">
           <Art src={ART.wall} className="layer__img" placeholder={
@@ -87,9 +99,10 @@ export function Room() {
               {Array.from({ length: 8 }, (_, r) => <div key={r} className="wall-row" style={{ marginLeft: r % 2 ? 46 : 0 }}>{Array.from({ length: 18 }, (_, c) => <i key={c} className="wall-brick" />)}</div>)}
             </div>
           } />
-          <button type="button" className="window" onClick={() => document.dispatchEvent(new CustomEvent('toggle-mode'))} aria-label={night ? 'Window: night. Switch to day' : 'Window: day. Switch to night'}>
-            <Art src={night ? ART.skyNight : ART.skyDay} className="window__sky" placeholder={<span className={`window__block ${night ? 'is-night' : ''}`}><i className="window__aurora" /></span>} />
-            <span className="ro__label label" aria-hidden="true">{night ? 'Night' : 'Day'}</span>
+          <button type="button" className={`window ${shut ? 'is-shut' : ''}`} onClick={() => setShut(v => !v)} aria-pressed={shut} aria-label={shut ? 'Window, shut. Open it' : 'Window, open. Shut it'}>
+            <Art src={sky} className="window__sky" placeholder={<span className={`window__block ${night ? 'is-night' : ''}`}><i className="window__aurora" /></span>} />
+            <i className="window__shutter" />
+            <span className="ro__label label" aria-hidden="true">{shut ? 'Open the window' : 'Shut the window'}</span>
           </button>
         </div>
         {/* depth 0.25: the postcard string, hanging in front of the wall */}

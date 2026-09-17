@@ -15,6 +15,21 @@
   --candle: transparent;
   color-scheme: light;
 }
+:root[data-mode='evening'] {
+  --bg: #f1e4d9;         /* warm paper, late sun */
+  --room: #eadcce;
+  --ice: #e9dde4;
+  --ice-2: #dccbd6;
+  --sky: #f3c8a6;
+  --ink: #2e2622;
+  --ink-2: #7d6f68;
+  --ink-3: #b3a49c;
+  --line: #e3d3c8;
+  --accent: #c7694a;
+  --sheet: #faf3ea;
+  --candle: #f0c07a;
+  color-scheme: light;
+}
 :root[data-mode='night'] {
   --bg: #171d26;
   --room: #1e2733;
