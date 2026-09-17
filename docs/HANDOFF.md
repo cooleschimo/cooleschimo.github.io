@@ -1,4 +1,4 @@
-# Handoff notes — Chimin Liu, personal site (v5.3, "the igloo")
+# Handoff notes — Chimin Liu, personal site (v5.4, "the igloo")
 
 Updated 2026-09-17 at the end of the second session. Read this, then `docs/PRD.md`,
 `docs/DESIGN.md` (v5) and `docs/ART-BRIEF.md`, before writing any code.
@@ -22,7 +22,10 @@ Updated 2026-09-17 at the end of the second session. Read this, then `docs/PRD.m
    for the postcards; I wanted objects that are 2D but look 3D" (with painted temple-on-sand frames as
    the reference) → `tools/render.py`: a small numpy rasteriser that builds each object and the igloo
    from simple 3D forms, shades them under one light, and paints over the result. Collage stays on the
-   postcards and stickers. Chimin has not yet judged this build.
+   postcards and stickers.
+8. Chimin sent a "snow made of letters" image: "imagine an igloo centre of this, 3d, and an arctic fox that
+   runs around it wherever cursor is. i'll be the eskimo lying in the snow" → `src/snow/Snowfield.tsx`
+   (three.js, lazy): the outside. It replaces Arrival.tsx. Chimin has not yet judged this build.
 
 **Nothing is deployed.** The workflow runs only on pushes to `main`.
 
@@ -38,7 +41,7 @@ tools/collage.py             the postcard fronts, pieces and stickers (collage);
 tools/optimize-art.py        PNG/JPG under public/art → WebP q82, deletes sources
 src/room/art.ts              every image slot, by name
 src/room/useArt.tsx          useArt(src) probes whether a file exists; <Art> renders it or the blockout placeholder
-src/room/Arrival.tsx         once-per-session opening: exterior shot + name, tilt/descend, push through, then Room assembles
+src/snow/Snowfield.tsx       outside (three.js): letter-snow ground, sparkles, block igloo, fox chase, Chimin in the snow, camera descent
 src/room/Room.tsx            world scaling, five depth layers (data-depth 0..1), camera dolly on open, the pulled postcard, sheets, assemble-on-arrival
 src/room/camera.ts           the 2.5D camera: pointer parallax + dolly, applied per layer by depth on gsap.ticker
 src/room/PostcardString.tsx  the string and its fourteen cards (positions from stringPoint)
@@ -73,11 +76,16 @@ src/styles/base.css          all room, blockout and sheet styles
 - **Fox**: zone `{x:120,y:560,w:520,h:300}` in world units, home `{330,700}`; the world gets
   `.room__world--fish` (cursor: none) and a fish element follows the pointer.
 - **Sheets**: one open at a time (`open` state in Room); `role="dialog"`, Escape closes.
-- **Arrival**: `Room` reads `sessionStorage 'arrived'`; if unset it renders `<Arrival>` over a hidden world
-  (`.room--arriving`). Arrival is one GSAP timeline on `.arrival__scene` (rotateX 58°→0, y, scale, then
-  scale 5.5 through the door, dark, fade) and calls `onDone`; Room then runs `gsap.from` on
-  `.obj, .ro, .fox, .pcard` (toward centre, scale .6, rotation ±25, expo.out, random stagger) and fades
-  the layers in. Click skips. Reduced motion: 0.6s.
+- **Outside** (`Snowfield.tsx`): `Room` reads `sessionStorage 'arrived'`; if unset it renders the lazy
+  `<Snowfield>` (z-index 58, under the sheets) over a hidden world. Ground = a 2048 canvas of ~30k letters
+  as a repeating texture (5.5×) + one non-repeating drift overlay; sparkles = `Points` with a twinkle
+  shader (additive); igloo = one `InstancedMesh` of boxes on a sphere + tunnel, a joint sphere, a dark
+  mouth, a blob shadow, `scale.y .86`; fox = capsules/spheres, `stepFox` moves it toward the cursor's
+  ground point (raycast on a plane), keeps it outside `R+1.3`, steers around the wall, gait/sit poses;
+  Chimin = a parka figure lying on a "snow angel" blob. Click igloo / Enter / "go inside" → GSAP moves
+  `camera.position` and a `look` vector to the door and in, `.snow__dark` fades, `onEnter` → Room sets
+  `arrived`, assembles from a clump. `.outside` in the room clears the flag. DPR ≤ 1.5, pauses when hidden,
+  disposes on unmount. three is a separate chunk (~170KB gzip) loaded only outside.
 - **Stand-in art, room register** (`tools/render.py`): `box/lathe/ellipsoid/cylinder/tube` build meshes;
   `Camera` + `rasterise` give colour/normal/depth buffers (perspective-correct depth, near-plane cull);
   `shade` is Lambert key + sky fill + a little specular, warm in light and cool in shade; `paint` adds a
@@ -101,11 +109,12 @@ Console: clean (art exists for every slot now). The verify scripts lived in the 
 
 1. **Stand-in art only.** The painted room is a sketch of the register so it can be judged with volume
    and light on; Chimin generates the real art per the brief and drops files in by name. Known weak
-   stand-ins: the sleeping fox (reads as a curled shape, not quite a fox), the loose flower stems (thin),
-   the day sky's clouds, the exterior's snow (grainy) and its tunnel (a pipe).
-1b. Arrival is a first cut: the exterior shot is generated, the tilt is CSS perspective on a flat image.
-   If Chimin wants the real "rotate down into the door", the exterior needs 2–3 layered plates (ground,
-   dome, entrance) or a short pre-rendered sequence; see the MCP notes in the last session recap.
+   stand-ins (room): the sleeping fox (reads as a curled shape, not quite a fox), the loose flower stems (thin),
+   the day sky's clouds.
+1b. Outside is a first cut: the fox and Chimin are primitive figures (fine as a sketch; a modelled fox and
+   a figure from Tripo/Meshy or Blender would replace them as GLB files); the letters are one repeating
+   tile (seams are hidden by the drifts but visible if you look); no night version of the snowfield yet;
+   touch: the fox follows the finger but there is no hover hint.
 2. Chimin's authored default postcard arrangements (replace `defaultPieces`) once pieces exist.
 3. Work has no object in the room (it's listed in About). Decide: a laptop on the table or a shelf. The fridge is furniture now; it could carry Work.
 3b. The 3D hero object (vase or bag) is planned for M2b with lazy three.js; not added yet.

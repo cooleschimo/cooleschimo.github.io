@@ -1,7 +1,7 @@
 # DESIGN.md — Chimin Liu, personal site
 
 Single source of truth for look and feel. Overrides any installed design skill, component library default, or agent instinct. If something here conflicts with PRD.md, ask.
-Revision: 2026-09-17 (v5.3, "the igloo": painted volumes in the room, collage only on the postcards). Hybrid: 2.5D room plus one real 3D hero object later. Chimin's own direction after three attempts: a 2.5D illustrated igloo room, simple but sophisticated, an aesthetic rather than realism. Art is generated from Chimin's photographs in one collage style (see `docs/ART-BRIEF.md`).
+Revision: 2026-09-17 (v5.4, "the igloo": outside is a 3D snowfield of letters; inside is the painted 2.5D room; collage on the postcards). Hybrid: 2.5D room plus one real 3D hero object later. Chimin's own direction after three attempts: a 2.5D illustrated igloo room, simple but sophisticated, an aesthetic rather than realism. Art is generated from Chimin's photographs in one collage style (see `docs/ART-BRIEF.md`).
 
 ## Feel
 One illustrated room inside an igloo, drawn like a page from a good travel sketchbook: warm, low-contrast, quiet, with a lot of space around a few objects. The arctic is told through light, not props: blue-white daylight through the ice blocks by day; candle glow and a faint aurora through the window by night. Nothing is glossy. **Depth is felt, not implied**: a camera that slides with the pointer and dollies toward whatever you open, layers that occlude and grow at different rates, surfaces in perspective. One real 3D object (the vase or the bag) may live inside its own window later; the room itself never becomes 3D geometry.
@@ -26,8 +26,10 @@ Until Chimin's art exists, `tools/render.py` renders the room register from simp
 - **Geist** for reading text inside sheets, 15–16px. Newsreader for long essays (M4).
 - No handwriting fonts, no bold, no gradient text.
 
-## Arrival (once per session)
-The site opens **above the igloo**: a near top-down collage of the dome in snow with **Chimin** set large in Instrument Serif over it. After a beat the shot tilts forward and drifts down to the front door (1.7s, `power2.inOut`), the name fading as it goes; then the camera pushes through the door (1.4s, `power3.in`) into dark. The room then **assembles from a clump**: every object starts pulled toward the centre, small, turned and faint, and settles into place (`expo.out`, 1.2s, random stagger), the way Jess Paik's opening scatters. Click anywhere skips it; it plays once per session; under reduced motion it is a 0.6s fade. Copy on this screen is the name only.
+## Outside (the landing, real 3D)
+The site opens **outside**, above a field of snow made of letters (Chimin's reference: periwinkle ground densely set with small letters in white, lilac and blue, with glittering points of light and softer lighter drifts). In the middle of it an **igloo of ice blocks, in real 3D** (three.js, lazy-loaded), seen from above and a little in front, with **Chimin** set large over it. An **arctic fox runs around the igloo to wherever the cursor is**, keeps outside its wall, faces where it runs, and sits when you stop. **Chimin lies in the snow** to the left, arms out, in a parka with a fur hood; hover says so, click opens About. Click the igloo (or the "go inside" button, or Enter) and the camera drops to the door and pushes through into dark; the room then assembles from a clump (`expo.out`, random stagger), the way Jess Paik's opening scatters. "outside" top-right in the room goes back out. Under reduced motion the descent is a fade.
+
+The outside is the only real 3D on the site; its look is flat-lit and pastel (white blocks, lavender joints, blob shadows, no shadow maps), so it reads as an illustration, not a render, and matches the letter snow.
 
 ## The room (2.5D with a camera)
 - A fixed viewport; a 1440×900 world scaled to fit. Layers by depth 0→1: ice wall + window (0), the postcard string (0.25), floor + rug (0.45), furniture and objects (0.7), the notebook and the entrance arc (1).
@@ -43,14 +45,14 @@ The site opens **above the igloo**: a near top-down collage of the dome in snow 
 Front: the place's collage artefact and a typewriter caption. Back: a cream postcard with address lines and a stamp box, holding Chimin's default arrangement of that place's collage pieces (torn paper, washi, a stamp, a caption). Every piece can be dragged; the visitor's arrangement is kept in their browser; Reset restores Chimin's. This is the one interaction that must be perfect.
 
 ## Motion
-Verbs: **descend**, **dolly**, **lift**, **pull down**, **settle**, **sway**.
-- Arrival as above; on later loads in the session the room fades in by layer (0.9s). Dolly 0.9s `power3.inOut`; the pulled card springs from its place on the string to the centre (bounce 0.12, 0.7s).
+Verbs: **run** (the fox), **descend**, **dolly**, **lift**, **pull down**, **settle**, **sway**.
+- Entering from outside as above; on later loads in the session the room fades in by layer (0.9s). Dolly 0.9s `power3.inOut`; the pulled card springs from its place on the string to the centre (bounce 0.12, 0.7s).
 - Sheets: rise 24px + fade, 0.35s. Magnets lift 3px on hover.
 - Fox: follows the cursor with a lag inside its zone; sits when the cursor leaves. The postcards sway; the candle flickers at night. Nothing else idles.
 - Reduced motion: no parallax, no fox chase, sheets fade.
 
 ## Never
-Realistic rendering, 3D geometry for the room (one hero object inside a window is the exception), glossy or glassy materials, drop shadows heavier than a paper lift, hand-drawn boxes, wobble filters, code-drawn characters, more than one artefact style, handwriting fonts, bright saturated UI colour, loaders, sound without a mute, scroll pinning, invented facts in the copy.
+Realistic rendering, 3D geometry for the room (the outside snowfield and one hero object inside a window are the exceptions), glossy or glassy materials, drop shadows heavier than a paper lift, hand-drawn boxes, wobble filters, code-drawn characters, more than one artefact style, handwriting fonts, bright saturated UI colour, loaders, sound without a mute, scroll pinning, invented facts in the copy.
 
 ## Always
 - Every interactive object has a keyboard path (a focusable button with the same label) and a tap path.

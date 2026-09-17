@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { gsap } from '../lib/gsap'
 import { prefersReducedMotion } from '../lib/motion-prefs'
@@ -10,13 +10,14 @@ import { Vase } from './Vase'
 import { Fox } from './Fox'
 import { PostcardString, stringPoint } from './PostcardString'
 import { createCamera, ZOOM_MAX } from './camera'
-import { Arrival } from './Arrival'
 import { Sheet } from '../sheets/Sheet'
 import { Postcard } from '../sheets/Postcard'
 import { About, Photos, Writing } from '../sheets/contents'
 import places from '../../content/places.json'
 
 type Open = { kind: 'about' } | { kind: 'photos' } | { kind: 'writing' } | { kind: 'place'; slug: string; i: number } | null
+
+const Snowfield = lazy(() => import('../snow/Snowfield').then(m => ({ default: m.Snowfield })))
 
 /** The igloo room: a 2.5D camera over four layers, a postcard string, six things to touch. Generated collage stand-ins fill every art slot until Chimin's art replaces them by name. */
 export function Room() {
@@ -72,7 +73,11 @@ export function Room() {
 
   return (
     <div ref={roomEl} className={`room ${open ? 'room--dim' : ''} ${zoom > 1.01 ? 'room--zoomed' : ''} ${arrived ? '' : 'room--arriving'}`}>
-      {!arrived && <Arrival onDone={() => setArrived(true)} />}
+      {!arrived && (
+        <Suspense fallback={<div className="snow" aria-hidden="true" />}>
+          <Snowfield onEnter={() => setArrived(true)} onAbout={() => setOpen({ kind: 'about' })} />
+        </Suspense>
+      )}
       <div ref={world} className="room__world" style={{ transform: `translate(-50%, -50%) scale(${scale})` }}>
         <div className="room__night" aria-hidden="true" />
         {/* depth 0: ice wall and window */}
@@ -117,6 +122,7 @@ export function Room() {
 
       <button type="button" className="name label" onClick={() => goTo(720, 450, 1.15, { kind: 'about' })}>Chimin Liu<span className="muted"> · engineer, photographer, painter</span></button>
       <p className="blockout-note label">stand-in art · painted by tools/render.py, collaged by tools/collage.py · slots per docs/ART-BRIEF.md</p>
+      <button type="button" className="outside label" onClick={() => { try { sessionStorage.removeItem('arrived') } catch { /* ignore */ } setOpen(null); setArrived(false) }}>outside ↗</button>
       <div className="camctl" role="group" aria-label="Camera">
         <span className="label muted camctl__hint">{zoom > 1.01 ? 'drag to pan · double-click to reset' : 'scroll or pinch to zoom · double-click to jump in'}</span>
         <button type="button" className="camctl__btn" onClick={() => camera.current?.reset()} disabled={zoom <= 1.01} aria-label="Reset the view">{zoom > 1.01 ? `${zoom.toFixed(1)}× · reset` : '1.0×'}</button>

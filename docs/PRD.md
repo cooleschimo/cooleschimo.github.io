@@ -109,7 +109,7 @@ Do NOT run `polish`, `normalize`, `quieter`, or any minimalist/high-end/brutalis
 
 ## 3. Site structure (one room, sheets on top)
 
-- **Arrival**: once per session the site opens above the igloo with the name over it, tilts down to the door, pushes through, and the room assembles from a clump (DESIGN.md, "Arrival"). Click skips; `sessionStorage` remembers.
+- **Outside** (`src/snow/Snowfield.tsx`, three.js lazy chunk): a 3D snowfield of letters with the igloo, the fox that chases the cursor, and Chimin lying in the snow; click the igloo to drop into the room (DESIGN.md, "Outside"). `sessionStorage` remembers; "outside" in the room goes back.
 - **The room**: fixed viewport, 1440×900 world scaled to fit, five depth layers under a 2.5D camera (pointer parallax + dolly on open). Objects: the postcard string (places), camera (photographs), vase (flower arranging, in-room), notebook (essays + reader stickers), fox (cursor chase in its zone), window (day/night). The fridge is furniture. Name and role line sit top-left; About is a sheet from the name.
 - **Sheets**: rise over the dimmed room; Escape closes.
 - **Phones**: the room scales to width; sheets go full height; the fox chase is off.
@@ -224,7 +224,7 @@ The full list, sizes and style spec are in `docs/ART-BRIEF.md` (room layers, obj
 ## 7. Milestones (vertical slices — each one is built and previewed on the branch; deploy is a separate, manual decision, see §11)
 
 **M1 — The igloo** (built, v5.2)
-Arrival shot (above the igloo, name, tilt to the door, push through, room assembles), room with the visitor camera (parallax, zoom, pan, dolly), postcard string, postcard collage with drag-and-drop and persistence, camera contact sheet, notebook with reader stickers, vase arranging, fox chase, day/night, sheets, keyboard paths. Every image slot named per `docs/ART-BRIEF.md` and filled with generated collage stand-ins.
+Outside (3D letter snowfield, igloo, fox chase, Chimin in the snow, descent into the door), room with the visitor camera (parallax, zoom, pan, dolly), postcard string, postcard collage with drag-and-drop and persistence, camera contact sheet, notebook with reader stickers, vase arranging, fox chase, day/night, sheets, keyboard paths. Every image slot named per `docs/ART-BRIEF.md` and filled with generated collage stand-ins.
 
 **M2 — Art in.** Chimin generates the room layers, objects and the first three places per the art brief; the blockout images are swapped for them with no code changes; tune light, shadow, parallax and dolly to the art.
 **M2b — The 3D hero object** (vase or bag) as a generated model inside its window, lazy-loaded three.js.
@@ -245,7 +245,7 @@ After each milestone run impeccable `critique` against DESIGN.md and list findin
 - One fixed room on desktop, sheets for content; the room scales to width on phones.
 - Deploy from `main` only; preview on the branch first. Stay on cooleschimo.github.io.
 - All ten old essays go live in v1 (M4). Old essay URLs keep working from `public/essays/`.
-- `react`/`react-dom` pinned to 19.2.x; `react-pageflip` and `wired-elements` are not used. three.js not before a shader is actually needed.
+- `react`/`react-dom` pinned to 19.2.x; `react-pageflip` and `wired-elements` are not used. three.js (no R3F) is used only for the outside snowfield, lazy-loaded.
 - Copy: Claude may write placeholder copy only when marked as such in the source; Chimin writes the real copy.
 
 ## 9. Open questions for Chimin

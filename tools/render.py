@@ -1,5 +1,5 @@
 """
-Painted-volume stand-ins for the room: every object, the wall, the floor, the entrance and the exterior are
+Painted-volume stand-ins for the room: every object, the wall, the floor and the entrance are
 simple 3D forms rendered with one camera (20° down, a touch from the right) and one key light (upper left,
 front), then painted over: soft wash, grain, darkened edges, a faint ink line, a blurred ground shadow.
 They are meant to read as 2D illustrations of solid things (the reference is a painted, slightly elevated
@@ -630,6 +630,6 @@ if __name__ == '__main__':
     if 'room' in which or 'wall' in which: save(wall(), 'room/wall.png')
     if 'room' in which or 'floor' in which: save(floor(), 'room/floor.png')
     if 'room' in which or 'entrance' in which: save(entrance(), 'room/entrance.png')
-    if 'room' in which or 'exterior' in which: save(exterior(), 'room/exterior.png')
+    if 'exterior' in which: save(exterior(), 'room/exterior.png')  # unused since the outside went 3D (Snowfield.tsx)
     if 'room' in which or 'sky' in which:
         save(string_line(), 'room/string.png'); save(sky(False), 'sky/day.png'); save(sky(True), 'sky/night.png')
