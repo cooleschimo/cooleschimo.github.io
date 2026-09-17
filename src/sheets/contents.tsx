@@ -64,7 +64,7 @@ export function Writing() {
       <ul className="essays">
         {ESSAYS.map(([slug, title]) => (
           <li key={slug} className="essay">
-            <a href={`/essays/${slug}.html`} className="essay__link display" onClick={(e) => { if (picked !== null) { e.preventDefault(); setGiven((g) => ({ ...g, [slug]: picked })); setPicked(null) } }}>{title}</a>
+            <a href={`${import.meta.env.BASE_URL}essays/${slug}.html`} className="essay__link display" onClick={(e) => { if (picked !== null) { e.preventDefault(); setGiven((g) => ({ ...g, [slug]: picked })); setPicked(null) } }}>{title}</a>
             <span className="essay__slot" aria-label={given[slug] !== undefined ? `Sticker given: ${STICKERS[given[slug]]}` : 'No sticker yet'}>
               {given[slug] !== undefined && <Art src={ART.sticker(given[slug] + 1)} placeholder={<span className="sticker__block sticker__block--sm">{STICKERS[given[slug]]}</span>} />}
             </span>

@@ -16,6 +16,7 @@ import { makePaintMaterial, NOISE_GLSL } from './paint'
  */
 type Props = { onEnter: () => void; onAbout: () => void }
 
+const B = import.meta.env.BASE_URL.replace(/\/$/, '')
 const G = 64 // ground size, world units
 const R = 5.2 // igloo footprint radius (the fox keeps outside it)
 
@@ -142,8 +143,8 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
   const reduced = useMemo(() => prefersReducedMotion(), [])
 
   // camera: a paper-theatre angle, drifting with the pointer; the look target is tweened when entering
-  const home = useMemo(() => new THREE.Vector3(0, 15, 14.5), [])
-  const look = useMemo(() => new THREE.Vector3(0, 0.6, -0.5), [])
+  const home = useMemo(() => new THREE.Vector3(0, 6.2, 22), [])
+  const look = useMemo(() => new THREE.Vector3(0, 2.0, 0), [])
   const par = useRef({ x: 0, y: 0 })
   const entering = useRef(false)
 
@@ -277,11 +278,11 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
     // the trail: the cursor, the fox, and Chimin pressed in
     if (hasCursor.current && !entering.current) trail.stamps.current.push({ x: cursor.current.x, z: cursor.current.z, r: 0.7, s: 0.38 })
     trail.stamps.current.push({ x: f.x, z: f.z, r: 0.95, s: 0.7 })
-    trail.stamps.current.push({ x: -7.5, z: 5.0, r: 2.7, s: 0.45 })
+    trail.stamps.current.push({ x: -6.8, z: 5.2, r: 2.7, s: 0.45 })
     snowMat.uniforms.uTrail.value = trail.step(gl)
 
     // camera drift
-    if (!entering.current && !reduced) { camera.position.x += (home.x + par.current.x * 1.4 - camera.position.x) * 0.04; camera.position.y += (home.y - par.current.y * 0.6 - camera.position.y) * 0.04 }
+    if (!entering.current && !reduced) { camera.position.x += (home.x + par.current.x * 1.8 - camera.position.x) * 0.04; camera.position.y += (home.y - par.current.y * 0.8 - camera.position.y) * 0.04 }
     camera.lookAt(look)
   })
 
@@ -297,21 +298,21 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
       <Sparkles count={420} scale={[70, 0.4, 70]} position={[0, 0.15, 0]} size={2.4} speed={0.35} opacity={0.75 * Math.min(1.6, look_.sparkle)} color="#ffffff" noise={0.4} />
       {/* the igloo: three paper plates and a warm glow at the door for the evening and night */}
       <mesh position={[0.6, 0.02, 0.8]} rotation={[-Math.PI / 2, 0, 0]} material={shadowMat}><planeGeometry args={[17, 13]} /></mesh>
-      <Piece url="/art/paper/igloo-back.webp" width={11.9} position={[0, 2.75, -2.4]} rotation={[-0.3, 0, 0]} delay={0.2} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
-      <Piece url="/art/paper/igloo-front.webp" width={11.6} position={[0, 2.3, 1.2]} rotation={[-0.26, 0, 0]} delay={0.5} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
-      <mesh position={[0, 0.9, 3.75]} rotation={[-0.18, 0, 0]}><circleGeometry args={[1.35, 24, 0, Math.PI]} /><meshBasicMaterial color="#2e3650" /></mesh>
-      <Piece url="/art/paper/igloo-arch.webp" width={4.6} position={[0, 1.4, 3.9]} rotation={[-0.18, 0, 0]} delay={0.8} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
+      <Piece url={`${B}/art/paper/igloo-back.webp`} width={11.9} position={[0, 2.9, -2.4]} rotation={[-0.06, 0, 0]} delay={0.2} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
+      <Piece url={`${B}/art/paper/igloo-front.webp`} width={11.6} position={[0, 2.45, 1.2]} rotation={[-0.05, 0, 0]} delay={0.5} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
+      <mesh position={[0, 0.9, 3.75]} rotation={[-0.04, 0, 0]}><circleGeometry args={[1.35, 24, 0, Math.PI]} /><meshBasicMaterial color="#2e3650" /></mesh>
+      <Piece url={`${B}/art/paper/igloo-arch.webp`} width={4.6} position={[0, 1.4, 3.9]} rotation={[-0.04, 0, 0]} delay={0.8} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
       <mesh position={[0, 0.06, 6.2]} rotation={[-Math.PI / 2, 0, 0]} material={glowMat}><planeGeometry args={[9, 7]} /></mesh>
       {/* Chimin, pressed into the snow, and a drift or two */}
-      <Piece url="/art/paper/chimin.webp" width={4.2} position={[-7.5, 0.05, 5.0]} rotation={[-Math.PI / 2, 0, 0.5]} delay={1.1} onHover={h => setHover(h ? 'chimin' : null)} onClick={onAbout} />
-      <Piece url="/art/paper/drift-3.webp" width={11} position={[-14, 0.03, -9]} rotation={[-Math.PI / 2, 0, 0.2]} delay={0.3} opacity={0.85} />
-      <Piece url="/art/paper/drift-1.webp" width={8} position={[15, 0.03, -6]} rotation={[-Math.PI / 2, 0, -0.3]} delay={0.6} opacity={0.85} />
+      <Piece url={`${B}/art/paper/chimin.webp`} width={4.2} position={[-6.8, 0.6, 5.2]} rotation={[-1.15, 0, 0.35]} delay={1.1} onHover={h => setHover(h ? 'chimin' : null)} onClick={onAbout} />
+      <Piece url={`${B}/art/paper/drift-3.webp`} width={11} position={[-14, 0.03, -9]} rotation={[-Math.PI / 2, 0, 0.2]} delay={0.3} opacity={0.85} />
+      <Piece url={`${B}/art/paper/drift-1.webp`} width={8} position={[15, 0.03, -6]} rotation={[-Math.PI / 2, 0, -0.3]} delay={0.6} opacity={0.85} />
       {/* the object test: a table patch with the camera on it */}
-      <Piece url="/art/paper/table.webp" width={5.2} position={[7.6, 0.04, 4.6]} rotation={[-Math.PI / 2, 0, -0.15]} delay={1.3} />
-      <Piece url="/art/paper/camera.webp" width={2.4} position={[7.6, 0.95, 4.7]} delay={1.8} control={camCtl} onHover={h => setHover(h ? 'camera' : null)} onClick={onCameraClick} />
+      <Piece url={`${B}/art/paper/table.webp`} width={5.2} position={[7.0, 0.3, 5.0]} rotation={[-1.25, 0, -0.1]} delay={1.3} />
+      <Piece url={`${B}/art/paper/camera.webp`} width={2.4} position={[7.0, 1.15, 5.3]} delay={1.8} control={camCtl} onHover={h => setHover(h ? 'camera' : null)} onClick={onCameraClick} />
       {/* the fox, wading */}
       <group ref={fox}>
-        <Piece url="/art/paper/fox-side.webp" width={3.2} position={[0, 1.05, 0]} delay={1.4} flip={foxFlip} />
+        <Piece url={`${B}/art/paper/fox-side.webp`} width={3.2} position={[0, 1.05, 0]} delay={1.4} flip={foxFlip} />
       </group>
       <points ref={spray}>
         <bufferGeometry><bufferAttribute attach="attributes-position" args={[sprayData.pos, 3]} /></bufferGeometry>
@@ -335,7 +336,7 @@ export function Diorama({ onEnter, onAbout }: Props) {
   return (
     <div className={`snow ${entering ? 'snow--entering' : ''} ${hover ? `snow--hover-${hover}` : ''}`}>
       <div className="snow__canvas">
-        <Canvas dpr={[1, 1.5]} camera={{ fov: 38, near: 0.1, far: 400, position: [0, 15, 14.5] }} gl={{ antialias: true, powerPreference: 'high-performance' }} onPointerDown={() => { if (hover === 'igloo') enter() }}>
+        <Canvas dpr={[1, 1.5]} camera={{ fov: 36, near: 0.1, far: 400, position: [0, 6.2, 22] }} gl={{ antialias: true, powerPreference: 'high-performance' }} onPointerDown={() => { if (hover === 'igloo') enter() }}>
           <Suspense fallback={null}>
             <Scene onEnter={onEnter} onAbout={onAbout} setHover={setHover} enterRef={enterRef} darkRef={darkRef} />
           </Suspense>
