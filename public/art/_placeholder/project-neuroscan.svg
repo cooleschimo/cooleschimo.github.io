@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400">
+  <!-- PLACEHOLDER project image: replace with a real screenshot. -->
+  <rect width="640" height="400" fill="#c9704f"/>
+  <g fill="none" stroke="#f6f1e7" stroke-width="6" stroke-linecap="round">
+    <path d="M160 200 c0 -70 60 -120 160 -120 s160 50 160 120 s-60 120 -160 120 s-160 -50 -160 -120z"/>
+    <path d="M320 80 c-30 40 -30 200 0 240"/>
+    <path d="M200 140 c40 20 40 100 0 120"/>
+    <path d="M440 140 c-40 20 -40 100 0 120"/>
+  </g>
+  <text x="320" y="360" font-family="Georgia, serif" font-size="26" fill="#f6f1e7" text-anchor="middle">neuroscan (placeholder)</text>
+</svg>

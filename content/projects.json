@@ -1,0 +1,11 @@
+[
+  {
+    "slug": "neuroscan",
+    "title": "NeuroScan",
+    "summary": "a small tool that reads brain-scan volumes and points a clinician at the slice worth looking at first.",
+    "tags": ["python", "pytorch", "nifti"],
+    "image": "/art/_placeholder/project-neuroscan.svg",
+    "links": [{ "label": "github", "href": "https://github.com/cooleschimo" }],
+    "mode": "day"
+  }
+]

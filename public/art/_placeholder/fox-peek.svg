@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120" fill="none" stroke="var(--ink, #2f3b4a)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+  <!-- PLACEHOLDER arctic fox, peek: head lifted, ears up, eyes wider. -->
+  <path d="M28 92 C40 70, 60 60, 80 62 C100 60, 120 70, 132 92" fill="var(--paper, #f6f1e7)"/>
+  <path d="M50 58 C42 40, 42 24, 50 14 C60 22, 66 36, 66 50"/>
+  <path d="M110 58 C118 40, 118 24, 110 14 C100 22, 94 36, 94 50"/>
+  <path d="M58 54 C68 46, 92 46, 102 54 C106 68, 98 80, 80 84 C62 80, 54 68, 58 54"/>
+  <circle cx="72" cy="64" r="3" fill="var(--ink, #2f3b4a)"/>
+  <circle cx="90" cy="64" r="3" fill="var(--ink, #2f3b4a)"/>
+  <path d="M77 74 C80 77, 82 77, 85 74"/>
+  <path d="M81 74 L81 78"/>
+  <path d="M10 96 C50 92, 110 92, 150 96" stroke-width="1.6"/>
+</svg>

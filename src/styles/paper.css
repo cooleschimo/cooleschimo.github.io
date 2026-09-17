@@ -1,0 +1,63 @@
+@import 'tailwindcss';
+@import './tokens.css';
+
+@theme {
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ice: var(--ice);
+  --color-sky: var(--sky);
+  --color-rust: var(--rust);
+  --color-moss: var(--moss);
+  --color-blush: var(--blush);
+  --color-sun: var(--sun);
+  --font-hand: var(--font-hand);
+  --font-serif: var(--font-serif);
+  --font-mono: var(--font-mono);
+}
+
+html {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  scroll-behavior: auto; /* Lenis owns smoothing */
+}
+body {
+  margin: 0;
+  min-height: 100dvh;
+  overflow-x: clip;
+  transition: background-color 600ms ease, color 600ms ease;
+}
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-stopped { overflow: hidden; }
+
+.hand { font-family: var(--font-hand); font-variation-settings: 'BNCE' 8, 'INFM' 40; line-height: 1.15; letter-spacing: 0.005em; }
+.hand-1 { font-size: var(--hand-1); }
+.hand-2 { font-size: var(--hand-2); }
+.hand-3 { font-size: var(--hand-3); }
+.hand-4 { font-size: var(--hand-4); }
+.serif-1 { font-family: var(--font-serif); font-size: var(--serif-1); }
+.serif-2 { font-family: var(--font-serif); font-size: var(--serif-2); }
+.mono { font-family: var(--font-mono); font-size: var(--mono-1); }
+
+.prose-col { max-width: 62ch; }
+
+a { color: inherit; text-decoration: none; }
+:focus-visible { outline: none; }
+
+/* Paper grain lives in <PaperGrain>; this keeps the page from ever being flat white. */
+.paper-grain {
+  position: fixed; inset: 0; pointer-events: none; z-index: 60;
+  mix-blend-mode: multiply; opacity: 0.55;
+}
+:root[data-mode='night'] .paper-grain { mix-blend-mode: screen; opacity: 0.16; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+:focus-visible > .rough-focus { opacity: 1 !important; }
