@@ -1,7 +1,7 @@
 # DESIGN.md — Chimin Liu, personal site
 
 Single source of truth for look and feel. Overrides any installed design skill, component library default, or agent instinct. If something here conflicts with PRD.md, ask.
-Revision: 2026-09-18 (v6.1, "the paper diorama": flat textured pieces in real 3D space, outside and in; paint as the motion language). Hybrid: 2.5D room plus one real 3D hero object later. Chimin's own direction after three attempts: a 2.5D illustrated igloo room, simple but sophisticated, an aesthetic rather than realism. Art is generated from Chimin's photographs in one collage style (see `docs/ART-BRIEF.md`).
+Revision: 2026-09-18 (v7, "letter snow": the snow is the thing. Real 3D snow made of letter particles with physics; Chimin's paper pieces set into it). Hybrid: 2.5D room plus one real 3D hero object later. Chimin's own direction after three attempts: a 2.5D illustrated igloo room, simple but sophisticated, an aesthetic rather than realism. Art is generated from Chimin's photographs in one collage style (see `docs/ART-BRIEF.md`).
 
 ## Feel
 One illustrated room inside an igloo, drawn like a page from a good travel sketchbook: warm, low-contrast, quiet, with a lot of space around a few objects. The arctic is told through light, not props: by day the room is lit by natural light through the window, dreamy and pastel; in the evening the sunset comes in warm and low; at night the aurora colours the room and the lamps take over. The ice itself is **clean, crisp crystal**: pale cyan-white blocks that look painted but translucent, light caught inside them, white frosted edges (references: the ice-card igloo, the translucent-block igloo with foxes, the glowing igloo under the aurora). Not matte, not clay, not grey. Nothing is glossy. **Depth is felt, not implied**: a camera that slides with the pointer and dollies toward whatever you open, layers that occlude and grow at different rates, surfaces in perspective. One real 3D object (the vase or the bag) may live inside its own window later; the room itself never becomes 3D geometry.
@@ -26,8 +26,17 @@ Until Chimin's art exists, `tools/render.py` renders the room register from simp
 - **Geist** for reading text inside sheets, 15–16px. Newsreader for long essays (M4).
 - No handwriting fonts, no bold, no gradient text.
 
-## The paper diorama (the style, outside and in)
-Chimin's decision after the 3D builds looked like clay: **flat, textured patches of colour arranged in real 3D space**, not textured 3D. The references are the letter snow with the cat lying in it, the ceramic-poster of torn paper patches with tiny figures in front, and the moving Chinese window for light. So:
+## Letter snow (outside; the idea the site is built on)
+Chimin's first reference, restated after the diorama missed it: **snow that looks like real piled snow but is made of letters**, with glitter in it, with Chimin and the fox *in* it, and letters that behave like matter.
+- **Piled, not printed.** A heightfield of mounds and drifts (`H(x,z)` in `Letters.tsx`) under tens of thousands of individual letter glyphs strewn in 3D, each lying along the slope with a random yaw and tilt, in two layers, so the heaps read as heaps. The mound underneath is a periwinkle surface that only shows through gaps.
+- **Light.** Each letter is lit on its own facet and throws a glint as the camera moves; sparkle points sit on the surface; a little bloom. Day, evening and night change the snow, the light, the sky and the aurora.
+- **Physics.** Letters are particles. The cursor pushes them aside; the fox wading through kicks them up and they tumble and fall back onto the slope; letters drift down from the sky and land. Nothing slides as an image.
+- **In the snow.** The fox and Chimin are Chimin's paper pieces, but they write depth and sit sunk into the mound, so the snow in front of them hides their lower parts, and letters are heaped over Chimin's edges.
+- **The igloo** is Chimin's three plates set into the middle mound; click it to go in.
+- The camera is in front and a little above, drifting with the pointer. Never a top view.
+
+## The paper pieces (Chimin's generated art)
+Chimin's generated pieces in the handmade-paper hand: flat, textured patches with torn edges and paper fibre, placed as planes in the 3D world. The references are the letter snow with the cat lying in it, the ceramic-poster of torn paper patches with tiny figures in front, and the moving Chinese window for light. So:
 - **Pieces are paper.** Every thing on the site is a flat picture: large patches of muted colour with handmade-paper fibre and speckle, torn edges and a lighter paper rim, a few tones, no gradients, no gloss. Real 2D art (Chimin's, generated in this hand) on planes. Never a modelled figure.
 - **Space is real.** A three.js scene with a camera that drifts with the pointer and moves when you go somewhere; pieces sit at depths and occlude each other; the ground is a painted plane. The depth is felt, the pictures stay flat.
 - **Paint is the motion.** A piece arrives as an ink line and fills with watercolour that runs in with a wet edge; when you move on it dissolves into pigment that lifts and drifts. Nothing slides, pops or bounces.

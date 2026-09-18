@@ -7,7 +7,7 @@ import places from '../../content/places.json'
 
 type Open = { kind: 'about' } | { kind: 'photos' } | { kind: 'writing' } | { kind: 'place'; slug: string; i: number } | null
 
-const Outside = lazy(() => import('../snow/Diorama').then(m => ({ default: m.Diorama })))
+const Outside = lazy(() => import('../snow/Letters').then(m => ({ default: m.Letters })))
 const Inside = lazy(() => import('../snow/Inside').then(m => ({ default: m.Inside })))
 
 /**

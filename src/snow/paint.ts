@@ -53,7 +53,7 @@ export function makePaintMaterial(map: THREE.Texture, seed = Math.random() * 100
         float dz = fbm(uv * 9.0 + uSeed * 1.7);
         a *= 1.0 - smoothstep(dz - 0.15, dz + 0.05, uDissolve * 1.15);
         gl_FragColor = vec4(col * uTint, a);
-        if (a < 0.01) discard;
+        if (a < 0.12) discard;
       }`,
     transparent: true, depthWrite: false,
   })

@@ -1,4 +1,4 @@
-# Handoff notes — Chimin Liu, personal site (v6.1, "the paper diorama")
+# Handoff notes — Chimin Liu, personal site (v7, "letter snow")
 
 Updated 2026-09-17 at the end of the second session. Read this, then `docs/PRD.md`,
 `docs/DESIGN.md` (v5) and `docs/ART-BRIEF.md`, before writing any code.
@@ -56,7 +56,8 @@ tools/collage.py             the postcard fronts, pieces and stickers (collage);
 tools/optimize-art.py        PNG/JPG under public/art → WebP q82, deletes sources
 src/room/art.ts              every image slot, by name
 src/room/useArt.tsx          useArt(src) probes whether a file exists; <Art> renders it or the blockout placeholder
-src/snow/Diorama.tsx         outside (R3F): the paper diorama. Trail render target, snow shader, fox, Chimin, igloo plates, post
+src/snow/Letters.tsx         outside (R3F): letter snow. H(x,z) mounds, glyph atlas, InstancedMesh of letters with a custom lit shader, particle sim, sparkles, fox, Chimin, igloo plates
+src/snow/Diorama.tsx         the earlier paper-diorama outside (unused; delete when v7 is approved)
 src/snow/Inside.tsx          inside (R3F): table close up with the objects, light planes by mode, window + shutter, hover lift, dissolve on open
 src/snow/Piece.tsx           the painted plane (shared): paint material, reveal on mount, control ref (reveal/dissolve), tint, hover/click
 src/snow/paint.ts            the paint material: ink line → watercolour fill with a wet edge (uReveal), dissolve into drifting pigment (uDissolve)
@@ -115,6 +116,15 @@ src/styles/base.css          all room, blockout and sheet styles
   `hoverRef` → a group lifts 0.18; `opened` prop (from Room: photos→camera, writing→notebook,
   place→postcards) → that piece's control `dissolve(1)`, and back to `reveal(1)` when it closes. The
   vase's `inVase[]` is in localStorage under `vase`; postcards open places in order (`nextPlace` in Room).
+- **Letter snow** (`Letters.tsx`): `H(x,z)` = sum of gaussian mounds + low sines; `moundGeometry` is a 160² plane
+  displaced by H (opaque, Lambert, also the raycast target for the cursor). `glyphAtlas()` draws 64 glyphs on a
+  1024² canvas; `buildField` makes one `InstancedMesh` of N+NF unit quads with per-instance `aGlyph`/`aColor`
+  and typed arrays pos/quat/scl/vel/ang/flying/falling; `restOrientation` aligns a letter to the slope normal
+  with random yaw/tilt. `kick()` samples a stride of indices around a point and launches letters (velocity
+  up and outward, angular velocity); `stepField` integrates flying ones, lands them on `H`, respawns sky-fallers
+  high up away from the camera, and uploads only the touched instances via `addUpdateRange`. The letter shader
+  does Lambert + a facet glint (reflect · view)^30 + aurora + fog. Fox/Chimin/igloo are `Piece`s with `solid`
+  (depthWrite on, alpha discard) so the mound hides their sunk parts; Chimin gets ~420 letters heaped on her rim.
 - The old three.js Snowfield (v5.4–5.5) is in git history if needed. Ground = a 2048 canvas of ~30k letters
   as a repeating texture (5.5×) + one non-repeating drift overlay; sparkles = `Points` with a twinkle
   shader (additive); igloo = one `InstancedMesh` of boxes on a sphere + tunnel, a joint sphere, a dark
@@ -159,7 +169,8 @@ Console: clean (art exists for every slot now). The verify scripts lived in the 
    generated art replaces them by name in `public/art/paper/`. The fox side view and Chimin are drawn
    shapes: charming, not finished. Only the outside is in the diorama language; the room inside is still
    the v5 painted-volume build and must be rebuilt in the same language (a table close up, few objects).
-1c. Headless screenshots of the diorama are unreliable (frames captured mid-render); judge it in a browser.
+1c. Headless screenshots are unreliable (frames captured mid-render, SwiftShader fps is meaningless for 82k instances); judge in a browser.
+1d. Letter snow to tune with Chimin: mound shapes, density per layer, letter size, kick strength, sky-fall rate; a night pass; phones (halve N).
 2. Chimin's authored default postcard arrangements (replace `defaultPieces`) once pieces exist.
 3. Work has no object in the room (it's listed in About). Decide: a laptop on the table or a shelf. The fridge is furniture now; it could carry Work.
 3b. The 3D hero object (vase or bag) is planned for M2b with lazy three.js; not added yet.

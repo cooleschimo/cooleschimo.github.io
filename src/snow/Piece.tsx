@@ -18,12 +18,15 @@ export type PieceProps = {
   onHover?: (h: boolean) => void; onClick?: () => void
   control?: React.MutableRefObject<PieceControl | null>
   renderOrder?: number
+  /** write depth, so snow and other solid things in front can hide it */
+  solid?: boolean
+  quaternion?: THREE.Quaternion
 }
 
 /** A flat painted picture on a plane. Arrives as ink and fills with watercolour; can dissolve into pigment. */
-export function Piece({ url, width, position, rotation = [0, 0, 0], delay = 0, flip = false, opacity = 1, tint, onHover, onClick, control, renderOrder }: PieceProps) {
+export function Piece({ url, width, position, rotation = [0, 0, 0], delay = 0, flip = false, opacity = 1, tint, onHover, onClick, control, renderOrder, solid = false, quaternion }: PieceProps) {
   const tex = useTexture(url); tex.colorSpace = THREE.SRGBColorSpace
-  const mat = useMemo(() => makePaintMaterial(tex), [tex])
+  const mat = useMemo(() => { const m = makePaintMaterial(tex); if (solid) { m.depthWrite = true; m.transparent = false } return m }, [tex, solid])
   const img = tex.image as HTMLImageElement
   const aspect = img.height / img.width
   useEffect(() => {
@@ -41,7 +44,7 @@ export function Piece({ url, width, position, rotation = [0, 0, 0], delay = 0, f
     if (tint) (mat.uniforms.uTint.value as THREE.Color).lerp(tint, Math.min(1, dt * 3))
   })
   return (
-    <mesh position={position} rotation={rotation} material={mat} renderOrder={renderOrder}
+    <mesh position={position} rotation={rotation} quaternion={quaternion} material={mat} renderOrder={renderOrder}
       onPointerOver={onHover ? (e) => { e.stopPropagation(); onHover(true) } : undefined} onPointerOut={onHover ? () => onHover(false) : undefined}
       onClick={onClick ? (e) => { e.stopPropagation(); onClick() } : undefined}>
       <planeGeometry args={[width, width * aspect]} />
