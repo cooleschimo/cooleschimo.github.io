@@ -197,6 +197,11 @@ Console: clean (art exists for every slot now). The verify scripts lived in the 
    the v5 painted-volume build and must be rebuilt in the same language (a table close up, few objects).
 1c. Headless screenshots are unreliable (frames captured mid-render, SwiftShader fps is meaningless for 82k instances); judge in a browser.
 1d. Letter snow to tune with Chimin: mound shapes, density per layer, letter size, kick strength, sky-fall rate. Real-GPU performance is unmeasured (SwiftShader reads 1 fps regardless); if a laptop struggles, lower N first, then the sparkle/dust counts.
+1n. **v12.2, one fox**: the six-picture switching read as several animals, so the fox is one drawing again: the side
+   view, rigged, turned toward its heading up to ±0.7 rad; the leap picture only while airborne (quick fade), the
+   sleeping picture only after it has stopped (slow fade). `fox-run`, `fox-front`, `fox-back` stay in `public/art/paper`
+   but are not mounted. The gallop is the walk with a faster stride and a higher bob. Facing from the lateral component
+   with a dead band, frozen mid-leap.
 1m. **v12, the fox in six pictures** (Chimin's: `fox-side`, `fox-run`, `fox-leap`, `fox-front`, `fox-back`, plus the
    earlier `fox-sit`; they arrived with a baked checkerboard, cut out with rembg u2net + alpha matting, then defringe +
    restyle `--rim 4 --smooth 3`). All six are `Piece`s in the fox group with `control` refs in `views`; `viewState`
