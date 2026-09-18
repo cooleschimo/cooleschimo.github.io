@@ -277,7 +277,6 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
       <mesh position={[0.6, 0.02, 0.8]} rotation={[-Math.PI / 2, 0, 0]} material={shadowMat}><planeGeometry args={[17, 13]} /></mesh>
       <Piece url={`${B}/art/paper/igloo-back.webp`} width={11.9} position={[0, 2.9, -2.4]} rotation={[-0.06, 0, 0]} delay={0.2} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
       <Piece url={`${B}/art/paper/igloo-front.webp`} width={11.6} position={[0, 2.45, 1.2]} rotation={[-0.05, 0, 0]} delay={0.5} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
-      <mesh position={[0, 0.9, 3.75]} rotation={[-0.04, 0, 0]}><circleGeometry args={[1.35, 24, 0, Math.PI]} /><meshBasicMaterial color="#2e3650" /></mesh>
       <Piece url={`${B}/art/paper/igloo-arch.webp`} width={4.6} position={[0, 1.4, 3.9]} rotation={[-0.04, 0, 0]} delay={0.8} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
       <mesh position={[0, 0.06, 6.2]} rotation={[-Math.PI / 2, 0, 0]} material={glowMat}><planeGeometry args={[9, 7]} /></mesh>
       {/* Chimin, pressed into the snow, and a drift or two */}
