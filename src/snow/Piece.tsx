@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { useTexture } from '@react-three/drei'
 import { gsap } from '../lib/gsap'
 import { prefersReducedMotion } from '../lib/motion-prefs'
@@ -21,12 +21,24 @@ export type PieceProps = {
   /** write depth, so snow and other solid things in front can hide it */
   solid?: boolean
   quaternion?: THREE.Quaternion
+  /** how much of the picture's height (0–1) blends into the snow colour at the bottom */
+  sink?: number
+  /** the snow colour the sunk part takes */
+  snow?: THREE.Color
+  /** take the scene's fog */
+  fog?: boolean
 }
 
-/** A flat painted picture on a plane. Arrives as ink and fills with watercolour; can dissolve into pigment. */
-export function Piece({ url, width, position, rotation = [0, 0, 0], delay = 0, flip = false, opacity = 1, tint, onHover, onClick, control, renderOrder, solid = false, quaternion }: PieceProps) {
+/** A painted picture standing on a plane. Arrives as ink and fills with watercolour; can dissolve into pigment. */
+export function Piece({ url, width, position, rotation = [0, 0, 0], delay = 0, flip = false, opacity = 1, tint, onHover, onClick, control, renderOrder, solid = false, quaternion, sink = 0, snow, fog = false }: PieceProps) {
   const tex = useTexture(url); tex.colorSpace = THREE.SRGBColorSpace
-  const mat = useMemo(() => { const m = makePaintMaterial(tex); if (solid) { m.depthWrite = true; m.transparent = false } return m }, [tex, solid])
+  const scene = useThree(s => s.scene)
+  const mat = useMemo(() => {
+    const m = makePaintMaterial(tex)
+    // a solid piece writes depth and draws nothing half-transparent, so its edge has no pale rim
+    if (solid) { m.depthWrite = true; m.transparent = false; m.uniforms.uCut.value = 0.5 }
+    return m
+  }, [tex, solid])
   const img = tex.image as HTMLImageElement
   const aspect = img.height / img.width
   useEffect(() => {
@@ -40,8 +52,12 @@ export function Piece({ url, width, position, rotation = [0, 0, 0], delay = 0, f
     return () => { tw.kill() }
   }, [mat, delay, control])
   useFrame((_, dt) => {
-    mat.uniforms.uTime.value += dt; mat.uniforms.uFlip.value = flip ? 1 : 0; mat.uniforms.uOpacity.value = opacity
-    if (tint) (mat.uniforms.uTint.value as THREE.Color).lerp(tint, Math.min(1, dt * 3))
+    const u = mat.uniforms
+    u.uTime.value += dt; u.uFlip.value = flip ? 1 : 0; u.uOpacity.value = opacity; u.uSink.value = sink
+    if (tint) (u.uTint.value as THREE.Color).lerp(tint, Math.min(1, dt * 3))
+    if (snow) (u.uSnow.value as THREE.Color).copy(snow)
+    const f = scene.fog as THREE.Fog | null
+    if (fog && f) { u.fogColor.value.copy(f.color); u.fogNear.value = f.near; u.fogFar.value = f.far }
   })
   return (
     <mesh position={position} rotation={rotation} quaternion={quaternion} material={mat} renderOrder={renderOrder}

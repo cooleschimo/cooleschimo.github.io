@@ -8,34 +8,45 @@ import { getMode, type Mode } from '../lib/mode'
 import { Piece, paper, type PieceControl } from './Piece'
 
 /**
- * Outside: snow that is really made of letters. A heightfield of mounds and drifts, strewn with tens of
- * thousands of letter glyphs lying along the slopes, each catching the light on its own facet. The letters
- * are particles: the cursor pushes them, the fox wading through kicks them up and they tumble back down,
- * and letters fall from the sky and land. Chimin and the fox sink into the snow and are hidden by it where
- * it rises in front of them. The igloo (Chimin's paper plates) sits in a mound in the middle.
+ * Outside: snow that is really made of letters. Deep white snow, piled in mounds and drifts, whose surface
+ * is tens of thousands of letter glyphs lying along the slopes; the snow and the letters share one shading
+ * (white, blue in the shadow, a subsurface glow at the rim, and glitter that moves as the camera moves), so
+ * the letters read as the texture of the snow rather than confetti on it. The letters are particles: the
+ * cursor pushes them, the fox wading through kicks them up, and letters fall from the sky and land. The
+ * painted pieces (igloo, Chimin, fox) stand in the same light and fog and sink into the snow.
  */
 type Props = { onEnter: () => void; onAbout: () => void }
 
 const G = 80            // field size
-const N = 82000         // letters at rest on the field
-const NF = 400          // letters falling from the sky
+const N = typeof window !== 'undefined' && window.innerWidth < 760 ? 48000 : 96000  // letters at rest on the field (fewer on a phone)
+const NF = 600          // letters falling from the sky
 const R = 5.6           // igloo footprint radius
 const CHARS = 'AaBbCcdDeEfFgGhHiJjkKLMmnNoOPpqrRsStTuvVwWxyzZ'
 
-const LOOKS: Record<Mode, { snow: string; light: string; ambient: string; sky: string; horizon: string; sparkle: number; aurora: number; glow: number }> = {
-  day: { snow: '#9aa7e6', light: '#fff6e6', ambient: '#ffffff', sky: '#a9b7ea', horizon: '#e6e7fb', sparkle: 1.0, aurora: 0, glow: 0 },
-  evening: { snow: '#b59ac8', light: '#ffb884', ambient: '#f4d9cc', sky: '#7c6db0', horizon: '#ffc9a2', sparkle: 0.8, aurora: 0, glow: 0.4 },
-  night: { snow: '#3f4a8e', light: '#a8b6ff', ambient: '#6c78c8', sky: '#0d1330', horizon: '#232f62', sparkle: 1.8, aurora: 1, glow: 1 },
+type Look = { white: string; shadow: string; light: string; sky: string; mid: string; horizon: string; sun: string; sunDir: [number, number, number]; sparkle: number; aurora: number; glow: number; stars: number }
+const LOOKS: Record<Mode, Look> = {
+  day: { white: '#f4f5fc', shadow: '#a7b6ea', light: '#fff1d4', sky: '#93aae6', mid: '#c9d5f4', horizon: '#e8e3f1', sun: '#fff0d0', sunDir: [-0.35, 0.42, -0.84], sparkle: 1.0, aurora: 0, glow: 0, stars: 0 },
+  evening: { white: '#f7e4d4', shadow: '#bda6cb', light: '#ffb27a', sky: '#6f66b4', mid: '#dc93a8', horizon: '#ffd6ad', sun: '#ffb070', sunDir: [-0.55, 0.14, -0.82], sparkle: 0.8, aurora: 0, glow: 0.45, stars: 0.2 },
+  night: { white: '#7181c9', shadow: '#2b3470', light: '#b9c6ff', sky: '#080d28', mid: '#171f4a', horizon: '#2d3b72', sun: '#c9d4ff', sunDir: [0.4, 0.55, -0.73], sparkle: 1.9, aurora: 1, glow: 1, stars: 1 },
 }
 
-// ------------------------------------------------------------------ the ground: mounds and drifts
+// ------------------------------------------------------------------ the ground: mounds, drifts, and a hollow where Chimin lies
+const CHIMIN: [number, number] = [-6.0, 6.2]
 const MOUNDS: [number, number, number, number][] = [ // x, z, radius, height
-  [0, 0, 9.5, 2.2], [-12, -6, 7, 1.6], [13, -9, 8, 1.9], [-9, 8, 5, 0.9], [11, 7, 5.5, 1.1], [-22, 2, 8, 1.4], [22, 4, 7, 1.2], [3, -18, 12, 2.4], [-4, 16, 6, 0.8], [0, 26, 10, 1.6],
+  [0, 0, 9.5, 2.2], [-12, -6, 7, 1.6], [13, -9, 8, 1.9], [-10, 10, 5, 0.9], [11, 7, 5.5, 1.1], [-22, 2, 8, 1.4], [22, 4, 7, 1.2], [3, -18, 12, 2.4], [-3, 17, 6, 0.8], [0, 26, 10, 1.6],
+  [CHIMIN[0], CHIMIN[1], 3.1, -0.65],
 ]
+// value noise, so the small drifts between the mounds never repeat
+function hash2(x: number, z: number) { const s = Math.sin(x * 127.1 + z * 311.7) * 43758.5453; return s - Math.floor(s) }
+function noise2(x: number, z: number) {
+  const ix = Math.floor(x), iz = Math.floor(z); let fx = x - ix, fz = z - iz; fx = fx * fx * (3 - 2 * fx); fz = fz * fz * (3 - 2 * fz)
+  const a = hash2(ix, iz), b = hash2(ix + 1, iz), c = hash2(ix, iz + 1), d = hash2(ix + 1, iz + 1)
+  return (a + (b - a) * fx) * (1 - fz) + (c + (d - c) * fx) * fz
+}
 function H(x: number, z: number) {
   let y = 0
   for (const [mx, mz, r, h] of MOUNDS) { const d2 = ((x - mx) * (x - mx) + (z - mz) * (z - mz)) / (r * r); y += h * Math.exp(-d2 * 1.6) }
-  y += 0.18 * Math.sin(x * 0.7 + 1.3) * Math.cos(z * 0.55) + 0.1 * Math.sin(x * 1.9 + z * 1.3) + 0.06 * Math.sin(x * 4.1) * Math.sin(z * 3.7)
+  y += (noise2(x * 0.18 + 3.1, z * 0.18) - 0.5) * 0.9 + (noise2(x * 0.55, z * 0.55 + 7.3) - 0.5) * 0.3 + (noise2(x * 1.7 + 1.3, z * 1.7) - 0.5) * 0.1
   return y
 }
 function normalAt(x: number, z: number, out: THREE.Vector3) {
@@ -44,10 +55,66 @@ function normalAt(x: number, z: number, out: THREE.Vector3) {
 }
 
 function moundGeometry() {
-  const seg = 160; const geo = new THREE.PlaneGeometry(G, G, seg, seg); geo.rotateX(-Math.PI / 2)
+  const seg = 180; const geo = new THREE.PlaneGeometry(G, G, seg, seg); geo.rotateX(-Math.PI / 2)
   const p = geo.attributes.position as THREE.BufferAttribute
   for (let i = 0; i < p.count; i++) p.setY(i, H(p.getX(i), p.getZ(i)))
   geo.computeVertexNormals(); return geo
+}
+
+// ------------------------------------------------------------------ one shading for snow and letters
+const SNOW_GLSL = `
+  float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float vnoise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f);
+    return mix(mix(hash(i), hash(i+vec2(1,0)), f.x), mix(hash(i+vec2(0,1)), hash(i+vec2(1,1)), f.x), f.y); }
+  float fbm(vec2 p){ float v = 0.0, a = 0.5; for (int i = 0; i < 3; i++) { v += a * vnoise(p); p *= 2.1; a *= 0.5; } return v; }
+  // white in the light, blue in the shadow, a subsurface glow where the surface turns away
+  vec3 snowShade(vec3 n, vec3 V, vec3 L, vec3 white, vec3 shadow, vec3 light, float depth){
+    float wrap = dot(n, L) * 0.5 + 0.5;
+    vec3 col = mix(shadow, white, smoothstep(0.3, 1.0, wrap));
+    col = mix(col, shadow, clamp(depth, 0.0, 1.0) * 0.45);
+    float fres = pow(1.0 - max(0.0, dot(n, V)), 3.0);
+    col += light * fres * 0.12;
+    col += light * pow(max(0.0, dot(n, L)), 10.0) * 0.1;
+    return col; }
+  // glitter: tiny facets in a grid, each with its own tilt, that flash when the reflection meets the eye
+  float glitter(vec3 w, vec3 n, vec3 V, vec3 L, float time){
+    vec2 cell = floor(w.xz * 26.0 + w.y * 7.0);
+    float h = hash(cell);
+    vec3 nj = normalize(n + (vec3(hash(cell + 1.7), hash(cell + 3.1), hash(cell + 5.3)) - 0.5) * 1.3);
+    float g = pow(max(0.0, dot(reflect(-L, nj), V)), 40.0);
+    float tw = 0.55 + 0.45 * sin(time * 2.4 + h * 60.0);
+    return g * step(0.5, h) * tw * 2.4; }
+  // the aurora, as a wash on the ground
+  vec3 auroraOn(vec3 w, float time){
+    vec2 p = w.xz * 0.25; float b = pow(0.5 + 0.5 * sin(p.x * 1.4 + p.y * 0.8 + time * 0.3 + sin(p.y * 1.2 - time * 0.2) * 2.0), 3.0);
+    vec3 ac = mix(vec3(0.35, 0.9, 0.65), vec3(0.6, 0.45, 0.9), 0.5 + 0.5 * sin(p.x * 0.8 - time * 0.17)); return ac * b * 0.35; }
+`
+const snowUniforms = () => ({
+  uLightDir: { value: new THREE.Vector3(-0.35, 0.42, -0.84).normalize() }, uWhite: { value: new THREE.Color('#fcfcff') }, uShadow: { value: new THREE.Color('#b4c1ee') }, uLight: { value: new THREE.Color('#fff4dc') },
+  uAurora: { value: 0 }, uTime: { value: 0 }, uSparkle: { value: 1 }, fogColor: { value: new THREE.Color('#f3ecf3') }, fogNear: { value: 24 }, fogFar: { value: 72 },
+})
+
+function snowMaterial() {
+  return new THREE.ShaderMaterial({
+    uniforms: snowUniforms(),
+    vertexShader: `varying vec3 vW; varying vec3 vN; varying float vFog;
+      void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; vN = normalize(mat3(modelMatrix) * normal); vec4 mv = viewMatrix * w; vFog = -mv.z; gl_Position = projectionMatrix * mv; }`,
+    fragmentShader: `
+      uniform vec3 uLightDir, uWhite, uShadow, uLight, fogColor; uniform float fogNear, fogFar, uAurora, uTime, uSparkle;
+      varying vec3 vW; varying vec3 vN; varying float vFog;
+      ${SNOW_GLSL}
+      void main(){
+        vec3 V = normalize(cameraPosition - vW); vec3 n = normalize(vN);
+        // a soft grain and a gentle pile pattern, so the surface between the letters is not flat paint
+        float grain = fbm(vW.xz * 2.3) - 0.5; n = normalize(n + vec3(grain * 0.25, 0.0, (fbm(vW.zx * 2.9) - 0.5) * 0.25));
+        float depth = smoothstep(1.2, -0.6, vW.y);
+        vec3 col = snowShade(n, V, uLightDir, uWhite, uShadow, uLight, depth);
+        col *= 0.96 + 0.08 * fbm(vW.xz * 9.0);
+        col += uLight * glitter(vW, n, V, uLightDir, uTime) * uSparkle;
+        if (uAurora > 0.001) col += auroraOn(vW, uTime) * uAurora;
+        float f = smoothstep(fogNear, fogFar, vFog); col = mix(col, fogColor, f);
+        gl_FragColor = vec4(col, 1.0); }`,
+  })
 }
 
 // ------------------------------------------------------------------ the glyph atlas
@@ -66,54 +133,73 @@ function glyphAtlas() {
 
 function letterMaterial(atlas: THREE.Texture) {
   return new THREE.ShaderMaterial({
-    uniforms: { uAtlas: { value: atlas }, uLightDir: { value: new THREE.Vector3(-0.45, 0.8, 0.5).normalize() }, uLight: { value: new THREE.Color('#fff6e6') }, uAmbient: { value: new THREE.Color('#ffffff') }, uAurora: { value: 0 }, uTime: { value: 0 },
-      fogColor: { value: new THREE.Color('#e6e7fb') }, fogNear: { value: 26 }, fogFar: { value: 70 } },
+    uniforms: { ...snowUniforms(), uAtlas: { value: atlas } },
     vertexShader: `
-      attribute float aGlyph; attribute vec3 aColor;
-      varying vec2 vUv; varying vec3 vColor; varying vec3 vN; varying vec3 vW; varying float vFog;
+      attribute float aGlyph; attribute vec3 aColor; attribute float aSeed;
+      varying vec2 vUv; varying vec3 vColor; varying vec3 vN; varying vec3 vW; varying float vFog; varying float vSeed;
       void main(){
-        float col = mod(aGlyph, 8.0), row = floor(aGlyph / 8.0); vUv = (uv + vec2(col, row)) / 8.0; vColor = aColor;
+        float col = mod(aGlyph, 8.0), row = floor(aGlyph / 8.0); vUv = (uv + vec2(col, row)) / 8.0; vColor = aColor; vSeed = aSeed;
         vec4 w = modelMatrix * instanceMatrix * vec4(position, 1.0); vW = w.xyz;
         vN = normalize(mat3(modelMatrix * instanceMatrix) * vec3(0.0, 0.0, 1.0));
         vec4 mv = viewMatrix * w; vFog = -mv.z; gl_Position = projectionMatrix * mv; }`,
     fragmentShader: `
-      uniform sampler2D uAtlas; uniform vec3 uLightDir, uLight, uAmbient, fogColor; uniform float fogNear, fogFar, uAurora, uTime;
-      varying vec2 vUv; varying vec3 vColor; varying vec3 vN; varying vec3 vW; varying float vFog;
+      uniform sampler2D uAtlas; uniform vec3 uLightDir, uWhite, uShadow, uLight, fogColor; uniform float fogNear, fogFar, uAurora, uTime, uSparkle;
+      varying vec2 vUv; varying vec3 vColor; varying vec3 vN; varying vec3 vW; varying float vFog; varying float vSeed;
+      ${SNOW_GLSL}
       void main(){
         float a = texture2D(uAtlas, vUv).a; if (a < 0.5) discard;
-        vec3 V = normalize(cameraPosition - vW); vec3 n = vN; if (dot(n, V) < 0.0) n = -n;
-        float lam = 0.5 + 0.5 * max(0.0, dot(n, uLightDir));
-        vec3 col = vColor * mix(uAmbient, uLight, 0.35) * lam;
-        // a facet glint: the letters catch the light as the camera moves
-        vec3 Rf = reflect(-uLightDir, n); float glint = pow(max(0.0, dot(Rf, V)), 30.0);
-        col += vec3(1.0) * glint * 0.7;
-        if (uAurora > 0.001) { vec2 p = vW.xz * 0.25; float b = pow(0.5 + 0.5 * sin(p.x * 1.4 + p.y * 0.8 + uTime * 0.3 + sin(p.y * 1.2 - uTime * 0.2) * 2.0), 3.0);
-          vec3 ac = mix(vec3(0.35, 0.9, 0.65), vec3(0.6, 0.45, 0.9), 0.5 + 0.5 * sin(p.x * 0.8 - uTime * 0.17)); col += ac * b * 0.35 * uAurora; }
+        vec3 V = normalize(cameraPosition - vW); vec3 n = normalize(vN); if (dot(n, V) < 0.0) n = -n;
+        float depth = smoothstep(1.2, -0.6, vW.y);
+        vec3 col = snowShade(n, V, uLightDir, uWhite, uShadow, uLight, depth) * vColor;
+        // each glyph keeps a soft blue edge, so the snow reads as letters when you look
+        float edge = 1.0 - smoothstep(0.5, 0.8, a); col = mix(col, uShadow, edge * 0.5);
+        // each letter is a facet: some catch the light hard as the camera moves
+        vec3 Rf = reflect(-uLightDir, n); float glint = pow(max(0.0, dot(Rf, V)), 24.0 + vSeed * 40.0);
+        col += uLight * glint * (0.35 + vSeed * 1.2) * uSparkle;
+        col += uLight * glitter(vW, n, V, uLightDir, uTime) * uSparkle * 0.5;
+        if (uAurora > 0.001) col += auroraOn(vW, uTime) * uAurora;
         float f = smoothstep(fogNear, fogFar, vFog); col = mix(col, fogColor, f);
         gl_FragColor = vec4(col, 1.0); }`,
     side: THREE.DoubleSide,
   })
 }
 
-// ------------------------------------------------------------------ sparkles on the surface
-function makeSparkles(count = 900) {
+// ------------------------------------------------------------------ sparkles on the surface, and snow dust in the air
+function makeSparkles(count = 1500) {
   const pos = new Float32Array(count * 3), phase = new Float32Array(count), speed = new Float32Array(count), size = new Float32Array(count)
   for (let i = 0; i < count; i++) {
-    const x = (Math.random() - 0.5) * G, z = (Math.random() - 0.5) * G
-    pos[i * 3] = x; pos[i * 3 + 1] = H(x, z) + 0.12; pos[i * 3 + 2] = z
-    phase[i] = Math.random() * Math.PI * 2; speed[i] = 0.6 + Math.random() * 2.4; size[i] = 0.3 + Math.random() * Math.random() * 1.1
+    const x = (Math.random() - 0.5) * 60, z = -30 + Math.random() * 50
+    pos[i * 3] = x; pos[i * 3 + 1] = H(x, z) + 0.1; pos[i * 3 + 2] = z
+    phase[i] = Math.random() * Math.PI * 2; speed[i] = 0.6 + Math.random() * 2.4; size[i] = 0.1 + Math.random() * Math.random() * 0.45
   }
   const geo = new THREE.BufferGeometry()
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('aPhase', new THREE.BufferAttribute(phase, 1))
   geo.setAttribute('aSpeed', new THREE.BufferAttribute(speed, 1)); geo.setAttribute('aSize', new THREE.BufferAttribute(size, 1))
   const mat = new THREE.ShaderMaterial({
-    uniforms: { uTime: { value: 0 }, uPixel: { value: 1 }, uGain: { value: 1 } },
+    uniforms: { uTime: { value: 0 }, uPixel: { value: 1 }, uGain: { value: 1 }, uColor: { value: new THREE.Color('#ffffff') } },
     vertexShader: `attribute float aPhase, aSpeed, aSize; uniform float uTime, uPixel, uGain; varying float vA;
       void main(){ vec4 mv = modelViewMatrix * vec4(position,1.0); float tw = pow(0.5+0.5*sin(uTime*aSpeed+aPhase), 6.0); vA = tw*uGain;
       gl_PointSize = aSize * uPixel * (300.0 / -mv.z) * (0.6+0.8*tw); gl_Position = projectionMatrix * mv; }`,
-    fragmentShader: `varying float vA; void main(){ vec2 p = gl_PointCoord-0.5; float d = length(p);
+    fragmentShader: `varying float vA; uniform vec3 uColor; void main(){ vec2 p = gl_PointCoord-0.5; float d = length(p);
       float core = smoothstep(0.5, 0.08, d); float star = max(0.0, 1.0-abs(p.x)*9.0)*max(0.0,1.0-abs(p.y)*40.0) + max(0.0, 1.0-abs(p.y)*9.0)*max(0.0,1.0-abs(p.x)*40.0);
-      float a = (core + star*0.7) * vA; gl_FragColor = vec4(1.0, 0.99, 1.0, a); }`,
+      float a = (core + star*0.7) * vA; gl_FragColor = vec4(uColor, a); }`,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  })
+  return new THREE.Points(geo, mat)
+}
+
+function makeDust(count = 420) {
+  const pos = new Float32Array(count * 3), seed = new Float32Array(count)
+  for (let i = 0; i < count; i++) { pos[i * 3] = (Math.random() - 0.5) * 40; pos[i * 3 + 1] = Math.random() * 14; pos[i * 3 + 2] = -6 + Math.random() * 28; seed[i] = Math.random() }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('aSeed', new THREE.BufferAttribute(seed, 1))
+  const mat = new THREE.ShaderMaterial({
+    uniforms: { uTime: { value: 0 }, uPixel: { value: 1 }, uColor: { value: new THREE.Color('#ffffff') }, uGain: { value: 1 } },
+    vertexShader: `attribute float aSeed; uniform float uTime, uPixel; varying float vA;
+      void main(){ vec3 p = position; float t = uTime * (0.25 + aSeed * 0.35);
+        p.y = mod(p.y - t, 14.0); p.x += sin(t * 0.7 + aSeed * 20.0) * 0.8; p.z += cos(t * 0.5 + aSeed * 13.0) * 0.5;
+        vec4 mv = modelViewMatrix * vec4(p, 1.0); vA = 0.18 + 0.35 * aSeed;
+        gl_PointSize = (0.12 + aSeed * 0.22) * uPixel * (300.0 / -mv.z); gl_Position = projectionMatrix * mv; }`,
+    fragmentShader: `varying float vA; uniform vec3 uColor; uniform float uGain; void main(){ float d = length(gl_PointCoord - 0.5); float a = smoothstep(0.5, 0.1, d) * vA * uGain; gl_FragColor = vec4(uColor, a); }`,
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
   })
   return new THREE.Points(geo, mat)
@@ -124,7 +210,8 @@ type Field = {
   mesh: THREE.InstancedMesh; pos: Float32Array; quat: Float32Array; scl: Float32Array; vel: Float32Array; ang: Float32Array
   flying: Uint8Array; falling: Uint8Array; list: number[]
 }
-const PALETTE = [[1, 1, 1], [0.93, 0.8, 0.94], [0.82, 0.85, 0.98], [0.52, 0.58, 0.88], [0.7, 0.75, 0.95], [0.86, 0.9, 1.0]]
+// mostly white; a few cooler letters give the snow its blue shadows
+const PALETTE = [[1, 1, 1], [1, 1, 1], [0.97, 0.97, 1], [0.93, 0.95, 1.0], [0.88, 0.91, 1.0], [0.96, 0.92, 0.98]]
 const _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion(), _n = new THREE.Vector3(), _up = new THREE.Vector3(0, 0, 1), _m = new THREE.Matrix4(), _p = new THREE.Vector3(), _s = new THREE.Vector3(), _e = new THREE.Euler()
 
 function restOrientation(x: number, z: number, out: THREE.Quaternion) {
@@ -135,31 +222,34 @@ function restOrientation(x: number, z: number, out: THREE.Quaternion) {
   return out
 }
 
+function spawnSky(pos: Float32Array, vel: Float32Array, b: number) {
+  pos[b] = (Math.random() - 0.5) * 60; pos[b + 2] = -30 + Math.random() * 48; pos[b + 1] = 7 + Math.random() * 14; vel[b + 1] = -0.45 - Math.random() * 0.7
+}
+
 function buildField(atlas: THREE.Texture): Field {
   const total = N + NF
   const geo = new THREE.PlaneGeometry(1, 1)
-  const glyph = new Float32Array(total), color = new Float32Array(total * 3)
+  const glyph = new Float32Array(total), color = new Float32Array(total * 3), seed = new Float32Array(total)
   const pos = new Float32Array(total * 3), quat = new Float32Array(total * 4), scl = new Float32Array(total)
   const vel = new Float32Array(total * 3), ang = new Float32Array(total * 3), flying = new Uint8Array(total), falling = new Uint8Array(total)
   for (let i = 0; i < total; i++) {
-    glyph[i] = Math.floor(Math.random() * 64)
-    const r = Math.random(); const c = PALETTE[r < 0.14 ? 0 : r < 0.24 ? 1 : r < 0.42 ? 2 : r < 0.62 ? 3 : r < 0.84 ? 4 : 5]
+    glyph[i] = Math.floor(Math.random() * 64); seed[i] = Math.random()
+    const c = PALETTE[Math.floor(Math.random() * PALETTE.length)]
     color[i * 3] = c[0]; color[i * 3 + 1] = c[1]; color[i * 3 + 2] = c[2]
-    scl[i] = 0.2 + Math.random() * Math.random() * 0.5
+    scl[i] = 0.17 + Math.random() * Math.random() * 0.6
     if (i < N) {
-      // denser near the camera and around the igloo, sparser far away
-      const x = (Math.random() - 0.5) * G, z = (Math.random() - 0.5) * G; const under = i % 3 === 0
-      pos[i * 3] = x; pos[i * 3 + 2] = z; pos[i * 3 + 1] = H(x, z) + (under ? -0.06 : 0.01 + Math.random() * 0.06)
-      if (under) { color[i * 3] *= 0.8; color[i * 3 + 1] *= 0.82; color[i * 3 + 2] *= 0.95 }
+      // the letters lie where the camera looks, denser toward it
+      const x = (Math.random() - 0.5) * 72, z = -32 + 54 * Math.pow(Math.random(), 0.7); const under = i % 3 === 0
+      pos[i * 3] = x; pos[i * 3 + 2] = z; pos[i * 3 + 1] = H(x, z) + (under ? -0.05 : 0.01 + Math.random() * 0.06)
+      if (under) { color[i * 3] *= 0.86; color[i * 3 + 1] *= 0.88; color[i * 3 + 2] *= 0.97 }
       restOrientation(x, z, _q); quat.set([_q.x, _q.y, _q.z, _q.w], i * 4)
     } else {
-      falling[i] = 1; flying[i] = 1
-      pos[i * 3] = (Math.random() - 0.5) * G; pos[i * 3 + 2] = -G / 2 + Math.random() * (G / 2 + 10); pos[i * 3 + 1] = 6 + Math.random() * 16
-      vel[i * 3 + 1] = -0.6 - Math.random() * 0.8; ang[i * 3] = (Math.random() - 0.5) * 2; ang[i * 3 + 1] = (Math.random() - 0.5) * 2; ang[i * 3 + 2] = (Math.random() - 0.5) * 2
+      falling[i] = 1; flying[i] = 1; spawnSky(pos, vel, i * 3); pos[i * 3 + 1] = Math.random() * 20; scl[i] *= 0.65
+      ang[i * 3] = (Math.random() - 0.5) * 2; ang[i * 3 + 1] = (Math.random() - 0.5) * 2; ang[i * 3 + 2] = (Math.random() - 0.5) * 2
       _q.setFromEuler(_e.set(Math.random() * 6, Math.random() * 6, Math.random() * 6)); quat.set([_q.x, _q.y, _q.z, _q.w], i * 4)
     }
   }
-  geo.setAttribute('aGlyph', new THREE.InstancedBufferAttribute(glyph, 1)); geo.setAttribute('aColor', new THREE.InstancedBufferAttribute(color, 3))
+  geo.setAttribute('aGlyph', new THREE.InstancedBufferAttribute(glyph, 1)); geo.setAttribute('aColor', new THREE.InstancedBufferAttribute(color, 3)); geo.setAttribute('aSeed', new THREE.InstancedBufferAttribute(seed, 1))
   const mesh = new THREE.InstancedMesh(geo, letterMaterial(atlas), total); mesh.frustumCulled = false
   for (let i = 0; i < total; i++) { _p.set(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]); _q.set(quat[i * 4], quat[i * 4 + 1], quat[i * 4 + 2], quat[i * 4 + 3]); _s.setScalar(scl[i]); _m.compose(_p, _q, _s); mesh.setMatrixAt(i, _m) }
   mesh.instanceMatrix.needsUpdate = true
@@ -186,15 +276,14 @@ function stepField(f: Field, dt: number) {
   const keep: number[] = []
   for (const i of f.list) {
     const b = i * 3
-    if (f.falling[i]) { f.vel[b] = Math.sin(f.pos[b + 1] * 1.3 + i) * 0.4; f.vel[b + 2] = Math.cos(f.pos[b + 1] * 0.9 + i * 0.3) * 0.4 }
+    if (f.falling[i]) { f.vel[b] = Math.sin(f.pos[b + 1] * 1.3 + i) * 0.35; f.vel[b + 2] = Math.cos(f.pos[b + 1] * 0.9 + i * 0.3) * 0.35 }
     else f.vel[b + 1] -= 11 * dt
     f.pos[b] += f.vel[b] * dt; f.pos[b + 1] += f.vel[b + 1] * dt; f.pos[b + 2] += f.vel[b + 2] * dt
     const ground = H(f.pos[b], f.pos[b + 2]) + 0.02
     _q.set(f.quat[i * 4], f.quat[i * 4 + 1], f.quat[i * 4 + 2], f.quat[i * 4 + 3])
     if (f.pos[b + 1] <= ground && f.vel[b + 1] <= 0) {
-      if (f.falling[i]) { // landed from the sky: start again up high
-        f.pos[b] = (Math.random() - 0.5) * G; f.pos[b + 2] = -G / 2 + Math.random() * (G / 2 + 10); f.pos[b + 1] = 8 + Math.random() * 14; f.vel[b + 1] = -0.6 - Math.random() * 0.8; keep.push(i)
-      } else { // settle on the slope
+      if (f.falling[i]) { spawnSky(f.pos, f.vel, b); keep.push(i) } // landed from the sky: start again up high
+      else { // settle on the slope
         f.pos[b + 1] = ground + Math.random() * 0.04; f.vel[b] = f.vel[b + 1] = f.vel[b + 2] = 0; f.flying[i] = 0
         restOrientation(f.pos[b], f.pos[b + 2], _q)
       }
@@ -209,7 +298,37 @@ function stepField(f: Field, dt: number) {
   f.list = keep; f.mesh.instanceMatrix.needsUpdate = true
 }
 
+// ------------------------------------------------------------------ the sky
+function skyMaterial() {
+  return new THREE.ShaderMaterial({
+    uniforms: { uTop: { value: new THREE.Color('#9db2ea') }, uMid: { value: new THREE.Color('#d3dcf6') }, uBot: { value: new THREE.Color('#f3ecf3') }, uSun: { value: new THREE.Color('#fff0d0') }, uSunDir: { value: new THREE.Vector3(-0.35, 0.42, -0.84) },
+      uAurora: { value: 0 }, uStars: { value: 0 }, uTime: { value: 0 } },
+    vertexShader: `varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+    fragmentShader: `uniform vec3 uTop, uMid, uBot, uSun, uSunDir; uniform float uAurora, uStars, uTime; varying vec3 vP;
+      ${SNOW_GLSL}
+      void main(){
+        float h = clamp(vP.y, 0.0, 1.0);
+        vec3 c = mix(uBot, uMid, smoothstep(0.0, 0.22, h)); c = mix(c, uTop, smoothstep(0.18, 0.75, h));
+        // a haze of soft cloud low over the horizon
+        float cl = fbm(vec2(atan(vP.x, vP.z) * 3.0, vP.y * 9.0) + uTime * 0.01);
+        c = mix(c, uBot, smoothstep(0.35, 0.0, h) * cl * 0.5);
+        // the sun (or the moon): a wide soft glow and a bright heart
+        float s = max(0.0, dot(vP, normalize(uSunDir)));
+        c += uSun * (pow(s, 6.0) * 0.28 + pow(s, 60.0) * 0.5 + pow(s, 400.0) * 0.8);
+        if (uAurora > 0.001) { float a = atan(vP.x, vP.z); float band = sin(a*5.0 + uTime*0.25 + sin(a*2.0+uTime*0.1)*1.5);
+          float y = smoothstep(0.05, 0.25, vP.y) * (1.0 - smoothstep(0.35, 0.7, vP.y)); float curtain = pow(0.5+0.5*band, 3.0) * y;
+          vec3 ac = mix(vec3(0.45, 0.95, 0.7), vec3(0.65, 0.5, 0.95), 0.5+0.5*sin(a*3.0 - uTime*0.15)); c += ac * curtain * 0.55 * uAurora; }
+        if (uStars > 0.001) { float star = step(0.9985, hash(floor(vP.xz*400.0))) * smoothstep(0.1,0.4,vP.y); c += star * 0.8 * uStars; }
+        gl_FragColor = vec4(c, 1.0); }`,
+    side: THREE.BackSide, depthWrite: false,
+  })
+}
+
 // ------------------------------------------------------------------ the scene
+type Cur = { white: THREE.Color; shadow: THREE.Color; light: THREE.Color; sky: THREE.Color; mid: THREE.Color; horizon: THREE.Color; sun: THREE.Color; sunDir: THREE.Vector3; sparkle: number; aurora: number; glow: number; stars: number }
+const newCur = (): Cur => ({ white: new THREE.Color(), shadow: new THREE.Color(), light: new THREE.Color(), sky: new THREE.Color(), mid: new THREE.Color(), horizon: new THREE.Color(), sun: new THREE.Color(), sunDir: new THREE.Vector3(), sparkle: 1, aurora: 0, glow: 0, stars: 0 })
+const setLook = (d: Cur, L: Look) => { d.white.set(L.white); d.shadow.set(L.shadow); d.light.set(L.light); d.sky.set(L.sky); d.mid.set(L.mid); d.horizon.set(L.horizon); d.sun.set(L.sun); d.sunDir.set(...L.sunDir).normalize(); d.sparkle = L.sparkle; d.aurora = L.aurora; d.glow = L.glow; d.stars = L.stars }
+
 type SceneProps = Props & { setHover: (h: 'igloo' | 'chimin' | null) => void; enterRef: React.MutableRefObject<() => void>; darkRef: React.RefObject<HTMLDivElement | null> }
 function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
   const { camera, gl, scene } = useThree()
@@ -217,12 +336,13 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
   const atlas = useMemo(() => glyphAtlas(), [])
   const field = useMemo(() => buildField(atlas), [atlas])
   const mound = useMemo(() => moundGeometry(), [])
-  const moundMat = useMemo(() => new THREE.MeshLambertMaterial({ color: '#9aa7e6' }), [])
+  const moundMat = useMemo(() => snowMaterial(), [])
   const sparkles = useMemo(() => makeSparkles(), [])
-  const hemi = useRef<THREE.HemisphereLight>(null); const sun = useRef<THREE.DirectionalLight>(null)
+  const dust = useMemo(() => makeDust(), [])
+  const skyMat = useMemo(() => skyMaterial(), [])
 
-  const home = useMemo(() => new THREE.Vector3(0, 6.8, 23), [])
-  const look = useMemo(() => new THREE.Vector3(0, 2.2, 0), [])
+  const home = useMemo(() => new THREE.Vector3(0, 8.2, 23), [])
+  const look = useMemo(() => new THREE.Vector3(0, 2.0, 0), [])
   const par = useRef({ x: 0, y: 0 }); const entering = useRef(false)
 
   // pointer on the ground (against the mound mesh, so the cursor really touches the snow)
@@ -247,24 +367,12 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
   const [foxFlip, setFoxFlip] = useState(false)
 
   // time of day
-  const cur = useMemo(() => ({ snow: new THREE.Color(), light: new THREE.Color(), ambient: new THREE.Color(), sky: new THREE.Color(), horizon: new THREE.Color(), sparkle: 1, aurora: 0, glow: 0 }), [])
-  const tgt = useMemo(() => ({ snow: new THREE.Color(), light: new THREE.Color(), ambient: new THREE.Color(), sky: new THREE.Color(), horizon: new THREE.Color(), sparkle: 1, aurora: 0, glow: 0 }), [])
+  const cur = useMemo(newCur, []); const tgt = useMemo(newCur, [])
   useEffect(() => {
-    const set = (d: typeof tgt) => { const L = LOOKS[getMode()]; d.snow.set(L.snow); d.light.set(L.light); d.ambient.set(L.ambient); d.sky.set(L.sky); d.horizon.set(L.horizon); d.sparkle = L.sparkle; d.aurora = L.aurora; d.glow = L.glow }
-    set(cur); set(tgt); const on = () => set(tgt); window.addEventListener('modechange', on); return () => window.removeEventListener('modechange', on)
+    setLook(cur, LOOKS[getMode()]); setLook(tgt, LOOKS[getMode()])
+    const on = () => setLook(tgt, LOOKS[getMode()]); window.addEventListener('modechange', on); return () => window.removeEventListener('modechange', on)
   }, [cur, tgt])
-  const skyMat = useMemo(() => new THREE.ShaderMaterial({
-    uniforms: { uTop: { value: new THREE.Color('#a9b7ea') }, uBot: { value: new THREE.Color('#e6e7fb') }, uAurora: { value: 0 }, uTime: { value: 0 } },
-    vertexShader: `varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
-    fragmentShader: `uniform vec3 uTop, uBot; uniform float uAurora, uTime; varying vec3 vP;
-      void main(){ float h = clamp(vP.y, 0.0, 1.0); vec3 c = mix(uBot, uTop, pow(h, 0.6));
-      if (uAurora > 0.001) { float a = atan(vP.x, vP.z); float band = sin(a*5.0 + uTime*0.25 + sin(a*2.0+uTime*0.1)*1.5);
-        float y = smoothstep(0.05, 0.25, vP.y) * (1.0 - smoothstep(0.35, 0.7, vP.y)); float curtain = pow(0.5+0.5*band, 3.0) * y;
-        vec3 ac = mix(vec3(0.45, 0.95, 0.7), vec3(0.65, 0.5, 0.95), 0.5+0.5*sin(a*3.0 - uTime*0.15)); c += ac * curtain * 0.55 * uAurora;
-        float star = step(0.9985, fract(sin(dot(floor(vP.xz*400.0), vec2(12.9898,78.233))) * 43758.5453)) * smoothstep(0.1,0.4,vP.y); c += star * 0.8 * uAurora; }
-      gl_FragColor = vec4(c, 1.0); }`,
-    side: THREE.BackSide, depthWrite: false,
-  }), [])
+  const pieceTint = useMemo(() => new THREE.Color('#ffffff'), [])
   const glowMat = useMemo(() => new THREE.MeshBasicMaterial({ color: '#ffb36b', transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }), [])
   const glowTex = useMemo(() => { const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d')!; const gr = g.createRadialGradient(128, 128, 0, 128, 128, 128); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 256, 256); return new THREE.CanvasTexture(c) }, [])
   useEffect(() => { glowMat.map = glowTex; glowMat.needsUpdate = true }, [glowMat, glowTex])
@@ -289,17 +397,23 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
     return () => { window.removeEventListener('keydown', onKey); timelines.current.forEach(t => t.kill()) }
   }, [camera, look, onEnter, enterRef, darkRef, reduced])
 
-  // Chimin lies in a hollow on the left; letters are heaped over her edges
-  const chiminPos = useMemo(() => new THREE.Vector3(-6.6, 0, 5.4), [])
-    // lying in a hollow, but propped toward the camera so she reads from the low front view
-  const chiminQuat = useMemo(() => { const q = new THREE.Quaternion(); normalAt(chiminPos.x, chiminPos.z, _n); const toCam = new THREE.Vector3(0.15, 0.55, 1).normalize(); const nn = _n.clone().add(toCam.multiplyScalar(1.6)).normalize(); q.setFromUnitVectors(new THREE.Vector3(0, 0, 1), nn); _q2.setFromAxisAngle(nn, 0.25); q.premultiply(_q2); return q }, [chiminPos])
+  // Chimin lies in the hollow on the left: nearly flat, tipped a little toward the camera, with the rim of the hollow heaped over her feet
+  const chiminPos = useMemo(() => new THREE.Vector3(CHIMIN[0], 0, CHIMIN[1]), [])
+  const chiminQuat = useMemo(() => { const q = new THREE.Quaternion(); normalAt(chiminPos.x, chiminPos.z, _n); const toCam = new THREE.Vector3(0.12, 0.45, 1).normalize(); const nn = _n.clone().add(toCam.multiplyScalar(0.5)).normalize(); q.setFromUnitVectors(new THREE.Vector3(0, 0, 1), nn); _q2.setFromAxisAngle(nn, 0.2); q.premultiply(_q2); return q }, [chiminPos])
   useEffect(() => {
-    // heap: move a few hundred rest letters onto the rim of Chimin's silhouette, slightly above her plane
+    // heap: move a few hundred rest letters onto the rim of the hollow, a little above the ground
     let moved = 0
-    for (let i = 0; i < N && moved < 420; i += 3) {
-      const t = Math.random() * Math.PI * 2; const rr = 1.9 + Math.random() * 0.9; const ex = Math.cos(t) * rr * 1.1, ez = Math.sin(t) * rr * 0.9
+    for (let i = 0; i < N && moved < 520; i += 3) {
+      const t = Math.random() * Math.PI * 2; const rr = 2.2 + Math.random() * 1.1; const ex = Math.cos(t) * rr * 1.05, ez = Math.sin(t) * rr * 0.95
       const x = chiminPos.x + ex, z = chiminPos.z + ez
-      field.pos[i * 3] = x; field.pos[i * 3 + 2] = z; field.pos[i * 3 + 1] = H(x, z) + 0.12 + Math.random() * 0.1
+      field.pos[i * 3] = x; field.pos[i * 3 + 2] = z; field.pos[i * 3 + 1] = H(x, z) + 0.08 + Math.random() * 0.12
+      restOrientation(x, z, _q); field.quat.set([_q.x, _q.y, _q.z, _q.w], i * 4)
+      _p.set(x, field.pos[i * 3 + 1], z); _s.setScalar(field.scl[i]); _m.compose(_p, _q, _s); field.mesh.setMatrixAt(i, _m); moved++
+    }
+    // and a drift heaped against the igloo's front, where the plates meet the snow
+    for (let i = 1; i < N && moved < 1400; i += 3) {
+      const x = (Math.random() - 0.5) * 12.5, z = 1.0 + Math.random() * Math.random() * 3.2; const lift = Math.max(0, 0.9 - Math.abs(x) / 7 - (z - 1.0) * 0.4)
+      field.pos[i * 3] = x; field.pos[i * 3 + 2] = z; field.pos[i * 3 + 1] = H(x, z) + 0.03 + Math.random() * lift
       restOrientation(x, z, _q); field.quat.set([_q.x, _q.y, _q.z, _q.w], i * 4)
       _p.set(x, field.pos[i * 3 + 1], z); _s.setScalar(field.scl[i]); _m.compose(_p, _q, _s); field.mesh.setMatrixAt(i, _m); moved++
     }
@@ -309,15 +423,21 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
   const t0 = useRef(0)
   useFrame((_, dt) => {
     const d = Math.min(dt, 0.05); t0.current += d; const k = Math.min(1, d * 2.2)
-    cur.snow.lerp(tgt.snow, k); cur.light.lerp(tgt.light, k); cur.ambient.lerp(tgt.ambient, k); cur.sky.lerp(tgt.sky, k); cur.horizon.lerp(tgt.horizon, k)
-    cur.sparkle += (tgt.sparkle - cur.sparkle) * k; cur.aurora += (tgt.aurora - cur.aurora) * k; cur.glow += (tgt.glow - cur.glow) * k
-    moundMat.color.copy(cur.snow); if (hemi.current) { hemi.current.color.copy(cur.ambient); hemi.current.groundColor.copy(cur.snow) } if (sun.current) sun.current.color.copy(cur.light)
-    const lm = field.mesh.material as THREE.ShaderMaterial
-    lm.uniforms.uLight.value.copy(cur.light); lm.uniforms.uAmbient.value.copy(cur.ambient); lm.uniforms.uAurora.value = cur.aurora; lm.uniforms.uTime.value = t0.current; lm.uniforms.fogColor.value.copy(cur.horizon)
+    for (const key of ['white', 'shadow', 'light', 'sky', 'mid', 'horizon', 'sun'] as const) cur[key].lerp(tgt[key], k)
+    cur.sunDir.lerp(tgt.sunDir, k).normalize()
+    cur.sparkle += (tgt.sparkle - cur.sparkle) * k; cur.aurora += (tgt.aurora - cur.aurora) * k; cur.glow += (tgt.glow - cur.glow) * k; cur.stars += (tgt.stars - cur.stars) * k
+    for (const m of [moundMat, field.mesh.material as THREE.ShaderMaterial]) {
+      const u = m.uniforms; u.uWhite.value.copy(cur.white); u.uShadow.value.copy(cur.shadow); u.uLight.value.copy(cur.light); u.uLightDir.value.copy(cur.sunDir)
+      u.uAurora.value = cur.aurora; u.uTime.value = reduced ? 0.3 : t0.current; u.uSparkle.value = cur.sparkle; u.fogColor.value.copy(cur.horizon)
+    }
     ;(scene.background as THREE.Color).copy(cur.horizon); (scene.fog as THREE.Fog).color.copy(cur.horizon)
-    skyMat.uniforms.uTop.value.copy(cur.sky); skyMat.uniforms.uBot.value.copy(cur.horizon); skyMat.uniforms.uAurora.value = cur.aurora; skyMat.uniforms.uTime.value = t0.current
-    const sm = sparkles.material as THREE.ShaderMaterial; sm.uniforms.uTime.value = reduced ? 0.3 : t0.current; sm.uniforms.uGain.value = cur.sparkle; sm.uniforms.uPixel.value = gl.getPixelRatio()
+    const su = skyMat.uniforms; su.uTop.value.copy(cur.sky); su.uMid.value.copy(cur.mid); su.uBot.value.copy(cur.horizon); su.uSun.value.copy(cur.sun); su.uSunDir.value.copy(cur.sunDir)
+    su.uAurora.value = cur.aurora; su.uStars.value = cur.stars; su.uTime.value = t0.current
+    const sm = sparkles.material as THREE.ShaderMaterial; sm.uniforms.uTime.value = reduced ? 0.3 : t0.current; sm.uniforms.uGain.value = cur.sparkle; sm.uniforms.uPixel.value = gl.getPixelRatio(); sm.uniforms.uColor.value.copy(cur.light).lerp(cur.white, 0.5)
+    const dm = dust.material as THREE.ShaderMaterial; dm.uniforms.uTime.value = reduced ? 0 : t0.current; dm.uniforms.uPixel.value = gl.getPixelRatio(); dm.uniforms.uColor.value.copy(cur.white).multiplyScalar(0.8); dm.uniforms.uGain.value = 0.5 + cur.sparkle * 0.3
     glowMat.opacity = cur.glow * 0.8
+    // the painted pieces take the day's light: white by day, warm by evening, blue by night
+    pieceTint.copy(cur.white).lerp(cur.light, 0.25)
 
     // the cursor shifts the snow
     if (hasCursor.current && !entering.current && !reduced) {
@@ -339,7 +459,7 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
     } else F.idle += d
     if (fox.current) {
       const bob = F.moving ? Math.abs(Math.sin(F.gait)) * 0.1 : 0
-      fox.current.position.set(F.x, H(F.x, F.z) + 0.12 + bob, F.z)  // sunk: its legs are in the snow
+      fox.current.position.set(F.x, H(F.x, F.z) + 0.02 + bob, F.z)  // sunk to the belly: its legs are in the snow
       fox.current.rotation.z = F.moving ? Math.sin(F.gait) * 0.05 : 0
       fox.current.rotation.y = Math.atan2(camera.position.x - F.x, camera.position.z - F.z)
     }
@@ -352,32 +472,32 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
 
   const iglooY = H(0, 0)
   const camCtl = useRef<PieceControl | null>(null)
+  const piece = { tint: pieceTint, snow: cur.white, fog: true }
   return (
     <>
-      <color attach="background" args={['#e6e7fb']} />
-      <fog attach="fog" args={['#e6e7fb', 26, 70]} />
-      <hemisphereLight ref={hemi} args={['#ffffff', '#9aa7e6', 1.2]} />
-      <directionalLight ref={sun} position={[-9, 14, 10]} intensity={1.0} />
+      <color attach="background" args={['#e8e3f1']} />
+      <fog attach="fog" args={['#e8e3f1', 24, 72]} />
       <mesh material={skyMat} renderOrder={-1}><sphereGeometry args={[150, 32, 16]} /></mesh>
-      {/* the snow: the mound underneath, the letters on it, the sparkles */}
+      {/* the snow: the piled ground, the letters on it, the sparkles on it, the dust in the air */}
       <mesh ref={moundRef} geometry={mound} material={moundMat} />
       <primitive object={field.mesh} />
       <primitive object={sparkles} />
-      {/* the igloo, set into the middle mound */}
-      <Piece url={paper('igloo-back')} width={12.4} position={[0, iglooY + 2.9, -2.6]} rotation={[-0.06, 0, 0]} delay={0.2} solid onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
-      <Piece url={paper('igloo-front')} width={11.6} position={[0, iglooY + 2.5, 1.2]} rotation={[-0.05, 0, 0]} delay={0.5} solid onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
-      <Piece url={paper('igloo-arch')} width={4.6} position={[0, H(0, 3.9) + 1.35, 3.9]} rotation={[-0.04, 0, 0]} delay={0.8} solid onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
+      <primitive object={dust} />
+      {/* the igloo, set into the middle mound, its base in the snow */}
+      <Piece url={paper('igloo-back')} width={12.4} position={[0, iglooY + 2.6, -2.6]} rotation={[-0.06, 0, 0]} delay={0.2} solid sink={0.1} {...piece} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
+      <Piece url={paper('igloo-front')} width={11.6} position={[0, iglooY + 2.2, 1.2]} rotation={[-0.05, 0, 0]} delay={0.5} solid sink={0.12} {...piece} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
+      <Piece url={paper('igloo-arch')} width={4.6} position={[0, H(0, 3.9) + 1.2, 3.9]} rotation={[-0.04, 0, 0]} delay={0.8} solid sink={0.14} {...piece} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
       <mesh position={[0, H(0, 6.4) + 0.08, 6.4]} rotation={[-Math.PI / 2, 0, 0]} material={glowMat}><planeGeometry args={[9, 7]} /></mesh>
       {/* Chimin, lying in the snow */}
-      <Piece url={paper('chimin')} width={4.6} position={[chiminPos.x, H(chiminPos.x, chiminPos.z) + 0.9, chiminPos.z]} quaternion={chiminQuat} delay={1.1} solid onHover={h => setHover(h ? 'chimin' : null)} onClick={onAbout} />
+      <Piece url={paper('chimin')} width={4.2} position={[chiminPos.x, H(chiminPos.x, chiminPos.z) + 0.5, chiminPos.z]} quaternion={chiminQuat} delay={1.1} solid {...piece} onHover={h => setHover(h ? 'chimin' : null)} onClick={onAbout} />
       {/* the fox, wading */}
       <group ref={fox}>
-        <Piece url={paper('fox-side')} width={3.2} position={[0, 0.5, 0]} delay={1.4} flip={foxFlip} solid control={camCtl} />
+        <Piece url={paper('fox-side')} width={3.2} position={[0, 0.5, 0]} delay={1.4} flip={foxFlip} solid sink={0.2} {...piece} control={camCtl} />
       </group>
       <EffectComposer enableNormalPass={false}>
-        <Bloom luminanceThreshold={0.9} luminanceSmoothing={0.15} intensity={0.7} mipmapBlur />
-        <Noise opacity={0.04} />
-        <Vignette eskil={false} offset={0.2} darkness={0.35} />
+        <Bloom luminanceThreshold={0.96} luminanceSmoothing={0.08} intensity={0.55} mipmapBlur />
+        <Noise opacity={0.025} />
+        <Vignette eskil={false} offset={0.15} darkness={0.3} />
       </EffectComposer>
     </>
   )
@@ -392,7 +512,7 @@ export function Letters({ onEnter, onAbout }: Props) {
   return (
     <div className={`snow ${entering ? 'snow--entering' : ''} ${hover ? `snow--hover-${hover}` : ''}`}>
       <div className="snow__canvas">
-        <Canvas dpr={[1, 1.5]} camera={{ fov: 36, near: 0.1, far: 400, position: [0, 6.8, 23] }} gl={{ antialias: true, powerPreference: 'high-performance' }} onPointerDown={() => { if (hover === 'igloo') enter() }}>
+        <Canvas dpr={[1, 1.5]} camera={{ fov: 36, near: 0.1, far: 400, position: [0, 8.2, 23] }} gl={{ antialias: true, powerPreference: 'high-performance' }} onPointerDown={() => { if (hover === 'igloo') enter() }}>
           <Suspense fallback={null}>
             <Scene onEnter={onEnter} onAbout={onAbout} setHover={setHover} enterRef={enterRef} darkRef={darkRef} />
           </Suspense>

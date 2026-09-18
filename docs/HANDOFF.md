@@ -1,4 +1,4 @@
-# Handoff notes — Chimin Liu, personal site (v7, "letter snow")
+# Handoff notes — Chimin Liu, personal site (v8, "paint in snow")
 
 Updated 2026-09-17 at the end of the second session. Read this, then `docs/PRD.md`,
 `docs/DESIGN.md` (v5) and `docs/ART-BRIEF.md`, before writing any code.
@@ -56,11 +56,11 @@ tools/collage.py             the postcard fronts, pieces and stickers (collage);
 tools/optimize-art.py        PNG/JPG under public/art → WebP q82, deletes sources
 src/room/art.ts              every image slot, by name
 src/room/useArt.tsx          useArt(src) probes whether a file exists; <Art> renders it or the blockout placeholder
-src/snow/Letters.tsx         outside (R3F): letter snow. H(x,z) mounds, glyph atlas, InstancedMesh of letters with a custom lit shader, particle sim, sparkles, fox, Chimin, igloo plates
-src/snow/Diorama.tsx         the earlier paper-diorama outside (unused; delete when v7 is approved)
+src/snow/Letters.tsx         outside (R3F): letter snow. H(x,z) mounds + value noise, glyph atlas, InstancedMesh of letters and the mound with one snow shader (SNOW_GLSL), particle sim, sparkles, dust, sky shader, fox, Chimin, igloo plates
+tools/defringe.py            takes the white fringe off a cut-out piece (nearest-solid colour bleed + 1px alpha erosion); run once per new piece
 src/snow/Inside.tsx          inside (R3F): table close up with the objects, light planes by mode, window + shutter, hover lift, dissolve on open
 src/snow/Piece.tsx           the painted plane (shared): paint material, reveal on mount, control ref (reveal/dissolve), tint, hover/click
-src/snow/paint.ts            the paint material: ink line → watercolour fill with a wet edge (uReveal), dissolve into drifting pigment (uDissolve)
+src/snow/paint.ts            the paint material: ink line → watercolour fill with a wet edge (uReveal), dissolve into drifting pigment (uDissolve), brushed edge (noise on alpha), uCut, uTint + uTopLight, uSink→uSnow, fog
 tools/paper.py               stand-in paper pieces: stylise(cut-out) → few tones + fibre + torn edge + rim; drawn igloo plates, drifts, Chimin, fox side view
 src/room/Room.tsx            world scaling, five depth layers (data-depth 0..1), camera dolly on open, the pulled postcard, sheets, assemble-on-arrival
 src/room/camera.ts           the 2.5D camera: pointer parallax + dolly, applied per layer by depth on gsap.ticker
@@ -116,15 +116,24 @@ src/styles/base.css          all room, blockout and sheet styles
   `hoverRef` → a group lifts 0.18; `opened` prop (from Room: photos→camera, writing→notebook,
   place→postcards) → that piece's control `dissolve(1)`, and back to `reveal(1)` when it closes. The
   vase's `inVase[]` is in localStorage under `vase`; postcards open places in order (`nextPlace` in Room).
-- **Letter snow** (`Letters.tsx`): `H(x,z)` = sum of gaussian mounds + low sines; `moundGeometry` is a 160² plane
-  displaced by H (opaque, Lambert, also the raycast target for the cursor). `glyphAtlas()` draws 64 glyphs on a
-  1024² canvas; `buildField` makes one `InstancedMesh` of N+NF unit quads with per-instance `aGlyph`/`aColor`
-  and typed arrays pos/quat/scl/vel/ang/flying/falling; `restOrientation` aligns a letter to the slope normal
-  with random yaw/tilt. `kick()` samples a stride of indices around a point and launches letters (velocity
-  up and outward, angular velocity); `stepField` integrates flying ones, lands them on `H`, respawns sky-fallers
-  high up away from the camera, and uploads only the touched instances via `addUpdateRange`. The letter shader
-  does Lambert + a facet glint (reflect · view)^30 + aurora + fog. Fox/Chimin/igloo are `Piece`s with `solid`
-  (depthWrite on, alpha discard) so the mound hides their sunk parts; Chimin gets ~420 letters heaped on her rim.
+- **Letter snow** (`Letters.tsx`, v8): `H(x,z)` = sum of gaussian mounds (one negative: Chimin's hollow at `CHIMIN`) +
+  three octaves of JS value noise; `moundGeometry` is a 180² plane displaced by H (opaque; also the raycast target for
+  the cursor). `SNOW_GLSL` is shared by the mound and the letters: `snowShade` (wrap-lit white→shadow, hollow darkening
+  by world y, fresnel glow, a soft highlight), `glitter` (hashed cells with jittered normals, (reflect·V)^40, twinkle),
+  `auroraOn`. Colours per mode in `LOOKS` (white, shadow, light, sky/mid/horizon, sun + sunDir, sparkle, aurora, glow,
+  stars) eased in `cur`→`tgt`; the sun is in front of the camera (z negative) so the field is backlit. `glyphAtlas()`
+  draws 64 glyphs on a 1024² canvas; `buildField` makes one `InstancedMesh` of N+NF unit quads (N = 96000, 48000 under
+  760px) with per-instance `aGlyph`/`aColor`/`aSeed`, letters distributed where the camera looks (x ±36, z −32…22,
+  denser near); `restOrientation` aligns a letter to the slope normal with random yaw/tilt. The letter shader adds a
+  blue edge per glyph (atlas alpha 0.5…0.8) and a per-letter facet glint. `kick()` samples a stride of indices around
+  a point and launches letters; `stepField` integrates flying ones, lands them on `H`, respawns sky-fallers (`spawnSky`,
+  z ≤ 18 so nothing appears beside the camera), and uploads only touched instances via `addUpdateRange`. Sparkles =
+  1500 twinkle points on the surface; dust = 420 soft points drifting down near the camera. Sky = a sphere shader
+  (three-stop gradient, fbm haze at the horizon, sun glow, aurora curtains, stars). Post = Bloom (threshold 0.96, so
+  only glints and sparkles bloom) + Noise + Vignette; DepthOfField was tried and dropped (it softened the igloo).
+  Fox/Chimin/igloo are `Piece`s with `solid` (depthWrite on, discard < 0.5) plus `tint`, `snow`, `fog`, and `sink`
+  (igloo 0.1–0.14, fox 0.2); Chimin lies at `H+0.5` on a quaternion = surface normal + 0.5·toward-camera, ~520 letters
+  are heaped on her rim and ~1400 in a drift against the igloo's base (`useEffect` after `buildField`).
 - The old three.js Snowfield (v5.4–5.5) is in git history if needed. Ground = a 2048 canvas of ~30k letters
   as a repeating texture (5.5×) + one non-repeating drift overlay; sparkles = `Points` with a twinkle
   shader (additive); igloo = one `InstancedMesh` of boxes on a sphere + tunnel, a joint sphere, a dark
@@ -170,7 +179,8 @@ Console: clean (art exists for every slot now). The verify scripts lived in the 
    shapes: charming, not finished. Only the outside is in the diorama language; the room inside is still
    the v5 painted-volume build and must be rebuilt in the same language (a table close up, few objects).
 1c. Headless screenshots are unreliable (frames captured mid-render, SwiftShader fps is meaningless for 82k instances); judge in a browser.
-1d. Letter snow to tune with Chimin: mound shapes, density per layer, letter size, kick strength, sky-fall rate; a night pass; phones (halve N).
+1d. Letter snow to tune with Chimin: mound shapes, density per layer, letter size, kick strength, sky-fall rate. Real-GPU performance is unmeasured (SwiftShader reads 1 fps regardless); if a laptop struggles, lower N first, then the sparkle/dust counts.
+1e. The inside (`Inside.tsx`) is still the paper-diorama room and has not had the v8 pass: it should show the letter snow through the window, take the same light, and its pieces already get the brushed edge/defringe.
 2. Chimin's authored default postcard arrangements (replace `defaultPieces`) once pieces exist.
 3. Work has no object in the room (it's listed in About). Decide: a laptop on the table or a shelf. The fridge is furniture now; it could carry Work.
 3b. The 3D hero object (vase or bag) is planned for M2b with lazy three.js; not added yet.
