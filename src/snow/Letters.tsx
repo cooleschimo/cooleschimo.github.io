@@ -34,19 +34,20 @@ const LOOKS: Record<Mode, Look> = {
 const CHIMIN: [number, number] = [-6.0, 6.2]
 const KEEP_CHIMIN = 3.7   // the fox never comes closer to her than this
 // Chimin's picture (a snow angel from above, 1086×1432): pivots and regions in picture uv, origin bottom left
-const CHIMIN_ASPECT = 1432 / 1086
+const CHIMIN_ASPECT = 1259 / 1086
+// Chimin's own drawing (1086×1259): the beanie and hair, the arms out to the mittens, the legs to the boots
 const CHIMIN_BONES: Bone[] = [
-  { pivot: [0.5, 0.70], region: [0.5, 0.80, 0.17, 0.13] },     // head
-  { pivot: [0.38, 0.70], region: [0.20, 0.72, 0.22, 0.13] },   // left arm
-  { pivot: [0.62, 0.70], region: [0.80, 0.72, 0.22, 0.13] },   // right arm
-  { pivot: [0.42, 0.42], region: [0.27, 0.27, 0.20, 0.22] },   // left leg
-  { pivot: [0.58, 0.42], region: [0.73, 0.27, 0.20, 0.22] },   // right leg
+  { pivot: [0.5, 0.78], region: [0.53, 0.88, 0.22, 0.14] },    // head (with the hair)
+  { pivot: [0.38, 0.75], region: [0.21, 0.79, 0.21, 0.11] },   // left arm
+  { pivot: [0.63, 0.75], region: [0.80, 0.79, 0.21, 0.11] },   // right arm
+  { pivot: [0.45, 0.50], region: [0.30, 0.30, 0.18, 0.24] },   // left leg
+  { pivot: [0.56, 0.50], region: [0.71, 0.30, 0.18, 0.24] },   // right leg
 ]
 // her body in the snow (uv, bone or -1 for the torso, radius): pressed in all the time, and swept by the angel
 const CHIMIN_BODY: [number, number, number, number][] = [
-  [0.5, 0.8, 0, 0.42], [0.5, 0.64, -1, 0.5], [0.5, 0.52, -1, 0.52], [0.44, 0.56, -1, 0.4], [0.56, 0.56, -1, 0.4], [0.5, 0.42, -1, 0.42],
-  [0.3, 0.72, 1, 0.3], [0.2, 0.73, 1, 0.3], [0.09, 0.74, 1, 0.34], [0.7, 0.72, 2, 0.3], [0.8, 0.73, 2, 0.3], [0.91, 0.73, 2, 0.34],
-  [0.37, 0.35, 3, 0.3], [0.28, 0.27, 3, 0.3], [0.18, 0.17, 3, 0.36], [0.63, 0.35, 4, 0.3], [0.72, 0.27, 4, 0.3], [0.82, 0.17, 4, 0.36],
+  [0.5, 0.88, 0, 0.42], [0.62, 0.85, 0, 0.3], [0.5, 0.67, -1, 0.5], [0.5, 0.57, -1, 0.5], [0.43, 0.61, -1, 0.4], [0.57, 0.61, -1, 0.4], [0.5, 0.48, -1, 0.42],
+  [0.3, 0.77, 1, 0.3], [0.19, 0.8, 1, 0.3], [0.08, 0.83, 1, 0.34], [0.7, 0.77, 2, 0.3], [0.81, 0.8, 2, 0.3], [0.92, 0.83, 2, 0.34],
+  [0.38, 0.4, 3, 0.3], [0.28, 0.28, 3, 0.3], [0.16, 0.12, 3, 0.36], [0.62, 0.4, 4, 0.3], [0.72, 0.28, 4, 0.3], [0.86, 0.12, 4, 0.36],
 ]
 // the fox's picture (side view walking right, 1505×995)
 // Chimin's fox, walking (1400×826): head, tail, and the four legs the picture shows

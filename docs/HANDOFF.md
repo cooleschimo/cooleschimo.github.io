@@ -197,6 +197,11 @@ Console: clean (art exists for every slot now). The verify scripts lived in the 
    the v5 painted-volume build and must be rebuilt in the same language (a table close up, few objects).
 1c. Headless screenshots are unreliable (frames captured mid-render, SwiftShader fps is meaningless for 82k instances); judge in a browser.
 1d. Letter snow to tune with Chimin: mound shapes, density per layer, letter size, kick strength, sky-fall rate. Real-GPU performance is unmeasured (SwiftShader reads 1 fps regardless); if a laptop struggles, lower N first, then the sparkle/dust counts.
+1o. **v13, Chimin's own drawing** (`chimin.webp`, 1086×1259 after the crop; cut out with rembg + matting, defringe,
+   restyle `--rim 4 --smooth 3`, then a fleck pass that drops saturated matting flecks at the edge). `CHIMIN_ASPECT`
+   1259/1086; `CHIMIN_BONES` re-placed (neck pivot 0.5,0.78 with the hair in the head region; shoulders 0.38/0.63 at
+   0.75; hips 0.45/0.56 at 0.5); `CHIMIN_BODY` 19 points (a second head point for the spilled hair). The prompt for
+   the drawing is in PROMPTS.md (pale-yellow puffer, saggy beanie, tan gloves, navy jeans, off-white boots, side part).
 1n. **v12.2, one fox**: the six-picture switching read as several animals, so the fox is one drawing again: the side
    view, rigged, turned toward its heading up to ±0.7 rad; the leap picture only while airborne (quick fade), the
    sleeping picture only after it has stopped (slow fade). `fox-run`, `fox-front`, `fox-back` stay in `public/art/paper`
