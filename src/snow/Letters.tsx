@@ -6,7 +6,6 @@ import { gsap } from '../lib/gsap'
 import { prefersReducedMotion } from '../lib/motion-prefs'
 import { getMode, type Mode } from '../lib/mode'
 import { Piece, paper, type Bone, type PieceControl, type Pose } from './Piece'
-import { useArt } from '../room/useArt'
 
 /**
  * Outside: snow that is really made of letters. Deep white snow, piled in mounds and drifts, whose surface
@@ -50,14 +49,25 @@ const CHIMIN_BODY: [number, number, number, number][] = [
   [0.37, 0.35, 3, 0.3], [0.28, 0.27, 3, 0.3], [0.18, 0.17, 3, 0.36], [0.63, 0.35, 4, 0.3], [0.72, 0.27, 4, 0.3], [0.82, 0.17, 4, 0.36],
 ]
 // the fox's picture (side view walking right, 1505×995)
+// Chimin's fox, walking (1400×826): head, tail, and the four legs the picture shows
 const FOX_BONES: Bone[] = [
-  { pivot: [0.78, 0.6], region: [0.88, 0.72, 0.14, 0.20] },    // head
-  { pivot: [0.42, 0.5], region: [0.20, 0.36, 0.22, 0.28] },    // tail
-  { pivot: [0.82, 0.42], region: [0.87, 0.2, 0.07, 0.17] },    // front near leg
-  { pivot: [0.70, 0.42], region: [0.69, 0.2, 0.06, 0.17] },    // front far leg
-  { pivot: [0.50, 0.42], region: [0.50, 0.2, 0.06, 0.17] },    // back near leg
-  { pivot: [0.40, 0.42], region: [0.34, 0.2, 0.07, 0.17] },    // back far leg
+  { pivot: [0.8, 0.62], region: [0.9, 0.76, 0.13, 0.22] },     // head
+  { pivot: [0.36, 0.5], region: [0.16, 0.46, 0.2, 0.28] },     // tail
+  { pivot: [0.86, 0.38], region: [0.88, 0.15, 0.08, 0.18] },   // front near leg
+  { pivot: [0.72, 0.38], region: [0.72, 0.15, 0.06, 0.18] },   // front far leg
+  { pivot: [0.56, 0.38], region: [0.55, 0.15, 0.07, 0.18] },   // back near leg
+  { pivot: [0.40, 0.38], region: [0.38, 0.15, 0.06, 0.18] },   // back far leg
 ]
+// the galloping picture (1400×673): the pairs stretch as one
+const FOX_RUN_BONES: Bone[] = [
+  { pivot: [0.8, 0.6], region: [0.9, 0.72, 0.12, 0.24] },      // head
+  { pivot: [0.36, 0.55], region: [0.15, 0.62, 0.18, 0.3] },    // tail
+  { pivot: [0.8, 0.42], region: [0.9, 0.2, 0.12, 0.22] },      // front pair
+  { pivot: [0.8, 0.42], region: [0.9, 0.2, 0.0, 0.0] },        // (unused)
+  { pivot: [0.36, 0.42], region: [0.24, 0.2, 0.14, 0.22] },    // back pair
+  { pivot: [0.36, 0.42], region: [0.24, 0.2, 0.0, 0.0] },      // (unused)
+]
+type FoxView = 'side' | 'run' | 'leap' | 'front' | 'back' | 'sit'
 const MOUNDS: [number, number, number, number][] = [ // x, z, radius, height
   [0, 0, 9.5, 2.2], [-12, -6, 7, 2.1], [13, -9, 8, 2.4], [-10, 10, 5, 0.9], [11, 7, 5.5, 1.3], [-22, 2, 8, 1.9], [22, 4, 7, 1.7], [3, -18, 12, 3.2], [-3, 17, 6, 1.0], [0, 26, 10, 2.2],
   [-17, 5, 3.6, 2.9], [18, -1, 4.2, 2.6], [-6, -11, 3.4, 1.9], [9, 15, 3.2, 1.5], [-15, 15, 5, -0.9], [16, 12, 4.5, -0.7], [22, 14, 6, 2.4], [-24, -12, 9, 2.8], [26, -10, 8, 2.6],
@@ -505,10 +515,11 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
   // the fox
   const fox = useRef<THREE.Group>(null)
   const f = useRef({ x: 9, z: 8, goal: new THREE.Vector3(9, 0, 8), speed: 0, heading: -Math.PI / 2, yaw: 0, gait: 0, idle: 0, flip: true, moving: false, leaving: false, nextBlink: 2, blinkT: 9, stepPh: 0, sitting: false, sitInit: false, leapInit: false, leap: 0, leapT: 0, leapFrom: new THREE.Vector3(), leapTo: new THREE.Vector3(), lift: 0 })
-  const sitCtl = useRef<PieceControl | null>(null)
   const [foxFlip, setFoxFlip] = useState(false)
   const foxPose = useRef<Pose>({ angles: [0, 0, 0, 0, 0, 0], breath: 0, blink: 0 })
-  const leapCtl = useRef<PieceControl | null>(null); const hasLeapArt = useArt(paper('fox-leap'))
+  // its pictures: one for each way of being seen; the one that fits cross-dissolves in
+  const views = useMemo(() => ({ side: { current: null as PieceControl | null }, run: { current: null as PieceControl | null }, leap: { current: null as PieceControl | null }, front: { current: null as PieceControl | null }, back: { current: null as PieceControl | null }, sit: { current: null as PieceControl | null } }), [])
+  const viewState = useRef<{ cur: FoxView; want: FoxView; since: number; init: boolean }>({ cur: 'side', want: 'side', since: 0, init: false })
   // Chimin's rig: head, both arms, both legs (picture uv); the snow angel and her idling drive it
   const chiminPose = useRef<Pose>({ angles: [0, 0, 0, 0, 0, 0], breath: 0, blink: 0 })
   const angel = useRef({ on: 0, phase: 0 }); const chiminGrp = useRef<THREE.Group>(null)
@@ -570,8 +581,8 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
   }, [field, chiminPos])
 
   const dbg = useRef({ noRig: false })
-  useEffect(() => { (window as unknown as { __snow?: unknown }).__snow = { f: f.current, chiminPose: chiminPose.current, foxPose: foxPose.current, angel: angel.current, dbg: dbg.current, cursor: cursor.current, gsap, trail, moundMat, letterMat: field.mesh.material, field, gl, stamp: (x: number, z: number, r: number, depth: number) => stamp(trail, x, z, r, depth) } }, [])
   const t0 = useRef(0)
+  useEffect(() => { (window as unknown as { __snow?: unknown }).__snow = { f: f.current, chiminPose: chiminPose.current, foxPose: foxPose.current, angel: angel.current, dbg: dbg.current, cursor: cursor.current, gsap, trail, moundMat, letterMat: field.mesh.material, field, gl, views, viewState: viewState.current, clock: () => t0.current, stamp: (x: number, z: number, r: number, depth: number) => stamp(trail, x, z, r, depth) } }, [])
   useFrame((_, dt) => {
     const d = Math.min(dt, 0.05); t0.current += d; const k = Math.min(1, d * 2.2)
     for (const key of ['white', 'shadow', 'light', 'sky', 'mid', 'horizon', 'band', 'sun'] as const) cur[key].lerp(tgt[key], k)
@@ -626,7 +637,7 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
       const e = a < 0.5 ? 2 * a * a : 1 - 2 * (1 - a) * (1 - a)
       F.x = F.leapFrom.x + (F.leapTo.x - F.leapFrom.x) * e; F.z = F.leapFrom.z + (F.leapTo.z - F.leapFrom.z) * e; F.lift = 4 * a * (1 - a) * 1.8
       F.moving = true; F.idle = 0; F.speed = 5
-      if (t >= 1) { F.leap = 0; F.lift = 0; if (!reduced) { stamp(trail, F.x, F.z, 0.7, 0.9); kick(field, F.x, F.z, 1.8, 5, 50) } leapCtl.current?.dissolve(1, 0.25); camCtl.current?.dissolve(0, 0.3) }
+      if (t >= 1) { F.leap = 0; F.lift = 0; if (!reduced) { stamp(trail, F.x, F.z, 0.7, 0.9); kick(field, F.x, F.z, 1.8, 5, 50) } }
     } else {
     const want = dist > 0.3 ? Math.min(5.5, 1.2 + dist * 1.1) : 0
     F.speed += (want - F.speed) * Math.min(1, d * (want > F.speed ? 3.5 : 7))
@@ -638,7 +649,7 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
       if (along > 0 && along < dist && perp < KEEP_CHIMIN - 0.2 && cd < KEEP_CHIMIN + 0.7 && !reduced) {
         const half = Math.sqrt(Math.max(0, KEEP_CHIMIN * KEEP_CHIMIN - perp * perp)); const exit = along + half + 0.5
         F.leapFrom.set(F.x, 0, F.z); F.leapTo.set(F.x + hx * exit, 0, F.z + hz * exit); F.leap = Math.max(0.75, exit / 6); F.leapT = 0
-        kick(field, F.x, F.z, 1.2, 3.5, 30); if (hasLeapArt) { leapCtl.current?.dissolve(0, 0.25); camCtl.current?.dissolve(1, 0.25) }
+        kick(field, F.x, F.z, 1.2, 3.5, 30)
       } else {
         _g.set(F.x + hx * step, 0, F.z + hz * step)
         // round the igloo: if the step lands inside its circle, walk along the circle toward the goal instead
@@ -661,10 +672,7 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
     }
     // after a while it sits down    } else F.idle += d
     // after a while it sits down; when it is called again it gets up (the pictures cross-dissolve)
-    if (sitCtl.current && !F.sitInit) { sitCtl.current.mat.uniforms.uDissolve.value = 1; F.sitInit = true }
-    if (leapCtl.current && !F.leapInit) { leapCtl.current.mat.uniforms.uDissolve.value = 1; F.leapInit = true }
-    const wantSit = F.idle > 3.5 && !F.leaving && !reduced
-    if (wantSit !== F.sitting && sitCtl.current && camCtl.current) { F.sitting = wantSit; camCtl.current.dissolve(wantSit ? 1 : 0, 1.1); sitCtl.current.dissolve(wantSit ? 0 : 1, 1.3) }
+    F.sitting = F.idle > 3.5 && !F.leaving && !reduced
     if (fox.current) {
       const bob = F.moving ? Math.abs(Math.sin(F.gait)) * 0.1 * Math.min(1, F.speed / 2) : 0
       fox.current.position.set(F.x, H(F.x, F.z) + 0.02 + bob + F.lift - trailAt(trail, F.x, F.z) * 0.3 * (1 - Math.min(1, F.lift)), F.z)  // sunk to the belly: its legs are in the snow; lifted mid-leap
@@ -672,9 +680,21 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
       fox.current.rotation.z = F.leap > 0 ? (F.flip ? 1 : -1) * (0.4 - 0.8 * la) : F.moving ? Math.sin(F.gait) * 0.05 : 0   // nose up on the way up, level at the top, down on the way down
       // its picture turns with its heading, up to a three-quarter view, so it can come toward you and go away
       const bill = Math.atan2(camera.position.x - F.x, camera.position.z - F.z)
+      // which picture: coming toward you → the front view, going away → the back view, otherwise the side (walking,
+      // galloping when fast, stretched mid-leap), and the sleeping one when it has waited; each switch waits a beat
+      const rel = Math.atan2(Math.sin(F.heading - bill), Math.cos(F.heading - bill))   // 0 = straight at the camera
+      const V = viewState.current
+      const want: FoxView = F.sitting ? 'sit' : F.leap > 0 && la > 0.02 ? 'leap' : !F.moving ? (V.cur === 'front' || V.cur === 'back' ? V.cur : 'side') : Math.abs(rel) < 0.6 ? 'front' : Math.abs(rel) > 2.55 ? 'back' : F.speed > 3.6 ? 'run' : 'side'
+      if (want !== V.want) { V.want = want; V.since = t0.current }
+      if (!V.init && views.side.current) { for (const k of Object.keys(views) as FoxView[]) if (k !== 'side' && views[k].current) views[k].current!.mat.uniforms.uDissolve.value = 1; V.init = true }
+      if (V.want !== V.cur && t0.current - V.since > (want === 'leap' ? 0 : 0.18) && views[V.want].current && views[V.cur].current) {
+        const quick = V.cur === 'leap' || V.want === 'leap' ? 0.22 : V.want === 'sit' || V.cur === 'sit' ? 1.1 : 0.35
+        views[V.cur].current!.dissolve(1, quick); views[V.want].current!.dissolve(0, quick); V.cur = V.want
+      }
+      // the side pictures turn up to a three-quarter view toward the side you see them from; the front and back face you
       const side1 = F.heading + Math.PI / 2, side2 = F.heading - Math.PI / 2
       const d1 = Math.atan2(Math.sin(side1 - bill), Math.cos(side1 - bill)), d2 = Math.atan2(Math.sin(side2 - bill), Math.cos(side2 - bill))
-      const turn = Math.max(-0.8, Math.min(0.8, Math.abs(d1) < Math.abs(d2) ? d1 : d2))
+      const turn = V.cur === 'front' || V.cur === 'back' ? 0 : Math.max(-0.8, Math.min(0.8, Math.abs(d1) < Math.abs(d2) ? d1 : d2))
       const wantYaw = bill + turn; let dy = wantYaw - F.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); F.yaw += dy * Math.min(1, d * 4)
       fox.current.rotation.y = F.yaw
     }
@@ -740,7 +760,6 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
   useEffect(() => { camera.position.copy(home); camera.lookAt(look) }, [camera, home, look])
 
   const iglooY = H(0, 0)
-  const camCtl = useRef<PieceControl | null>(null)
   const piece = { tint: pieceTint, snow: cur.white, light: cur.light, shadow: cur.shadow, fog: true, frost: 0.16, grain: 0.3 }
   return (
     <>
@@ -763,9 +782,12 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
       </group>
       {/* the fox, wading */}
       <group ref={fox}>
-        <Piece url={paper('fox-side')} width={3.2} position={[0, 0.5, 0]} delay={1.4} flip={foxFlip} solid sink={0.2} {...piece} glisten={0.4} puff={0.25} relief={1} bones={FOX_BONES} pose={foxPose} eye={[0.905, 0.705, 0.02, 0.018]} control={camCtl} />
-        <Piece url={paper('fox-sit')} width={2.3} position={[0, 0.62, 0.02]} delay={0} flip={foxFlip} solid sink={0.25} {...piece} glisten={0.4} puff={0.25} relief={1} control={sitCtl} />
-        {hasLeapArt && <Piece url={paper('fox-leap')} width={3.6} position={[0, 0.55, 0.03]} delay={0} flip={foxFlip} solid {...piece} glisten={0.4} puff={0.25} relief={1} control={leapCtl} />}
+        <Piece url={paper('fox-side')} width={3.2} position={[0, 0.5, 0]} delay={1.4} flip={foxFlip} solid sink={0.2} {...piece} glisten={0.4} puff={0.25} relief={1} bones={FOX_BONES} pose={foxPose} eye={[0.9, 0.72, 0.02, 0.018]} control={views.side} />
+        <Piece url={paper('fox-run')} width={3.7} position={[0, 0.55, 0.01]} delay={0} flip={foxFlip} solid sink={0.15} {...piece} glisten={0.4} puff={0.25} relief={1} bones={FOX_RUN_BONES} pose={foxPose} control={views.run} />
+        <Piece url={paper('fox-leap')} width={3.7} position={[0, 0.6, 0.02]} delay={0} flip={foxFlip} solid {...piece} glisten={0.4} puff={0.25} relief={1} control={views.leap} />
+        <Piece url={paper('fox-front')} width={1.9} position={[0, 0.6, 0.03]} delay={0} flip={foxFlip} solid sink={0.18} {...piece} glisten={0.4} puff={0.3} relief={1} eye={[0.69, 0.74, 0.02, 0.018]} control={views.front} />
+        <Piece url={paper('fox-back')} width={2.0} position={[0, 0.5, 0.04]} delay={0} flip={foxFlip} solid sink={0.2} {...piece} glisten={0.4} puff={0.3} relief={1} control={views.back} />
+        <Piece url={paper('fox-sit')} width={2.3} position={[0, 0.62, 0.05]} delay={0} flip={foxFlip} solid sink={0.25} {...piece} glisten={0.4} puff={0.25} relief={1} control={views.sit} />
       </group>
       <EffectComposer enableNormalPass={false}>
         <Bloom luminanceThreshold={0.96} luminanceSmoothing={0.08} intensity={0.55} mipmapBlur />

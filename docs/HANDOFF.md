@@ -197,6 +197,16 @@ Console: clean (art exists for every slot now). The verify scripts lived in the 
    the v5 painted-volume build and must be rebuilt in the same language (a table close up, few objects).
 1c. Headless screenshots are unreliable (frames captured mid-render, SwiftShader fps is meaningless for 82k instances); judge in a browser.
 1d. Letter snow to tune with Chimin: mound shapes, density per layer, letter size, kick strength, sky-fall rate. Real-GPU performance is unmeasured (SwiftShader reads 1 fps regardless); if a laptop struggles, lower N first, then the sparkle/dust counts.
+1m. **v12, the fox in six pictures** (Chimin's: `fox-side`, `fox-run`, `fox-leap`, `fox-front`, `fox-back`, plus the
+   earlier `fox-sit`; they arrived with a baked checkerboard, cut out with rembg u2net + alpha matting, then defringe +
+   restyle `--rim 4 --smooth 3`). All six are `Piece`s in the fox group with `control` refs in `views`; `viewState`
+   {cur, want, since} picks one per frame: sit when idle > 3.5 s, leap during the flight, front when the heading is
+   within 0.6 rad of the camera direction, back when beyond 2.55 rad, run above speed 3.6, else side; a switch waits
+   0.18 s of scene time (0 for the leap) then cross-dissolves (0.22 s leap, 1.1 s sit, 0.35 s otherwise). Front/back
+   billboard straight at the camera; the side pictures keep the ±0.8 rad turn. `FOX_BONES` re-placed for the new side
+   picture (legs at uv x 0.86/0.72/0.56/0.40, pivots y 0.38; eye 0.9,0.72); `FOX_RUN_BONES` rig the gallop picture's
+   pairs (bones 2 and 4). Debug: `__snow.views`, `__snow.viewState`, `__snow.clock()`. Headless renders here run at a
+   frame every few seconds, so a view switch needs ~15–45 s of wall time in a probe.
 1l. **v11, the outside tuned**: terrain = 19 mounds (two negative hollows, tall steep ones at the sides and far) + four
    octaves of value noise (2.0 / 0.8 / 0.3 / 0.1). Fox rig = six bones: head, tail, four legs on their own bones (the
    picture shows all four); gait = a diagonal trot (near-front with far-back) that blends to a gallop (front pair, back
