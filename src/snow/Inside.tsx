@@ -46,7 +46,7 @@ function Scene({ onOpen, opened, shut, onShutter, setHover }: SceneProps) {
   const reduced = useMemo(() => prefersReducedMotion(), [])
   const home = useMemo(() => new THREE.Vector3(0, 4.6, 12.5), [])
   const look = useMemo(() => new THREE.Vector3(0, 3.0, 0), [])
-  const TY = 2.35 // the table top
+  const TY = 2.8 // the table top (the generated table piece)
   const par = useRef({ x: 0, y: 0 })
   useEffect(() => { camera.position.copy(home); camera.lookAt(look) }, [camera, home, look])
   useEffect(() => {
@@ -120,9 +120,9 @@ function Scene({ onOpen, opened, shut, onShutter, setHover }: SceneProps) {
       <Sky />
       {/* the wall, with the window hole, and the shutter behind it */}
       <group ref={shutterRef} position={[0, 11.6, -7.6]}><Piece url={paper('shutter')} width={5.2} position={[0, 0, 0]} delay={0} tint={tint} /></group>
-      <Piece url={paper('wall-inside')} width={26} position={[0, 2.32, -7]} delay={0.1} tint={tint} />
+      <Piece url={paper('wall-inside')} width={26} position={[0, 1.11, -7]} delay={0.1} tint={tint} />
       <mesh position={[0, 6.0, -6.8]} onPointerOver={(e) => { e.stopPropagation(); hover('window') }} onPointerOut={() => hover(null)} onClick={(e) => { e.stopPropagation(); onShutter() }}><circleGeometry args={[2.6, 32]} /><meshBasicMaterial transparent opacity={0} depthWrite={false} /></mesh>
-      <Piece url={paper('floor-inside')} width={26} position={[0, 0, 1]} rotation={[-Math.PI / 2, 0, 0]} delay={0.2} tint={tint} />
+      <Piece url={paper('floor-inside')} width={26} position={[0, 0, -1.6]} rotation={[-Math.PI / 2, 0, 0]} delay={0.2} tint={tint} />
       {/* the light: a beam from the window to the table, pools on the table and floor, a wash on the wall, the candle's lamp */}
       <mesh position={[0, 4.6, -3.2]} rotation={[-0.55, 0, 0]} material={beamMat}><planeGeometry args={[6.5, 10]} /></mesh>
       <mesh position={[0, TY + 0.1, 0.6]} rotation={[-1.2, 0, 0]} material={poolMat}><planeGeometry args={[8, 3]} /></mesh>
@@ -130,7 +130,7 @@ function Scene({ onOpen, opened, shut, onShutter, setHover }: SceneProps) {
       <mesh position={[0, 5.4, -6.9]} material={washMat}><planeGeometry args={[16, 12]} /></mesh>
       <mesh position={[2.4, TY + 1.3, 0.5]} material={lampMat}><planeGeometry args={[4.5, 3.6]} /></mesh>
       {/* the table: the one focal point, seen from the front */}
-      <Piece url={paper('table-front')} width={9.4} position={[0, 0.9, 0.4]} delay={0.4} tint={tint} renderOrder={1} />
+      <Piece url={paper('table-front')} width={9.4} position={[0, 1.87, 0.4]} delay={0.4} tint={tint} renderOrder={1} />
       <group ref={groups.camera}>
         <Piece url={paper('camera')} width={2.2} position={[-2.5, TY + 0.85, 1.0]} delay={0.9} tint={tint} control={ctl.camera} onHover={h => hover(h ? 'camera' : null)} onClick={() => onOpen('camera')} />
       </group>
