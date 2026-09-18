@@ -5,7 +5,7 @@ import { EffectComposer, Bloom, Noise, Vignette } from '@react-three/postprocess
 import { gsap } from '../lib/gsap'
 import { prefersReducedMotion } from '../lib/motion-prefs'
 import { getMode, type Mode } from '../lib/mode'
-import { Piece, paper, type PieceControl } from './Piece'
+import { Piece, paper, type Bone, type PieceControl, type Pose } from './Piece'
 
 /**
  * Outside: snow that is really made of letters. Deep white snow, piled in mounds and drifts, whose surface
@@ -32,6 +32,24 @@ const LOOKS: Record<Mode, Look> = {
 
 // ------------------------------------------------------------------ the ground: mounds, drifts, and a hollow where Chimin lies
 const CHIMIN: [number, number] = [-6.0, 6.2]
+const KEEP_CHIMIN = 3.7   // the fox never comes closer to her than this
+// Chimin's picture (a snow angel from above, 1086×1432): pivots and regions in picture uv, origin bottom left
+const CHIMIN_ASPECT = 1432 / 1086
+const CHIMIN_BONES: Bone[] = [
+  { pivot: [0.5, 0.70], region: [0.5, 0.80, 0.17, 0.13] },     // head
+  { pivot: [0.38, 0.70], region: [0.20, 0.72, 0.22, 0.13] },   // left arm
+  { pivot: [0.62, 0.70], region: [0.80, 0.72, 0.22, 0.13] },   // right arm
+  { pivot: [0.42, 0.42], region: [0.27, 0.27, 0.20, 0.22] },   // left leg
+  { pivot: [0.58, 0.42], region: [0.73, 0.27, 0.20, 0.22] },   // right leg
+]
+const CHIMIN_TIPS: [number, number, number][] = [[0.08, 0.73, 1], [0.92, 0.73, 2], [0.16, 0.16, 3], [0.84, 0.16, 4]] // mittens and boots: uv and their bone
+// the fox's picture (side view walking right, 1505×995)
+const FOX_BONES: Bone[] = [
+  { pivot: [0.76, 0.58], region: [0.87, 0.72, 0.15, 0.20] },   // head
+  { pivot: [0.42, 0.52], region: [0.22, 0.38, 0.24, 0.30] },   // tail
+  { pivot: [0.74, 0.42], region: [0.74, 0.18, 0.13, 0.20] },   // front legs
+  { pivot: [0.50, 0.42], region: [0.50, 0.18, 0.13, 0.20] },   // back legs
+]
 const MOUNDS: [number, number, number, number][] = [ // x, z, radius, height
   [0, 0, 9.5, 2.2], [-12, -6, 7, 1.6], [13, -9, 8, 1.9], [-10, 10, 5, 0.9], [11, 7, 5.5, 1.1], [-22, 2, 8, 1.4], [22, 4, 7, 1.2], [3, -18, 12, 2.4], [-3, 17, 6, 0.8], [0, 26, 10, 1.6],
   [CHIMIN[0], CHIMIN[1], 3.1, -0.65],
@@ -83,7 +101,7 @@ const SNOW_GLSL = `
     vec3 nj = normalize(n + (vec3(hash(cell + 1.7), hash(cell + 3.1), hash(cell + 5.3)) - 0.5) * 1.3);
     float g = pow(max(0.0, dot(reflect(-L, nj), V)), 40.0);
     float tw = 0.55 + 0.45 * sin(time * 2.4 + h * 60.0);
-    return g * step(0.5, h) * tw * 2.4; }
+    return g * step(0.5, h) * tw * 2.0; }
   // the aurora, as a wash on the ground
   vec3 auroraOn(vec3 w, float time){
     vec2 p = w.xz * 0.25; float b = pow(0.5 + 0.5 * sin(p.x * 1.4 + p.y * 0.8 + time * 0.3 + sin(p.y * 1.2 - time * 0.2) * 2.0), 3.0);
@@ -92,6 +110,7 @@ const SNOW_GLSL = `
 const snowUniforms = () => ({
   uLightDir: { value: new THREE.Vector3(-0.35, 0.42, -0.84).normalize() }, uWhite: { value: new THREE.Color('#fcfcff') }, uShadow: { value: new THREE.Color('#b4c1ee') }, uLight: { value: new THREE.Color('#fff4dc') },
   uAurora: { value: 0 }, uTime: { value: 0 }, uSparkle: { value: 1 }, fogColor: { value: new THREE.Color('#f3ecf3') }, fogNear: { value: 24 }, fogFar: { value: 72 },
+  uCursor: { value: new THREE.Vector3() }, uCursorOn: { value: 0 },
 })
 
 function snowMaterial() {
@@ -100,17 +119,19 @@ function snowMaterial() {
     vertexShader: `varying vec3 vW; varying vec3 vN; varying float vFog;
       void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; vN = normalize(mat3(modelMatrix) * normal); vec4 mv = viewMatrix * w; vFog = -mv.z; gl_Position = projectionMatrix * mv; }`,
     fragmentShader: `
-      uniform vec3 uLightDir, uWhite, uShadow, uLight, fogColor; uniform float fogNear, fogFar, uAurora, uTime, uSparkle;
+      uniform vec3 uLightDir, uWhite, uShadow, uLight, fogColor, uCursor; uniform float fogNear, fogFar, uAurora, uTime, uSparkle, uCursorOn;
       varying vec3 vW; varying vec3 vN; varying float vFog;
       ${SNOW_GLSL}
       void main(){
         vec3 V = normalize(cameraPosition - vW); vec3 n = normalize(vN);
+        float ring = smoothstep(2.6, 0.3, distance(vW.xz, uCursor.xz)) * uCursorOn;
         // a soft grain and a gentle pile pattern, so the surface between the letters is not flat paint
         float grain = fbm(vW.xz * 2.3) - 0.5; n = normalize(n + vec3(grain * 0.25, 0.0, (fbm(vW.zx * 2.9) - 0.5) * 0.25));
         float depth = smoothstep(1.2, -0.6, vW.y);
         vec3 col = snowShade(n, V, uLightDir, uWhite, uShadow, uLight, depth);
         col *= 0.96 + 0.08 * fbm(vW.xz * 9.0);
-        col += uLight * glitter(vW, n, V, uLightDir, uTime) * uSparkle;
+        col += uLight * ring * 0.1;
+        col += uLight * glitter(vW, n, V, uLightDir, uTime) * uSparkle * (1.0 + ring * 2.5);
         if (uAurora > 0.001) col += auroraOn(vW, uTime) * uAurora;
         float f = smoothstep(fogNear, fogFar, vFog); col = mix(col, fogColor, f);
         gl_FragColor = vec4(col, 1.0); }`,
@@ -118,16 +139,34 @@ function snowMaterial() {
 }
 
 // ------------------------------------------------------------------ the glyph atlas
-function glyphAtlas() {
-  const S = 1024, cells = 8, cs = S / cells
-  const c = document.createElement('canvas'); c.width = c.height = S; const g = c.getContext('2d')!
+/** 64 handwritten glyphs on one canvas, each with a grainy edge and a speckled body, so a letter is a splat of snow, not print. */
+function drawAtlas(c: HTMLCanvasElement) {
+  const S = c.width, cells = 8, cs = S / cells; const g = c.getContext('2d')!
   g.clearRect(0, 0, S, S); g.fillStyle = '#ffffff'; g.textAlign = 'center'; g.textBaseline = 'middle'
   for (let i = 0; i < cells * cells; i++) {
     const ch = CHARS[i % CHARS.length]; const x = (i % cells) * cs + cs / 2, y = Math.floor(i / cells) * cs + cs / 2
-    g.font = `${i % 3 === 0 ? '600' : '500'} ${cs * 0.78}px Geist, ui-sans-serif, system-ui, sans-serif`
-    g.fillText(ch, x, y + cs * 0.04)
+    g.font = `${i % 2 === 0 ? '700' : '600'} ${cs * 0.92}px Caveat, 'Segoe Script', 'Bradley Hand', cursive`
+    g.fillText(ch, x, y + cs * 0.06)
   }
+  // grain: the alpha is roughened by noise, most at the edge, so the stroke breaks up like a dry brush
+  const img = g.getImageData(0, 0, S, S), d = img.data
+  const noise = new Float32Array(S * S); for (let i = 0; i < noise.length; i++) noise[i] = Math.random()
+  const blur = (v: Float32Array) => { const o = new Float32Array(v.length); for (let y = 1; y < S - 1; y++) for (let x = 1; x < S - 1; x++) { const i = y * S + x; o[i] = (v[i] * 4 + v[i - 1] + v[i + 1] + v[i - S] + v[i + S]) / 8 } return o }
+  const soft = blur(blur(noise))
+  for (let i = 0; i < S * S; i++) {
+    const a = d[i * 4 + 3]; if (a === 0) continue
+    const n = (soft[i] - 0.5) * 2 // −1…1, smooth
+    const body = 0.82 + 0.18 * (noise[i] * 0.5 + soft[i] * 0.5) // speckle inside the stroke
+    d[i * 4 + 3] = Math.max(0, Math.min(255, a * body + n * 150 * (1 - a / 255)))
+  }
+  g.putImageData(img, 0, 0)
+}
+function glyphAtlas() {
+  const c = document.createElement('canvas'); c.width = c.height = 1024
+  drawAtlas(c)
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; t.generateMipmaps = true; t.minFilter = THREE.LinearMipmapLinearFilter
+  // the handwriting may not be in yet on the first draw: redraw when it lands
+  if ('fonts' in document) document.fonts.load('700 100px Caveat').then(() => { drawAtlas(c); t.needsUpdate = true }).catch(() => {})
   return t
 }
 
@@ -135,28 +174,34 @@ function letterMaterial(atlas: THREE.Texture) {
   return new THREE.ShaderMaterial({
     uniforms: { ...snowUniforms(), uAtlas: { value: atlas } },
     vertexShader: `
-      attribute float aGlyph; attribute vec3 aColor; attribute float aSeed;
-      varying vec2 vUv; varying vec3 vColor; varying vec3 vN; varying vec3 vW; varying float vFog; varying float vSeed;
+      attribute float aGlyph; attribute vec3 aColor; attribute float aSeed; uniform vec3 uCursor; uniform float uCursorOn, uTime;
+      varying vec2 vUv; varying vec3 vColor; varying vec3 vN; varying vec3 vW; varying float vFog; varying float vSeed; varying float vRing;
       void main(){
         float col = mod(aGlyph, 8.0), row = floor(aGlyph / 8.0); vUv = (uv + vec2(col, row)) / 8.0; vColor = aColor; vSeed = aSeed;
-        vec4 w = modelMatrix * instanceMatrix * vec4(position, 1.0); vW = w.xyz;
+        vec4 w = modelMatrix * instanceMatrix * vec4(position, 1.0);
+        // under the cursor the letters stir: they lift a little and shimmer
+        vRing = smoothstep(2.6, 0.3, distance(w.xz, uCursor.xz)) * uCursorOn;
+        w.y += vRing * 0.16 * (0.5 + 0.5 * sin(uTime * 5.0 + aSeed * 40.0));
+        vW = w.xyz;
         vN = normalize(mat3(modelMatrix * instanceMatrix) * vec3(0.0, 0.0, 1.0));
         vec4 mv = viewMatrix * w; vFog = -mv.z; gl_Position = projectionMatrix * mv; }`,
     fragmentShader: `
       uniform sampler2D uAtlas; uniform vec3 uLightDir, uWhite, uShadow, uLight, fogColor; uniform float fogNear, fogFar, uAurora, uTime, uSparkle;
-      varying vec2 vUv; varying vec3 vColor; varying vec3 vN; varying vec3 vW; varying float vFog; varying float vSeed;
+      varying vec2 vUv; varying vec3 vColor; varying vec3 vN; varying vec3 vW; varying float vFog; varying float vSeed; varying float vRing;
       ${SNOW_GLSL}
       void main(){
-        float a = texture2D(uAtlas, vUv).a; if (a < 0.5) discard;
+        float a = texture2D(uAtlas, vUv).a; if (a < 0.38) discard;
         vec3 V = normalize(cameraPosition - vW); vec3 n = normalize(vN); if (dot(n, V) < 0.0) n = -n;
         float depth = smoothstep(1.2, -0.6, vW.y);
         vec3 col = snowShade(n, V, uLightDir, uWhite, uShadow, uLight, depth) * vColor;
-        // each glyph keeps a soft blue edge, so the snow reads as letters when you look
-        float edge = 1.0 - smoothstep(0.5, 0.8, a); col = mix(col, uShadow, edge * 0.5);
+        // a grain over the stroke, and a soft blue edge, so the snow reads as letters when you look
+        col *= 0.92 + 0.16 * fbm(vW.xz * 38.0 + vSeed * 9.0);
+        float edge = 1.0 - smoothstep(0.38, 0.8, a); col = mix(col, uShadow, edge * 0.32);
         // each letter is a facet: some catch the light hard as the camera moves
         vec3 Rf = reflect(-uLightDir, n); float glint = pow(max(0.0, dot(Rf, V)), 24.0 + vSeed * 40.0);
-        col += uLight * glint * (0.35 + vSeed * 1.2) * uSparkle;
-        col += uLight * glitter(vW, n, V, uLightDir, uTime) * uSparkle * 0.5;
+        col += uLight * glint * (0.3 + vSeed * 1.0) * uSparkle * (1.0 + vRing * 1.5);
+        col += uLight * glitter(vW, n, V, uLightDir, uTime) * uSparkle * (0.5 + vRing * 1.5);
+        col += uLight * vRing * 0.1;
         if (uAurora > 0.001) col += auroraOn(vW, uTime) * uAurora;
         float f = smoothstep(fogNear, fogFar, vFog); col = mix(col, fogColor, f);
         gl_FragColor = vec4(col, 1.0); }`,
@@ -363,8 +408,13 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
 
   // the fox
   const fox = useRef<THREE.Group>(null)
-  const f = useRef({ x: 9, z: 8, target: new THREE.Vector3(9, 0, 8), gait: 0, idle: 0, flip: false, moving: false, leaving: false })
+  const f = useRef({ x: 9, z: 8, target: new THREE.Vector3(9, 0, 8), gait: 0, idle: 0, flip: false, moving: false, leaving: false, nextBlink: 2, blinkT: 9 })
   const [foxFlip, setFoxFlip] = useState(false)
+  const foxPose = useRef<Pose>({ angles: [0, 0, 0, 0, 0, 0], breath: 0, blink: 0 })
+  // Chimin's rig: head, both arms, both legs (picture uv); the snow angel and her idling drive it
+  const chiminPose = useRef<Pose>({ angles: [0, 0, 0, 0, 0, 0], breath: 0, blink: 0 })
+  const angel = useRef({ on: 0, phase: 0 }); const chiminGrp = useRef<THREE.Group>(null)
+  const [chiminHover, setChiminHover] = useState(false)
 
   // time of day
   const cur = useMemo(newCur, []); const tgt = useMemo(newCur, [])
@@ -420,6 +470,8 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
     field.mesh.instanceMatrix.needsUpdate = true
   }, [field, chiminPos])
 
+  const dbg = useRef({ noRig: false })
+  useEffect(() => { (window as unknown as { __snow?: unknown }).__snow = { f: f.current, chiminPose: chiminPose.current, foxPose: foxPose.current, angel: angel.current, dbg: dbg.current, cursor: cursor.current, gsap } }, [])
   const t0 = useRef(0)
   useFrame((_, dt) => {
     const d = Math.min(dt, 0.05); t0.current += d; const k = Math.min(1, d * 2.2)
@@ -429,6 +481,7 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
     for (const m of [moundMat, field.mesh.material as THREE.ShaderMaterial]) {
       const u = m.uniforms; u.uWhite.value.copy(cur.white); u.uShadow.value.copy(cur.shadow); u.uLight.value.copy(cur.light); u.uLightDir.value.copy(cur.sunDir)
       u.uAurora.value = cur.aurora; u.uTime.value = reduced ? 0.3 : t0.current; u.uSparkle.value = cur.sparkle; u.fogColor.value.copy(cur.horizon)
+      u.uCursor.value.copy(cursor.current); u.uCursorOn.value += ((hasCursor.current && !entering.current && !reduced ? 1 : 0) - u.uCursorOn.value) * Math.min(1, d * 4)
     }
     ;(scene.background as THREE.Color).copy(cur.horizon); (scene.fog as THREE.Fog).color.copy(cur.horizon)
     const su = skyMat.uniforms; su.uTop.value.copy(cur.sky); su.uMid.value.copy(cur.mid); su.uBot.value.copy(cur.horizon); su.uSun.value.copy(cur.sun); su.uSunDir.value.copy(cur.sunDir)
@@ -447,12 +500,18 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
     // the fox wades toward the cursor, kicking letters as it goes
     const F = f.current
     if (F.leaving) F.target.set(10, 0, 12)
-    else if (hasCursor.current) { F.target.copy(cursor.current); const dd = Math.hypot(F.target.x, F.target.z); const keep = R + 1.4; if (dd < keep) { F.target.x *= keep / Math.max(dd, 1e-3); F.target.z *= keep / Math.max(dd, 1e-3) } }
+    else if (hasCursor.current) {
+      F.target.copy(cursor.current); const dd = Math.hypot(F.target.x, F.target.z); const keep = R + 1.4; if (dd < keep) { F.target.x *= keep / Math.max(dd, 1e-3); F.target.z *= keep / Math.max(dd, 1e-3) }
+      // never onto Chimin: the target stays outside her hollow
+      const cx = F.target.x - CHIMIN[0], cz = F.target.z - CHIMIN[1]; const cd = Math.hypot(cx, cz); if (cd < KEEP_CHIMIN) { F.target.x = CHIMIN[0] + cx * KEEP_CHIMIN / Math.max(cd, 1e-3); F.target.z = CHIMIN[1] + cz * KEEP_CHIMIN / Math.max(cd, 1e-3) }
+    }
     const dx = F.target.x - F.x, dz = F.target.z - F.z; const dist = Math.hypot(dx, dz); F.moving = dist > 0.6
     if (F.moving) {
       const speed = Math.min(6, 2 + dist * 1.1); const step = Math.min(dist, speed * d)
       let nx = F.x + (dx / dist) * step, nz = F.z + (dz / dist) * step; const nd = Math.hypot(nx, nz); const keep = R + 1.0
       if (nd < keep) { const ang = Math.atan2(nx, nz) + (dx * nz - dz * nx > 0 ? -1 : 1) * 0.08; nx = Math.sin(ang) * keep; nz = Math.cos(ang) * keep }
+      // and it walks round Chimin, never over her
+      { const cx = nx - CHIMIN[0], cz = nz - CHIMIN[1]; const cd = Math.hypot(cx, cz); if (cd < KEEP_CHIMIN) { const ang = Math.atan2(cx, cz) + (dx * cz - dz * cx > 0 ? -1 : 1) * 0.1; nx = CHIMIN[0] + Math.sin(ang) * KEEP_CHIMIN; nz = CHIMIN[1] + Math.cos(ang) * KEEP_CHIMIN } }
       F.x = nx; F.z = nz; F.gait += d * 9; F.idle = 0
       const flip = dx < 0; if (flip !== F.flip) { F.flip = flip; setFoxFlip(flip) }
       if (!reduced) kick(field, F.x - (dx / dist) * 0.4, F.z - (dz / dist) * 0.4, 1.2, 3.4 + speed * 0.3, 30)
@@ -463,6 +522,36 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
       fox.current.rotation.z = F.moving ? Math.sin(F.gait) * 0.05 : 0
       fox.current.rotation.y = Math.atan2(camera.position.x - F.x, camera.position.z - F.z)
     }
+    // the fox is alive: its head nods, its tail swings, its legs stride when it walks, it breathes and blinks
+    { const t = t0.current, P = foxPose.current, g = F.gait, mv = F.moving ? 1 : 0
+      P.angles[0] = 0.05 * Math.sin(t * 1.7) + 0.07 * Math.sin(g) * mv                                  // head
+      P.angles[1] = 0.16 * Math.sin(t * 2.1) + 0.22 * Math.sin(g * 0.5) * mv                            // tail
+      P.angles[2] = 0.03 * Math.sin(t * 1.1) + 0.32 * Math.sin(g) * mv                                  // front legs
+      P.angles[3] = -0.03 * Math.sin(t * 1.1 + 1.0) - 0.32 * Math.sin(g) * mv                           // back legs
+      P.breath = 0.008 * Math.sin(t * 2.0)
+      if (t > F.nextBlink) { F.blinkT = 0; F.nextBlink = t + 2.5 + Math.random() * 4 }
+      F.blinkT += d; P.blink = F.blinkT < 0.16 ? Math.sin((F.blinkT / 0.16) * Math.PI) : 0
+      if (reduced || dbg.current.noRig) { P.angles.fill(0); P.breath = 0 } }
+    // Chimin is alive too: she breathes, her head turns a little; hovered, she makes a snow angel and pushes the letters
+    { const t = t0.current, P = chiminPose.current, A = angel.current
+      A.on += ((chiminHover && !reduced ? 1 : 0) - A.on) * Math.min(1, d * 2.5); A.phase += d * 3.4 * A.on
+      const sw = Math.sin(A.phase) * A.on
+      P.angles[0] = 0.04 * Math.sin(t * 0.7) + 0.06 * sw                                                // head
+      P.angles[1] = -0.03 * Math.sin(t * 0.9) - 0.5 * sw                                                // left arm (up together)
+      P.angles[2] = 0.03 * Math.sin(t * 0.9 + 0.5) + 0.5 * sw                                           // right arm
+      P.angles[3] = 0.02 * Math.sin(t * 0.8 + 1.0) + 0.28 * sw                                          // left leg (out together)
+      P.angles[4] = -0.02 * Math.sin(t * 0.8 + 1.5) - 0.28 * sw                                         // right leg
+      P.breath = 0.006 * Math.sin(t * 1.3)
+      if (reduced || dbg.current.noRig) { P.angles.fill(0); P.breath = 0 }
+      // her mittens and boots sweep through the snow: kick the letters where they pass
+      if (A.on > 0.3 && Math.abs(Math.cos(A.phase)) > 0.4 && chiminGrp.current) {
+        for (const [u, v, bone] of CHIMIN_TIPS) {
+          const b = CHIMIN_BONES[bone]; const W = 4.2, Hh = 4.2 * CHIMIN_ASPECT
+          let x = (u - 0.5) * W, y = (v - 0.5) * Hh; const px = (b.pivot[0] - 0.5) * W, py = (b.pivot[1] - 0.5) * Hh; const a = P.angles[bone]
+          const qx = x - px, qy = y - py; x = px + qx * Math.cos(a) - qy * Math.sin(a); y = py + qx * Math.sin(a) + qy * Math.cos(a)
+          _p.set(x, y, 0); chiminGrp.current.localToWorld(_p); kick(field, _p.x, _p.z, 0.8, 2.4, 5)
+        }
+      } }
     if (!reduced) stepField(field, d)
 
     if (!entering.current && !reduced) { camera.position.x += (home.x + par.current.x * 2.2 - camera.position.x) * 0.04; camera.position.y += (home.y - par.current.y * 0.9 - camera.position.y) * 0.04 }
@@ -472,7 +561,7 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
 
   const iglooY = H(0, 0)
   const camCtl = useRef<PieceControl | null>(null)
-  const piece = { tint: pieceTint, snow: cur.white, fog: true }
+  const piece = { tint: pieceTint, snow: cur.white, light: cur.light, fog: true, frost: 0.2, grain: 0.35 }
   return (
     <>
       <color attach="background" args={['#e8e3f1']} />
@@ -484,19 +573,21 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
       <primitive object={sparkles} />
       <primitive object={dust} />
       {/* the igloo, set into the middle mound, its base in the snow */}
-      <Piece url={paper('igloo-back')} width={12.4} position={[0, iglooY + 2.6, -2.6]} rotation={[-0.06, 0, 0]} delay={0.2} solid sink={0.1} {...piece} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
-      <Piece url={paper('igloo-front')} width={11.6} position={[0, iglooY + 2.2, 1.2]} rotation={[-0.05, 0, 0]} delay={0.5} solid sink={0.12} {...piece} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
-      <Piece url={paper('igloo-arch')} width={4.6} position={[0, H(0, 3.9) + 1.2, 3.9]} rotation={[-0.04, 0, 0]} delay={0.8} solid sink={0.14} {...piece} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
+      <Piece url={paper('igloo-back')} width={12.4} position={[0, iglooY + 2.6, -2.6]} rotation={[-0.06, 0, 0]} delay={0.2} glisten={1} solid sink={0.1} {...piece} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
+      <Piece url={paper('igloo-front')} width={11.6} position={[0, iglooY + 2.2, 1.2]} rotation={[-0.05, 0, 0]} delay={0.5} glisten={1} solid sink={0.12} {...piece} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
+      <Piece url={paper('igloo-arch')} width={4.6} position={[0, H(0, 3.9) + 1.2, 3.9]} rotation={[-0.04, 0, 0]} delay={0.8} glisten={1} solid sink={0.14} {...piece} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
       <mesh position={[0, H(0, 6.4) + 0.08, 6.4]} rotation={[-Math.PI / 2, 0, 0]} material={glowMat}><planeGeometry args={[9, 7]} /></mesh>
       {/* Chimin, lying in the snow */}
-      <Piece url={paper('chimin')} width={4.2} position={[chiminPos.x, H(chiminPos.x, chiminPos.z) + 0.5, chiminPos.z]} quaternion={chiminQuat} delay={1.1} solid {...piece} onHover={h => setHover(h ? 'chimin' : null)} onClick={onAbout} />
+      <group ref={chiminGrp} position={[chiminPos.x, H(chiminPos.x, chiminPos.z) + 0.5, chiminPos.z]} quaternion={chiminQuat}>
+        <Piece url={paper('chimin')} width={4.2} position={[0, 0, 0]} delay={1.1} solid {...piece} glisten={0.5} bones={CHIMIN_BONES} pose={chiminPose} onHover={h => { setHover(h ? 'chimin' : null); setChiminHover(h) }} onClick={onAbout} />
+      </group>
       {/* the fox, wading */}
       <group ref={fox}>
-        <Piece url={paper('fox-side')} width={3.2} position={[0, 0.5, 0]} delay={1.4} flip={foxFlip} solid sink={0.2} {...piece} control={camCtl} />
+        <Piece url={paper('fox-side')} width={3.2} position={[0, 0.5, 0]} delay={1.4} flip={foxFlip} solid sink={0.2} {...piece} glisten={0.4} bones={FOX_BONES} pose={foxPose} eye={[0.905, 0.705, 0.02, 0.018]} control={camCtl} />
       </group>
       <EffectComposer enableNormalPass={false}>
         <Bloom luminanceThreshold={0.96} luminanceSmoothing={0.08} intensity={0.55} mipmapBlur />
-        <Noise opacity={0.025} />
+        <Noise opacity={0.06} />
         <Vignette eskil={false} offset={0.15} darkness={0.3} />
       </EffectComposer>
     </>
@@ -519,7 +610,7 @@ export function Letters({ onEnter, onAbout }: Props) {
         </Canvas>
       </div>
       <h1 className="snow__name display">Chimin</h1>
-      <p className="snow__hint label">{hover === 'chimin' ? 'that’s me, lying in the snow' : hover === 'igloo' ? 'go inside' : 'the snow is made of letters · the fox follows your cursor · click the igloo to go inside'}</p>
+      <p className="snow__hint label">{hover === 'chimin' ? 'that’s me · making a snow angel · click for about' : hover === 'igloo' ? 'go inside' : 'the snow is made of letters · the fox follows your cursor · click the igloo to go inside'}</p>
       <button type="button" className="snow__go label" onClick={enter}>go inside →</button>
       <div ref={darkRef} className="snow__dark" aria-hidden="true" />
     </div>

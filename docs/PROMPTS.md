@@ -14,6 +14,13 @@ exact file name, run `python3 tools/optimize-art.py` if it is a PNG, and reload.
 ## Style prefix (paste before every prompt)
 > Flat paper-cut illustration in the style of a handmade collage poster: large patches of muted colour cut from handmade paper, visible paper fibre and tiny dark speckles, slightly torn irregular edges with a thin lighter paper rim, three to five tones per object, no gradients, no gloss, no outlines heavier than a pencil line, soft light from the upper left, no cast shadow, no background, centred with generous margin. Muted palette: cream, sand, clay, rust, ash, ink, pale ice blue. Not a 3D render, not clip art, not a sticker.
 
+## Style prefix B: painted, for the outside (try this if the paper-cut pieces still look pasted on)
+The snow outside is soft, luminous and grainy; a flat paper cut-out with a torn rim reads as a sticker against it. For the
+igloo, Chimin and the fox, generate again with this prefix instead, same prompts, same file names:
+> Soft gouache and pastel illustration with visible grain, painted light: pale forms modelled with gentle tonal shading, no outlines, no paper texture, no torn edges, no rim, edges soft and slightly dry-brushed, a few muted tones, matte, no gloss, lit from behind and above by a low pale sun so the top and far edges catch a faint glow and the shadows are pale blue, no cast shadow on the ground, no background, transparent, centred with generous margin. Palette: white, ice blue, lilac shadow, sand, rust, ink. Not a 3D render, not clip art, not a sticker, not paper.
+
+The site already frosts, grains and glistens every piece in the shader, so a painted piece needs no sparkle drawn in.
+
 ## Outside (the snowfield)
 | File | Prompt (after the prefix) | Aspect |
 |---|---|---|

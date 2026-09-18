@@ -134,6 +134,22 @@ src/styles/base.css          all room, blockout and sheet styles
   Fox/Chimin/igloo are `Piece`s with `solid` (depthWrite on, discard < 0.5) plus `tint`, `snow`, `fog`, and `sink`
   (igloo 0.1–0.14, fox 0.2); Chimin lies at `H+0.5` on a quaternion = surface normal + 0.5·toward-camera, ~520 letters
   are heaped on her rim and ~1400 in a drift against the igloo's base (`useEffect` after `buildField`).
+- **v8.1, alive**: the glyph atlas is drawn in Caveat (`src/fonts/caveat-latin.woff2`, registered in tokens.css; redrawn when
+  `document.fonts.load` resolves) with a grain pass over the alpha (`drawAtlas`), and the letter shader cuts at 0.38 with a
+  softer blue edge. The paint material (`paint.ts`) is also a puppet: `uPivot/uRegion/uAngle[BONES=6]` warp the plane's
+  vertices (a 48² plane when `bones` is given) by rotating each soft-ellipse region about its pivot; `uBreath` swells the
+  picture; `uEye`+`uBlink` draw fur over an eye. `Piece` takes `bones`, `pose` (a ref `{angles, breath, blink}` read every
+  frame), `eye`, plus `frost`, `grain`, `glisten`, `light`. Rigs are in `Letters.tsx`: `CHIMIN_BONES` (head, arms, legs; the
+  picture is 1086×1432) and `FOX_BONES` (head, tail, front legs, back legs; 1505×995), `CHIMIN_TIPS` = mitten/boot uv per
+  bone. Per frame: the fox nods, swings its tail, strides when moving (±0.32 rad on the gait), breathes and blinks every
+  2.5–6.5 s; Chimin breathes and turns her head, and while hovered (`chiminHover`) `angel.on` eases to 1, her arms sweep
+  ±0.5 rad and legs ±0.28 in a 3.4 rad/s cycle, and her mittens and boots (transformed by the bone angle and
+  `chiminGrp.localToWorld`) `kick` the letters. The fox never comes within `KEEP_CHIMIN` (3.7) of her: both its target and
+  its step are deflected round that circle like round the igloo. The snow shaders take `uCursor/uCursorOn`: within 2.6 of
+  the cursor the mound brightens and glitters more, and the letters lift (vertex shader) and shimmer. Igloo pieces get
+  `glisten={1}`: fine hashed dots on the bright parts twinkle in turn and a slow light sweeps across. Debug: `window.__snow`
+  exposes the fox state, both poses, `angel`, `dbg.noRig`, the cursor and gsap (headless probes call
+  `gsap.ticker.lagSmoothing(0)`, because at SwiftShader's 1 fps gsap's lag smoothing makes every reveal crawl).
 - The old three.js Snowfield (v5.4–5.5) is in git history if needed. Ground = a 2048 canvas of ~30k letters
   as a repeating texture (5.5×) + one non-repeating drift overlay; sparkles = `Points` with a twinkle
   shader (additive); igloo = one `InstancedMesh` of boxes on a sphere + tunnel, a joint sphere, a dark
@@ -180,6 +196,7 @@ Console: clean (art exists for every slot now). The verify scripts lived in the 
    the v5 painted-volume build and must be rebuilt in the same language (a table close up, few objects).
 1c. Headless screenshots are unreliable (frames captured mid-render, SwiftShader fps is meaningless for 82k instances); judge in a browser.
 1d. Letter snow to tune with Chimin: mound shapes, density per layer, letter size, kick strength, sky-fall rate. Real-GPU performance is unmeasured (SwiftShader reads 1 fps regardless); if a laptop struggles, lower N first, then the sparkle/dust counts.
+1f. Chimin is unsure the paper-cut style is right for the outside pieces; `docs/PROMPTS.md` has a painted prefix B to regenerate igloo/Chimin/fox. If she regenerates, re-run `tools/defringe.py` on the new files and re-check the bone regions (they are in picture uv and assume the current compositions).
 1e. The inside (`Inside.tsx`) is still the paper-diorama room and has not had the v8 pass: it should show the letter snow through the window, take the same light, and its pieces already get the brushed edge/defringe.
 2. Chimin's authored default postcard arrangements (replace `defaultPieces`) once pieces exist.
 3. Work has no object in the room (it's listed in About). Decide: a laptop on the table or a shelf. The fridge is furniture now; it could carry Work.

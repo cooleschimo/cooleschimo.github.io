@@ -5,8 +5,15 @@ import * as THREE from 'three'
  * watercolour (uReveal 0→1, a wet edge running ahead of the colour) and leaves by dissolving into pigment
  * that drifts up (uDissolve 0→1). Its edge is a brushed edge, not a cut one: the alpha is broken up by
  * noise so no straight sticker outline survives. It takes the scene's light (uTint, a brighter top),
- * its fog, and can sink into the snow (uSink: the bottom of the picture blends toward uSnow).
+ * its fog, and can sink into the snow (uSink: the bottom of the picture blends toward uSnow), give up
+ * contrast to the snow (uFrost), carry the snow's grain (uGrain) and glisten like it (uGlisten).
+ *
+ * A picture can also be a puppet: up to BONES regions of the picture (an arm, a leg, a head, a tail) that
+ * rotate about a pivot by warping the plane's vertices, with a soft falloff so nothing is cut. Angles are
+ * set per frame. An eye can blink (uEye, uBlink: fur from just above the eye is drawn over it).
  */
+export const BONES = 6
+
 export const NOISE_GLSL = `
   float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   float vnoise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f);
@@ -19,14 +26,39 @@ export function makePaintMaterial(map: THREE.Texture, seed = Math.random() * 100
     uniforms: {
       uMap: { value: map }, uReveal: { value: 0 }, uDissolve: { value: 0 }, uTime: { value: 0 }, uSeed: { value: seed },
       uTint: { value: new THREE.Color('#ffffff') }, uFlip: { value: 0 }, uOpacity: { value: 1 }, uCut: { value: 0.12 },
-      uSnow: { value: new THREE.Color('#f4f5ff') }, uSink: { value: 0 }, uTopLight: { value: 0.08 },
+      uSnow: { value: new THREE.Color('#f4f5ff') }, uSink: { value: 0 }, uTopLight: { value: 0.08 }, uFrost: { value: 0 }, uGrain: { value: 0 }, uGlisten: { value: 0 },
+      uLight: { value: new THREE.Color('#ffffff') },
       fogColor: { value: new THREE.Color('#e6e7fb') }, fogNear: { value: 1e6 }, fogFar: { value: 1e7 },
+      uSize: { value: new THREE.Vector2(1, 1) }, uBreath: { value: 0 },
+      uPivot: { value: Array.from({ length: BONES }, () => new THREE.Vector2(0.5, 0.5)) },
+      uRegion: { value: Array.from({ length: BONES }, () => new THREE.Vector4(0.5, 0.5, 0, 0)) },
+      uAngle: { value: new Float32Array(BONES) },
+      uEye: { value: new THREE.Vector4(0, 0, 0, 0) }, uBlink: { value: 0 },
     },
-    vertexShader: `varying vec2 vUv; varying float vFog; uniform float uFlip;
-      void main(){ vUv = uv; if (uFlip > 0.5) vUv.x = 1.0 - vUv.x; vec4 mv = modelViewMatrix * vec4(position, 1.0); vFog = -mv.z; gl_Position = projectionMatrix * mv; }`,
+    vertexShader: `
+      varying vec2 vUv; varying vec3 vW; varying float vFog; uniform float uFlip, uBreath; uniform vec2 uSize;
+      uniform vec2 uPivot[${BONES}]; uniform vec4 uRegion[${BONES}]; uniform float uAngle[${BONES}];
+      void main(){
+        vUv = uv; if (uFlip > 0.5) vUv.x = 1.0 - vUv.x;
+        vec2 p = position.xy;
+        // breathing: the picture swells a little about its middle
+        p *= 1.0 + uBreath;
+        // bones: each region turns about its pivot, weighted by a soft ellipse so the picture bends rather than cuts
+        for (int i = 0; i < ${BONES}; i++) {
+          if (uRegion[i].z <= 0.0) continue;
+          vec2 pu = uPivot[i], cu = uRegion[i].xy; float a = uAngle[i];
+          if (uFlip > 0.5) { pu.x = 1.0 - pu.x; cu.x = 1.0 - cu.x; a = -a; }
+          vec2 piv = (pu - 0.5) * uSize, c = (cu - 0.5) * uSize, r = uRegion[i].zw * uSize;
+          vec2 d = (p - c) / r; float w = 1.0 - smoothstep(0.55, 1.0, length(d));
+          a *= w; vec2 q = p - piv; float cs = cos(a), sn = sin(a);
+          p = piv + vec2(q.x * cs - q.y * sn, q.x * sn + q.y * cs);
+        }
+        vec4 w4 = modelMatrix * vec4(p, 0.0, 1.0); vW = w4.xyz;
+        vec4 mv = viewMatrix * w4; vFog = -mv.z; gl_Position = projectionMatrix * mv; }`,
     fragmentShader: `
-      uniform sampler2D uMap; uniform float uReveal, uDissolve, uTime, uSeed, uFlip, uOpacity, uCut, uSink, uTopLight, fogNear, fogFar; uniform vec3 uTint, uSnow, fogColor;
-      varying vec2 vUv; varying float vFog;
+      uniform sampler2D uMap; uniform float uReveal, uDissolve, uTime, uSeed, uFlip, uOpacity, uCut, uSink, uTopLight, uFrost, uGrain, uGlisten, uBlink, fogNear, fogFar;
+      uniform vec3 uTint, uSnow, uLight, fogColor; uniform vec4 uEye;
+      varying vec2 vUv; varying vec3 vW; varying float vFog;
       ${NOISE_GLSL}
       void main(){
         vec2 uv = vUv;
@@ -35,6 +67,9 @@ export function makePaintMaterial(map: THREE.Texture, seed = Math.random() * 100
         float drift = uDissolve * (0.12 + 0.1 * dn);
         uv.y -= drift * 0.6; uv.x += (dn - 0.5) * drift * 0.8;
         vec4 tex = texture2D(uMap, uv);
+        // a blink: fur from just above the eye closes over it
+        if (uEye.z > 0.0 && uBlink > 0.001) { vec2 ed = (uv - uEye.xy) / uEye.zw; float d = length(ed);
+          if (d < 1.2) tex = mix(tex, texture2D(uMap, uv + vec2(0.0, uEye.w * 2.2)), smoothstep(1.2, 0.7, d) * uBlink); }
         // a brushed edge: the alpha edge wanders with fine noise, so it reads as paint, not a cut-out
         float en = fbm(uv * 28.0 + uSeed) - 0.5;
         float ta = smoothstep(0.25, 0.75, tex.a + en * 0.45);
@@ -59,6 +94,15 @@ export function makePaintMaterial(map: THREE.Texture, seed = Math.random() * 100
         col = mix(col, vec3(0.28, 0.22, 0.2), ink * inkShow * 0.45);
         // the scene's light: a little brighter toward the top, and the day's tint
         col *= uTint * (1.0 + uTopLight * (vUv.y - 0.5) * 2.0);
+        // frost: the picture gives up some of its own contrast to the snow's colour; grain: the same dry speckle as the snow
+        col = mix(col, uSnow, uFrost * (0.6 + 0.4 * (1.0 - lum)));
+        col *= 1.0 + (fbm(uv * 70.0 + uSeed) - 0.5) * uGrain;
+        // glisten: the bright parts of the picture sparkle like the snow, cells that flash in turn, and a slow light that sweeps across
+        if (uGlisten > 0.0) { vec2 g = uv * 260.0 + uSeed; vec2 cell = floor(g); float h = hash(cell);
+          vec2 pt = vec2(hash(cell + 3.3), hash(cell + 7.1)); float dd = length(fract(g) - pt);
+          float dot_ = smoothstep(0.32, 0.0, dd); float tw = pow(0.5 + 0.5 * sin(uTime * 1.6 + h * 80.0), 12.0); float bright = smoothstep(0.5, 0.9, lum);
+          col += uLight * dot_ * tw * step(0.6, h) * bright * 1.2 * uGlisten;
+          col *= 1.0 + 0.04 * uGlisten * sin(uv.x * 4.0 + uv.y * 3.0 + uTime * 0.35) * bright; }
         // sunk into the snow: the bottom of the picture takes the snow's colour
         if (uSink > 0.0) { float s = smoothstep(uSink, 0.0, vUv.y + (fbm(vUv * 9.0 + uSeed) - 0.5) * 0.12); col = mix(col, uSnow, s * 0.9); }
         float a = ta * max(painted, ink * inkShow) * uOpacity;

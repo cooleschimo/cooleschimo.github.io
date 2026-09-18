@@ -4,3 +4,4 @@ Fonts in this folder are self-hosted Latin subsets from Google Fonts, all under 
 - Geist (variable wght) — body and interface
 - JetBrains Mono (variable wght) — small uppercase labels
 - Newsreader (variable wght, opsz; upright + italic) — long-form reading (M4)
+- Caveat (variable wght) — the handwritten letters the snow is made of
