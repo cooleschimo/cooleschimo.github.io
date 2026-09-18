@@ -27,8 +27,10 @@ const LOOKS: Record<Mode, { tint: string; bg: string; beam: string; beamI: numbe
 function Sky() {
   const [mode, setMode] = useState<Mode>(getMode())
   useEffect(() => { const on = () => setMode(getMode()); window.addEventListener('modechange', on); return () => window.removeEventListener('modechange', on) }, [])
-  const url = mode === 'night' ? ART.skyNight : mode === 'evening' ? ART.skyEvening : ART.skyDay
-  const tex = useTexture(url); tex.colorSpace = THREE.SRGBColorSpace
+  // all three skies load up front so a mode change never suspends the scene
+  const [day, evening, night] = useTexture([ART.skyDay, ART.skyEvening, ART.skyNight])
+  for (const t of [day, evening, night]) t.colorSpace = THREE.SRGBColorSpace
+  const tex = mode === 'night' ? night : mode === 'evening' ? evening : day
   return <mesh position={[0, 6.0, -8.2]}><circleGeometry args={[2.7, 40]} /><meshBasicMaterial map={tex} /></mesh>
 }
 
@@ -67,8 +69,8 @@ function Scene({ onOpen, opened, shut, onShutter, setHover }: SceneProps) {
   }, [tgt])
 
   // the shutter slides down over the window
-  const shutterY = useRef(9.3)
-  useEffect(() => { gsap.to(shutterY, { current: shut ? 6.0 : 9.3, duration: reduced ? 0.2 : 0.7, ease: 'power3.out' }) }, [shut, reduced])
+  const shutterY = useRef(11.6)
+  useEffect(() => { gsap.to(shutterY, { current: shut ? 6.0 : 11.6, duration: reduced ? 0.2 : 0.7, ease: 'power3.out' }) }, [shut, reduced])
   const shutterRef = useRef<THREE.Group>(null)
 
   // objects: hover lift, open → dissolve, close → paint back
@@ -117,7 +119,7 @@ function Scene({ onOpen, opened, shut, onShutter, setHover }: SceneProps) {
       <color attach="background" args={['#e9eef6']} />
       <Sky />
       {/* the wall, with the window hole, and the shutter behind it */}
-      <group ref={shutterRef} position={[0, 9.3, -7.6]}><Piece url={paper('shutter')} width={5.2} position={[0, 0, 0]} delay={0} tint={tint} /></group>
+      <group ref={shutterRef} position={[0, 11.6, -7.6]}><Piece url={paper('shutter')} width={5.2} position={[0, 0, 0]} delay={0} tint={tint} /></group>
       <Piece url={paper('wall-inside')} width={26} position={[0, 2.32, -7]} delay={0.1} tint={tint} />
       <mesh position={[0, 6.0, -6.8]} onPointerOver={(e) => { e.stopPropagation(); hover('window') }} onPointerOut={() => hover(null)} onClick={(e) => { e.stopPropagation(); onShutter() }}><circleGeometry args={[2.6, 32]} /><meshBasicMaterial transparent opacity={0} depthWrite={false} /></mesh>
       <Piece url={paper('floor-inside')} width={26} position={[0, 0, 1]} rotation={[-Math.PI / 2, 0, 0]} delay={0.2} tint={tint} />
