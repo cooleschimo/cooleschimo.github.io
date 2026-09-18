@@ -280,7 +280,7 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
       <Piece url={`${B}/art/paper/igloo-arch.webp`} width={4.6} position={[0, 1.4, 3.9]} rotation={[-0.04, 0, 0]} delay={0.8} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
       <mesh position={[0, 0.06, 6.2]} rotation={[-Math.PI / 2, 0, 0]} material={glowMat}><planeGeometry args={[9, 7]} /></mesh>
       {/* Chimin, pressed into the snow, and a drift or two */}
-      <Piece url={`${B}/art/paper/chimin.webp`} width={4.2} position={[-6.8, 0.6, 5.2]} rotation={[-1.15, 0, 0.35]} delay={1.1} onHover={h => setHover(h ? 'chimin' : null)} onClick={onAbout} />
+      <Piece url={`${B}/art/paper/chimin.webp`} width={5.0} position={[-6.8, 0.6, 5.2]} rotation={[-1.15, 0, 0.35]} delay={1.1} onHover={h => setHover(h ? 'chimin' : null)} onClick={onAbout} />
       <Piece url={`${B}/art/paper/drift-3.webp`} width={11} position={[-14, 0.03, -9]} rotation={[-Math.PI / 2, 0, 0.2]} delay={0.3} opacity={0.85} />
       <Piece url={`${B}/art/paper/drift-1.webp`} width={8} position={[15, 0.03, -6]} rotation={[-Math.PI / 2, 0, -0.3]} delay={0.6} opacity={0.85} />
       {/* the object test: a table patch with the camera on it */}
