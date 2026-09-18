@@ -197,6 +197,18 @@ Console: clean (art exists for every slot now). The verify scripts lived in the 
    the v5 painted-volume build and must be rebuilt in the same language (a table close up, few objects).
 1c. Headless screenshots are unreliable (frames captured mid-render, SwiftShader fps is meaningless for 82k instances); judge in a browser.
 1d. Letter snow to tune with Chimin: mound shapes, density per layer, letter size, kick strength, sky-fall rate. Real-GPU performance is unmeasured (SwiftShader reads 1 fps regardless); if a laptop struggles, lower N first, then the sparkle/dust counts.
+1h. **Prints and paper** (v8.3): `Trail` in `Letters.tsx` is a 512×384 pressure map over x −32…32, z −26…22 (a
+   Float32 master + a Uint8 `DataTexture`, RedFormat). `stamp()` presses a soft disc (max blend), `settleTrail()` fades it
+   (τ 45 s: the snow fills the prints back in) and uploads. Both snow shaders take `uTrail/uTrailBox/uTrailDepth` (0.5):
+   the mound's vertices and every letter sink by trail×depth, `trailTilt()` tilts the shading normal from the map's
+   gradient so a print has a lit far wall and a shadowed near wall, and the trough is mixed toward the shadow colour. Stamps:
+   the fox's wading furrow (r 0.55) plus a paw print every half gait cycle (front/back, left/right in turn, r 0.27, 0.85),
+   Chimin's sweeping arms and legs (tips r 0.62), and the cursor as it moves (r 0.6, 0.3). The mound raycast still uses the
+   undisplaced geometry (the cursor lands a few cm off inside a print; harmless). `uDebug` on the mound material paints the
+   trail as colour for probing; `window.__snow` also exposes `trail`, `stamp`, `moundMat`, `letterMat`, `field`, `gl`.
+   Paper: `paperize()` in `SNOW_GLSL` lays handmade-paper fibre and tiny dark speckles over the snow and each letter, the
+   wrap-lit tone is half posterised into flat patches, letters get a lighter cut rim inside a blue edge, and the day white
+   is cream (`#f6f4f0`), to match Chimin's paper pieces.
 1g. **Relief** (v8.2): every outside piece gets a height map inflated from its silhouette at load (`heightMap` in
    `Piece.tsx`: chamfer distance transform at 384 px wide, square-root profile, small blur, a `DataTexture` cached per
    image). The paint shader shades the form from it (`uRelief`: key light upper-left front, blue in the turn, a rim

@@ -25,7 +25,7 @@ const CHARS = 'AaBbCcdDeEfFgGhHiJjkKLMmnNoOPpqrRsStTuvVwWxyzZ'
 
 type Look = { white: string; shadow: string; light: string; sky: string; mid: string; horizon: string; sun: string; sunDir: [number, number, number]; sparkle: number; aurora: number; glow: number; stars: number }
 const LOOKS: Record<Mode, Look> = {
-  day: { white: '#f4f5fc', shadow: '#a7b6ea', light: '#fff1d4', sky: '#93aae6', mid: '#c9d5f4', horizon: '#e8e3f1', sun: '#fff0d0', sunDir: [-0.35, 0.42, -0.84], sparkle: 1.0, aurora: 0, glow: 0, stars: 0 },
+  day: { white: '#f6f4f0', shadow: '#adbae6', light: '#fff1d4', sky: '#93aae6', mid: '#c9d5f4', horizon: '#e8e3f1', sun: '#fff0d0', sunDir: [-0.35, 0.42, -0.84], sparkle: 1.0, aurora: 0, glow: 0, stars: 0 },
   evening: { white: '#f7e4d4', shadow: '#bda6cb', light: '#ffb27a', sky: '#6f66b4', mid: '#dc93a8', horizon: '#ffd6ad', sun: '#ffb070', sunDir: [-0.55, 0.14, -0.82], sparkle: 0.8, aurora: 0, glow: 0.45, stars: 0.2 },
   night: { white: '#7181c9', shadow: '#2b3470', light: '#b9c6ff', sky: '#080d28', mid: '#171f4a', horizon: '#2d3b72', sun: '#c9d4ff', sunDir: [0.4, 0.55, -0.73], sparkle: 1.9, aurora: 1, glow: 1, stars: 1 },
 }
@@ -80,6 +80,36 @@ function moundGeometry() {
   geo.computeVertexNormals(); return geo
 }
 
+// ------------------------------------------------------------------ the trail: where the snow has been pressed down
+// A pressure map over the near field (paw prints, the wading furrow, the snow angel, the cursor). The ground and the
+// letters on it sink where it is high; it fades back as snow falls.
+const TW = 512, TH = 384, TX0 = -32, TX1 = 32, TZ0 = -26, TZ1 = 22
+type Trail = { data: Float32Array; bytes: Uint8Array; tex: THREE.DataTexture }
+function makeTrail(): Trail {
+  const bytes = new Uint8Array(TW * TH); const tex = new THREE.DataTexture(bytes, TW, TH, THREE.RedFormat, THREE.UnsignedByteType)
+  tex.minFilter = tex.magFilter = THREE.LinearFilter; tex.needsUpdate = true
+  return { data: new Float32Array(TW * TH), bytes, tex }
+}
+/** press a soft disc into the snow (max blend: pressing twice does not dig deeper) */
+function stamp(t: Trail, x: number, z: number, r: number, depth: number) {
+  const sx = TW / (TX1 - TX0), sz = TH / (TZ1 - TZ0); const cx = (x - TX0) * sx, cz = (z - TZ0) * sz; const rx = r * sx, rz = r * sz
+  const x0 = Math.max(0, Math.floor(cx - rx)), x1 = Math.min(TW - 1, Math.ceil(cx + rx)), z0 = Math.max(0, Math.floor(cz - rz)), z1 = Math.min(TH - 1, Math.ceil(cz + rz))
+  for (let iz = z0; iz <= z1; iz++) for (let ix = x0; ix <= x1; ix++) {
+    const dx = (ix - cx) / rx, dz = (iz - cz) / rz; const d2 = dx * dx + dz * dz; if (d2 > 1) continue
+    const v = depth * (1 - d2) * (1 - d2); const i = iz * TW + ix; if (v > t.data[i]) t.data[i] = v
+  }
+}
+function trailAt(t: Trail, x: number, z: number) {
+  const ix = Math.round((x - TX0) * TW / (TX1 - TX0)), iz = Math.round((z - TZ0) * TH / (TZ1 - TZ0))
+  if (ix < 0 || iz < 0 || ix >= TW || iz >= TH) return 0; return t.data[iz * TW + ix]
+}
+/** the snow fills the prints back in: an exponential fade, then upload */
+function settleTrail(t: Trail, dt: number, tau = 45) {
+  const k = Math.exp(-dt / tau); const d = t.data, b = t.bytes
+  for (let i = 0; i < d.length; i++) { const v = d[i] * k; d[i] = v < 0.004 ? 0 : v; b[i] = v * 255 }
+  t.tex.needsUpdate = true
+}
+
 // ------------------------------------------------------------------ one shading for snow and letters
 const SNOW_GLSL = `
   float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -89,7 +119,8 @@ const SNOW_GLSL = `
   // white in the light, blue in the shadow, a subsurface glow where the surface turns away
   vec3 snowShade(vec3 n, vec3 V, vec3 L, vec3 white, vec3 shadow, vec3 light, float depth){
     float wrap = dot(n, L) * 0.5 + 0.5;
-    vec3 col = mix(shadow, white, smoothstep(0.3, 1.0, wrap));
+    float tone = smoothstep(0.3, 1.0, wrap); tone = mix(tone, floor(tone * 4.0 + 0.5) / 4.0, 0.45);
+    vec3 col = mix(shadow, white, tone);
     col = mix(col, shadow, clamp(depth, 0.0, 1.0) * 0.45);
     float fres = pow(1.0 - max(0.0, dot(n, V)), 3.0);
     col += light * fres * 0.12;
@@ -103,6 +134,16 @@ const SNOW_GLSL = `
     float g = pow(max(0.0, dot(reflect(-L, nj), V)), 40.0);
     float tw = 0.55 + 0.45 * sin(time * 2.4 + h * 60.0);
     return g * step(0.5, h) * tw * 2.0; }
+  // handmade paper: long soft fibres, tiny dark speckles
+  float fibre(vec2 p){ return fbm(vec2(p.x * 1.0, p.y * 6.0)) * 0.5 + fbm(vec2(p.x * 7.0, p.y * 1.2) + 3.7) * 0.5; }
+  float speck(vec2 p){ vec2 c = floor(p); vec2 f = fract(p) - 0.5; float h = hash(c); vec2 pt = (vec2(hash(c + 1.3), hash(c + 2.7)) - 0.5) * 0.8; return step(0.94, h) * smoothstep(0.12, 0.03, length(f - pt)); }
+  vec3 paperize(vec3 col, vec2 p, float amount){ col *= 1.0 + (fibre(p * 3.0) - 0.5) * 0.16 * amount; col = mix(col, col * 0.6, speck(p * 22.0) * 0.55 * amount); return col; }
+  // the trail: pressed-down snow
+  float trailAt(vec2 xz){ vec2 uv = (xz - uTrailBox.xy) * uTrailBox.zw; if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return 0.0; return texture2D(uTrail, uv).r; }
+  // the tilt of the ground where a print has pressed it: the surface normal of y = H - trail*depth
+  vec3 trailTilt(vec2 xz, float depth){ float e = 0.12;
+    float tx = trailAt(xz + vec2(e, 0.0)) - trailAt(xz - vec2(e, 0.0)); float tz = trailAt(xz + vec2(0.0, e)) - trailAt(xz - vec2(0.0, e));
+    return vec3(tx, 0.0, tz) * (depth / (2.0 * e)); }
   // the aurora, as a wash on the ground
   vec3 auroraOn(vec3 w, float time){
     vec2 p = w.xz * 0.25; float b = pow(0.5 + 0.5 * sin(p.x * 1.4 + p.y * 0.8 + time * 0.3 + sin(p.y * 1.2 - time * 0.2) * 2.0), 3.0);
@@ -112,25 +153,35 @@ const snowUniforms = () => ({
   uLightDir: { value: new THREE.Vector3(-0.35, 0.42, -0.84).normalize() }, uWhite: { value: new THREE.Color('#fcfcff') }, uShadow: { value: new THREE.Color('#b4c1ee') }, uLight: { value: new THREE.Color('#fff4dc') },
   uAurora: { value: 0 }, uTime: { value: 0 }, uSparkle: { value: 1 }, fogColor: { value: new THREE.Color('#f3ecf3') }, fogNear: { value: 24 }, fogFar: { value: 72 },
   uCursor: { value: new THREE.Vector3() }, uCursorOn: { value: 0 },
+  uTrail: { value: null as THREE.Texture | null }, uTrailBox: { value: new THREE.Vector4(TX0, TZ0, 1 / (TX1 - TX0), 1 / (TZ1 - TZ0)) }, uTrailDepth: { value: 0.5 }, uDebug: { value: 0 },
 })
 
 function snowMaterial() {
   return new THREE.ShaderMaterial({
     uniforms: snowUniforms(),
-    vertexShader: `varying vec3 vW; varying vec3 vN; varying float vFog;
-      void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; vN = normalize(mat3(modelMatrix) * normal); vec4 mv = viewMatrix * w; vFog = -mv.z; gl_Position = projectionMatrix * mv; }`,
+    vertexShader: `varying vec3 vW; varying vec3 vN; varying float vFog; varying float vTrail; uniform sampler2D uTrail; uniform vec4 uTrailBox; uniform float uTrailDepth;
+      float trailAt(vec2 xz){ vec2 uv = (xz - uTrailBox.xy) * uTrailBox.zw; if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return 0.0; return texture2D(uTrail, uv).r; }
+      void main(){ vec4 w = modelMatrix * vec4(position, 1.0); float tr = trailAt(w.xz); w.y -= tr * uTrailDepth; vTrail = tr; vW = w.xyz; vN = normalize(mat3(modelMatrix) * normal); vec4 mv = viewMatrix * w; vFog = -mv.z; gl_Position = projectionMatrix * mv; }`,
     fragmentShader: `
-      uniform vec3 uLightDir, uWhite, uShadow, uLight, fogColor, uCursor; uniform float fogNear, fogFar, uAurora, uTime, uSparkle, uCursorOn;
-      varying vec3 vW; varying vec3 vN; varying float vFog;
+      uniform vec3 uLightDir, uWhite, uShadow, uLight, fogColor, uCursor; uniform float fogNear, fogFar, uAurora, uTime, uSparkle, uCursorOn, uTrailDepth, uDebug;
+      uniform sampler2D uTrail; uniform vec4 uTrailBox;
+      varying vec3 vW; varying vec3 vN; varying float vFog; varying float vTrail;
       ${SNOW_GLSL}
       void main(){
         vec3 V = normalize(cameraPosition - vW); vec3 n = normalize(vN);
         float ring = smoothstep(2.6, 0.3, distance(vW.xz, uCursor.xz)) * uCursorOn;
         // a soft grain and a gentle pile pattern, so the surface between the letters is not flat paint
         float grain = fbm(vW.xz * 2.3) - 0.5; n = normalize(n + vec3(grain * 0.25, 0.0, (fbm(vW.zx * 2.9) - 0.5) * 0.25));
+        n = normalize(n + trailTilt(vW.xz, uTrailDepth));
         float depth = smoothstep(1.2, -0.6, vW.y);
         vec3 col = snowShade(n, V, uLightDir, uWhite, uShadow, uLight, depth);
         col *= 0.96 + 0.08 * fbm(vW.xz * 9.0);
+        col = paperize(col, vW.xz, 1.0);
+        if (uDebug > 0.5) { gl_FragColor = vec4(vTrail, trailAt(vW.xz), 0.3, 1.0); return; }
+        // the prints: the trough is in shadow, its near wall darker, its far wall catches the light
+        { float s = 0.16; float edge = trailAt(vW.xz - uLightDir.xz * s) - trailAt(vW.xz + uLightDir.xz * s);
+          col = mix(col, uShadow, clamp(vTrail * 0.85 + max(0.0, edge) * 1.5, 0.0, 0.88));
+          col += uLight * clamp(-edge * 2.0, 0.0, 1.0) * 0.4; }
         col += uLight * ring * 0.1;
         col += uLight * glitter(vW, n, V, uLightDir, uTime) * uSparkle * (1.0 + ring * 2.5);
         if (uAurora > 0.001) col += auroraOn(vW, uTime) * uAurora;
@@ -175,29 +226,37 @@ function letterMaterial(atlas: THREE.Texture) {
   return new THREE.ShaderMaterial({
     uniforms: { ...snowUniforms(), uAtlas: { value: atlas } },
     vertexShader: `
-      attribute float aGlyph; attribute vec3 aColor; attribute float aSeed; uniform vec3 uCursor; uniform float uCursorOn, uTime;
-      varying vec2 vUv; varying vec3 vColor; varying vec3 vN; varying vec3 vW; varying float vFog; varying float vSeed; varying float vRing;
+      attribute float aGlyph; attribute vec3 aColor; attribute float aSeed; uniform vec3 uCursor; uniform float uCursorOn, uTime, uTrailDepth; uniform sampler2D uTrail; uniform vec4 uTrailBox;
+      varying vec2 vUv; varying vec3 vColor; varying vec3 vN; varying vec3 vW; varying float vFog; varying float vSeed; varying float vRing; varying float vTrail;
+      float trailAt(vec2 xz){ vec2 uv = (xz - uTrailBox.xy) * uTrailBox.zw; if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return 0.0; return texture2D(uTrail, uv).r; }
       void main(){
         float col = mod(aGlyph, 8.0), row = floor(aGlyph / 8.0); vUv = (uv + vec2(col, row)) / 8.0; vColor = aColor; vSeed = aSeed;
         vec4 w = modelMatrix * instanceMatrix * vec4(position, 1.0);
         // under the cursor the letters stir: they lift a little and shimmer
         vRing = smoothstep(2.6, 0.3, distance(w.xz, uCursor.xz)) * uCursorOn;
         w.y += vRing * 0.16 * (0.5 + 0.5 * sin(uTime * 5.0 + aSeed * 40.0));
+        // pressed down where something has been: the letters sink with the ground
+        float tr = trailAt(w.xz); w.y -= tr * uTrailDepth; vTrail = tr;
         vW = w.xyz;
         vN = normalize(mat3(modelMatrix * instanceMatrix) * vec3(0.0, 0.0, 1.0));
         vec4 mv = viewMatrix * w; vFog = -mv.z; gl_Position = projectionMatrix * mv; }`,
     fragmentShader: `
-      uniform sampler2D uAtlas; uniform vec3 uLightDir, uWhite, uShadow, uLight, fogColor; uniform float fogNear, fogFar, uAurora, uTime, uSparkle;
-      varying vec2 vUv; varying vec3 vColor; varying vec3 vN; varying vec3 vW; varying float vFog; varying float vSeed; varying float vRing;
+      uniform sampler2D uAtlas; uniform vec3 uLightDir, uWhite, uShadow, uLight, fogColor; uniform float fogNear, fogFar, uAurora, uTime, uSparkle, uTrailDepth;
+      uniform sampler2D uTrail; uniform vec4 uTrailBox;
+      varying vec2 vUv; varying vec3 vColor; varying vec3 vN; varying vec3 vW; varying float vFog; varying float vSeed; varying float vRing; varying float vTrail;
       ${SNOW_GLSL}
       void main(){
         float a = texture2D(uAtlas, vUv).a; if (a < 0.38) discard;
         vec3 V = normalize(cameraPosition - vW); vec3 n = normalize(vN); if (dot(n, V) < 0.0) n = -n;
+        if (vTrail > 0.001) n = normalize(n + trailTilt(vW.xz, uTrailDepth));
         float depth = smoothstep(1.2, -0.6, vW.y);
         vec3 col = snowShade(n, V, uLightDir, uWhite, uShadow, uLight, depth) * vColor;
-        // a grain over the stroke, and a soft blue edge, so the snow reads as letters when you look
+        // each letter is cut paper: fibre across the stroke, a speckle, a lighter cut rim, and a soft blue edge outside it
         col *= 0.92 + 0.16 * fbm(vW.xz * 38.0 + vSeed * 9.0);
-        float edge = 1.0 - smoothstep(0.38, 0.8, a); col = mix(col, uShadow, edge * 0.32);
+        col = paperize(col, vUv * 60.0 + vSeed * 7.0, 0.8);
+        float edge = 1.0 - smoothstep(0.38, 0.8, a); float rim = smoothstep(0.38, 0.55, a) * (1.0 - smoothstep(0.55, 0.75, a));
+        col = mix(col, uShadow, edge * 0.26); col = mix(col, uWhite, rim * 0.35);
+        col = mix(col, uShadow, clamp(vTrail * 0.75, 0.0, 0.8));
         // each letter is a facet: some catch the light hard as the camera moves
         vec3 Rf = reflect(-uLightDir, n); float glint = pow(max(0.0, dot(Rf, V)), 24.0 + vSeed * 40.0);
         col += uLight * glint * (0.3 + vSeed * 1.0) * uSparkle * (1.0 + vRing * 1.5);
@@ -350,7 +409,7 @@ function skyMaterial() {
     uniforms: { uTop: { value: new THREE.Color('#9db2ea') }, uMid: { value: new THREE.Color('#d3dcf6') }, uBot: { value: new THREE.Color('#f3ecf3') }, uSun: { value: new THREE.Color('#fff0d0') }, uSunDir: { value: new THREE.Vector3(-0.35, 0.42, -0.84) },
       uAurora: { value: 0 }, uStars: { value: 0 }, uTime: { value: 0 } },
     vertexShader: `varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
-    fragmentShader: `uniform vec3 uTop, uMid, uBot, uSun, uSunDir; uniform float uAurora, uStars, uTime; varying vec3 vP;
+    fragmentShader: `uniform vec3 uTop, uMid, uBot, uSun, uSunDir; uniform float uAurora, uStars, uTime; varying vec3 vP; uniform sampler2D uTrail; uniform vec4 uTrailBox;
       ${SNOW_GLSL}
       void main(){
         float h = clamp(vP.y, 0.0, 1.0);
@@ -384,6 +443,7 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
   const mound = useMemo(() => moundGeometry(), [])
   const moundMat = useMemo(() => snowMaterial(), [])
   const sparkles = useMemo(() => makeSparkles(), [])
+  const trail = useMemo(() => makeTrail(), [])
   const dust = useMemo(() => makeDust(), [])
   const skyMat = useMemo(() => skyMaterial(), [])
 
@@ -409,7 +469,7 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
 
   // the fox
   const fox = useRef<THREE.Group>(null)
-  const f = useRef({ x: 9, z: 8, target: new THREE.Vector3(9, 0, 8), gait: 0, idle: 0, flip: false, moving: false, leaving: false, nextBlink: 2, blinkT: 9 })
+  const f = useRef({ x: 9, z: 8, target: new THREE.Vector3(9, 0, 8), gait: 0, idle: 0, flip: false, moving: false, leaving: false, nextBlink: 2, blinkT: 9, stepPh: 0 })
   const [foxFlip, setFoxFlip] = useState(false)
   const foxPose = useRef<Pose>({ angles: [0, 0, 0, 0, 0, 0], breath: 0, blink: 0 })
   // Chimin's rig: head, both arms, both legs (picture uv); the snow angel and her idling drive it
@@ -472,7 +532,7 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
   }, [field, chiminPos])
 
   const dbg = useRef({ noRig: false })
-  useEffect(() => { (window as unknown as { __snow?: unknown }).__snow = { f: f.current, chiminPose: chiminPose.current, foxPose: foxPose.current, angel: angel.current, dbg: dbg.current, cursor: cursor.current, gsap } }, [])
+  useEffect(() => { (window as unknown as { __snow?: unknown }).__snow = { f: f.current, chiminPose: chiminPose.current, foxPose: foxPose.current, angel: angel.current, dbg: dbg.current, cursor: cursor.current, gsap, trail, moundMat, letterMat: field.mesh.material, field, gl, stamp: (x: number, z: number, r: number, depth: number) => stamp(trail, x, z, r, depth) } }, [])
   const t0 = useRef(0)
   useFrame((_, dt) => {
     const d = Math.min(dt, 0.05); t0.current += d; const k = Math.min(1, d * 2.2)
@@ -482,7 +542,7 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
     for (const m of [moundMat, field.mesh.material as THREE.ShaderMaterial]) {
       const u = m.uniforms; u.uWhite.value.copy(cur.white); u.uShadow.value.copy(cur.shadow); u.uLight.value.copy(cur.light); u.uLightDir.value.copy(cur.sunDir)
       u.uAurora.value = cur.aurora; u.uTime.value = reduced ? 0.3 : t0.current; u.uSparkle.value = cur.sparkle; u.fogColor.value.copy(cur.horizon)
-      u.uCursor.value.copy(cursor.current); u.uCursorOn.value += ((hasCursor.current && !entering.current && !reduced ? 1 : 0) - u.uCursorOn.value) * Math.min(1, d * 4)
+      u.uTrail.value = trail.tex; u.uCursor.value.copy(cursor.current); u.uCursorOn.value += ((hasCursor.current && !entering.current && !reduced ? 1 : 0) - u.uCursorOn.value) * Math.min(1, d * 4)
     }
     ;(scene.background as THREE.Color).copy(cur.horizon); (scene.fog as THREE.Fog).color.copy(cur.horizon)
     const su = skyMat.uniforms; su.uTop.value.copy(cur.sky); su.uMid.value.copy(cur.mid); su.uBot.value.copy(cur.horizon); su.uSun.value.copy(cur.sun); su.uSunDir.value.copy(cur.sunDir)
@@ -496,7 +556,7 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
     // the cursor shifts the snow
     if (hasCursor.current && !entering.current && !reduced) {
       const moved = lastCursor.current.distanceTo(cursor.current); lastCursor.current.copy(cursor.current)
-      if (moved > 0.02) kick(field, cursor.current.x, cursor.current.z, 1.4, Math.min(5, 1.8 + moved * 3), 40)
+      if (moved > 0.02) { kick(field, cursor.current.x, cursor.current.z, 1.4, Math.min(5, 1.8 + moved * 3), 40); stamp(trail, cursor.current.x, cursor.current.z, 0.6, 0.3) }
     }
     // the fox wades toward the cursor, kicking letters as it goes
     const F = f.current
@@ -514,12 +574,17 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
       // and it walks round Chimin, never over her
       { const cx = nx - CHIMIN[0], cz = nz - CHIMIN[1]; const cd = Math.hypot(cx, cz); if (cd < KEEP_CHIMIN) { const ang = Math.atan2(cx, cz) + (dx * cz - dz * cx > 0 ? -1 : 1) * 0.1; nx = CHIMIN[0] + Math.sin(ang) * KEEP_CHIMIN; nz = CHIMIN[1] + Math.cos(ang) * KEEP_CHIMIN } }
       F.x = nx; F.z = nz; F.gait += d * 9; F.idle = 0
+      // the fox wades a furrow, and each stride leaves a paw print: front and back paws, left and right in turn
+      if (!reduced) { const hx = dx / dist, hz = dz / dist
+        stamp(trail, F.x, F.z, 0.55, 0.32)
+        const ph = Math.floor(F.gait / Math.PI); if (ph !== F.stepPh) { F.stepPh = ph; const fwd = ph % 2 === 0 ? 0.42 : -0.42, side = (ph % 4 < 2 ? 1 : -1) * 0.15
+          stamp(trail, F.x + hx * fwd - hz * side, F.z + hz * fwd + hx * side, 0.27, 0.85) } }
       const flip = dx < 0; if (flip !== F.flip) { F.flip = flip; setFoxFlip(flip) }
       if (!reduced) kick(field, F.x - (dx / dist) * 0.4, F.z - (dz / dist) * 0.4, 1.2, 3.4 + speed * 0.3, 30)
     } else F.idle += d
     if (fox.current) {
       const bob = F.moving ? Math.abs(Math.sin(F.gait)) * 0.1 : 0
-      fox.current.position.set(F.x, H(F.x, F.z) + 0.02 + bob, F.z)  // sunk to the belly: its legs are in the snow
+      fox.current.position.set(F.x, H(F.x, F.z) + 0.02 + bob - trailAt(trail, F.x, F.z) * 0.3, F.z)  // sunk to the belly: its legs are in the snow
       fox.current.rotation.z = F.moving ? Math.sin(F.gait) * 0.05 : 0
       fox.current.rotation.y = Math.atan2(camera.position.x - F.x, camera.position.z - F.z)
     }
@@ -551,9 +616,10 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
           let x = (u - 0.5) * W, y = (v - 0.5) * Hh; const px = (b.pivot[0] - 0.5) * W, py = (b.pivot[1] - 0.5) * Hh; const a = P.angles[bone]
           const qx = x - px, qy = y - py; x = px + qx * Math.cos(a) - qy * Math.sin(a); y = py + qx * Math.sin(a) + qy * Math.cos(a)
           _p.set(x, y, 0); chiminGrp.current.localToWorld(_p); const tip = u < 0.1 || u > 0.9 || v < 0.2; kick(field, _p.x, _p.z, tip ? 0.9 : 0.6, (tip ? 3.0 : 2.0) * Math.abs(Math.cos(A.phase)), tip ? 7 : 4)
+          stamp(trail, _p.x, _p.z, tip ? 0.62 : 0.45, (tip ? 0.75 : 0.5) * A.on)  // and press the angel's wings into the snow
         }
       } }
-    if (!reduced) stepField(field, d)
+    if (!reduced) { stepField(field, d); settleTrail(trail, d) }
 
     if (!entering.current && !reduced) { camera.position.x += (home.x + par.current.x * 2.2 - camera.position.x) * 0.04; camera.position.y += (home.y - par.current.y * 0.9 - camera.position.y) * 0.04 }
     camera.lookAt(look)
