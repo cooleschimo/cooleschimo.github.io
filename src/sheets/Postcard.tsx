@@ -19,7 +19,7 @@ function defaultPieces(slug: string): Piece[] {
 }
 
 /** The postcard: front is the place's collage; back is the collage canvas the visitor can rearrange. */
-export function Postcard({ slug }: { slug: string }) {
+export function Postcard({ slug, bare = false }: { slug: string; bare?: boolean }) {
   const place = places.find((p) => p.slug === slug)!
   const key = `postcard:${slug}`
   const [side, setSide] = useState<'front' | 'back'>('front')
@@ -50,10 +50,10 @@ export function Postcard({ slug }: { slug: string }) {
           )}
         </div>
         <div ref={card} className="postcard__face postcard__back" aria-hidden={side !== 'back'}>
-          <div className="postcard__lines" aria-hidden="true"><i /><i /><i /><i /></div>
+          {!bare && <><div className="postcard__lines" aria-hidden="true"><i /><i /><i /><i /></div>
           <div className="postcard__stampbox" aria-hidden="true" />
-          <div className="postcard__divider" aria-hidden="true" />
-          <p className="postcard__hint label muted">drag the pieces · your arrangement is kept in this browser</p>
+          <div className="postcard__divider" aria-hidden="true" /></>}
+          <p className="postcard__hint label muted">{bare ? 'paste the stamps, sketches and stickers where you like · kept in this browser' : 'drag the pieces · your arrangement is kept in this browser'}</p>
           {pieces.map((p) => (
             <div key={p.n} className={`piece piece--${p.kind} ${dragging === p.n ? 'is-dragging' : ''}`}
               style={{ left: p.x, top: p.y, width: p.w, transform: `rotate(${p.r}deg)`, zIndex: top === p.n ? 20 : p.n }}

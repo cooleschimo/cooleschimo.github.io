@@ -32,7 +32,21 @@ The site already frosts, grains, glistens and shades every piece in the shader (
 | `chimin.png` | a person lying on their back in the snow making a snow angel, seen from directly above, arms and legs out, a sand-coloured parka with a fur-trimmed hood, rust mittens, dark boots, a small calm face, black hair | 3:4 |
 | `drift-1.png`, `drift-2.png`, `drift-3.png` | a soft oval drift of snow, a single pale lavender-white paper patch with a torn edge, seen from above | 5:2 |
 
-## Inside (the room)
+## Inside (the room, v10: the coats, the bed, the window)
+| File | Prompt (after the prefix) | Aspect |
+|---|---|---|
+| `puffer.png` | a white puffer jacket hanging from a wall hook by its collar, seen from the front, its baffles softly stitched, a small dark hook above it | 4:5 |
+| `bag.png` | a large brown leather shoulder bag with a flap and a brass clasp, hanging by its strap from a wall hook, seen from the front, the flap plain (the pins are separate pieces) | 7:8 |
+| `laptop-base.png` | the lower half of a slim silver laptop seen from the front and a little above: the keyboard and trackpad only, no screen | 3:2 |
+| `laptop-screen.png` | the screen half of a slim silver laptop seen from the front, the display pale cream and empty | 3:2 |
+| `pin-1.png` … `pin-6.png` | a small round enamel pin badge, one motif each: a fox, a snowflake, a star, a heart, a leaf, a letter C; bold flat colours, a little shine | 1:1 |
+| `bed.png` | a low single bed seen from the front: a wooden frame, a pale blue quilt folded back, one cream pillow at the left | 13:7 |
+| `bedside.png` | a small wooden bedside table with one drawer and a brass knob, seen from the front | 5:6 |
+| `magazines.png` | a stack of five thin magazines lying flat, seen from the front and slightly above, spines toward you, in muted colours | 3:2 |
+| `magazine-<slug>.png` | one magazine cover, portrait, a single muted colour with the essay's title in a serif at the top (slugs: whitman, hume, induction, smith, august, catullus, howardsend, lostfound, salesman, selflove) | 3:4 |
+| `vinyl.png` | a small record player in a wooden case, lid open, a black record with a rust label on the platter and the tone arm resting on it, seen from the front and slightly above | 4:3 |
+
+## Inside (the room, earlier pieces)
 | File | Prompt (after the prefix) | Aspect |
 |---|---|---|
 | `wall-inside.png` | the inside wall of an igloo: pale ice-white snow blocks in staggered courses filling the whole picture, a round window hole cut through near the top centre showing nothing (transparent), whiter near the top, faintly deeper blue near the bottom | 12:7, no margin, fills the frame |

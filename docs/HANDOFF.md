@@ -197,6 +197,22 @@ Console: clean (art exists for every slot now). The verify scripts lived in the 
    the v5 painted-volume build and must be rebuilt in the same language (a table close up, few objects).
 1c. Headless screenshots are unreliable (frames captured mid-render, SwiftShader fps is meaningless for 82k instances); judge in a browser.
 1d. Letter snow to tune with Chimin: mound shapes, density per layer, letter size, kick strength, sky-fall rate. Real-GPU performance is unmeasured (SwiftShader reads 1 fps regardless); if a laptop struggles, lower N first, then the sparkle/dust counts.
+1k. **v10, the inside as Chimin specified** (`Inside.tsx` rewritten again, `sheets/room.tsx` new): stops = the coats
+   (pos −3.2,2.9,9.4 looking at the left wall), the bed (looking right), the window (0,3.7,5.6 → the window whole). Pieces
+   on the left wall are rotated `onLeft` (y +π/2) at x ≥ WALL_L+0.2 (the wall plate's relief reaches x −9.8; anything
+   closer is buried). **Bag/laptop**: the laptop is a closed slab (base group `baseG` + `hinge` group, both pivoting at
+   its bottom) standing in the bag; `bagHover` raises it 0.75; `opened === 'laptop'` flies it to `inFront(2.6, 0, −0.75)`
+   at scale 1.4 and then lays the base down (rotation.x 1.35) and leans the screen (−0.22); the Projects sheet opens over
+   it. **Pins**: `PINS` in bag units, groups `pinRefs`; hover scale 1.6 + glisten 2.2; `opened === 'pin:n'` flies it to
+   `inFront(2.6, −0.6, 0.05)` at scale 3.8 and turns it; `DesignPanel` docks right (`Sheet dock="right"`), content from
+   `content/design.json`. **Magazines**: `magazines` stack piece + one `magazine-<slug>` piece per essay (`ESSAYS` in
+   `src/lib/essays.ts`), fan on hover (`fanOn`, 350 ms grace) to an arc above the table; click → `Magazine` (fetches
+   `public/essays/<slug>.html`, splits `<p>` into ~640-char pages, CSS 3D leaves that turn on click / arrow keys; cover
+   art `magazine-<slug>.webp`). **Vinyl**: `Vinyl` panel (`content/songs.json`, `src` empty until mp3s are dropped in
+   `public/audio`), volume 0.9 at the bed, 0.28 elsewhere. **Window**: `CARDS` postcards lying on the chest (dissolve when
+   the spread is open) → `PlacesSpread` (every place as a card flying in; pick → the `Postcard` with `bare` = no lines).
+   Stand-in art from `tools/room-standins.py`; prompts for the real pieces in PROMPTS.md. The ceiling plane ends at the
+   back wall (z −6.5) so it never shows through the window. Headless: `.inside__nav button:nth-child(n)` jumps stops.
 1j. **v9, the inside** (`Inside.tsx`, rewritten): `STATIONS` (pos, look, name, hint) = the entry (0.6, 2.7, 11.4) →
    the table (0, 3.3, 6.2) → the window (0, 4.1, 1.6); `station` state in `Inside`, gsap-tweened `pos`/`look` in the
    scene (1.7 s), wheel (throttled 1.1 s, |deltaY| ≥ 30), arrow keys, and `.inside__nav`. Room: floor piece ×2 (z 0.2 and

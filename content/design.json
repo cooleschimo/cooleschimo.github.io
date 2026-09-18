@@ -1,0 +1,8 @@
+[
+  { "n": 1, "title": "Arctic sketchbook", "summary": "This site: an igloo in a field of letter snow, a fox that follows you, a room to walk through. Built with three.js and a lot of paper.", "tags": ["three.js", "shaders", "react"], "links": [{ "label": "GitHub", "href": "https://github.com/cooleschimo/cooleschimo.github.io" }] },
+  { "n": 2, "title": "Postcards from places", "summary": "A collage system: each place gets a paper front and an empty back to paste stamps, sketches and stickers onto. (placeholder copy)", "tags": ["collage", "interaction"], "links": [] },
+  { "n": 3, "title": "Enamel pin set", "summary": "Six pins drawn for the bag on the hook by the door. (placeholder copy)", "tags": ["illustration"], "links": [] },
+  { "n": 4, "title": "Letter snow", "summary": "Snow made of handwriting: a hundred thousand glyphs with physics, prints that fill back in, glitter that moves with you. (placeholder copy)", "tags": ["generative", "typography"], "links": [] },
+  { "n": 5, "title": "The paper fox", "summary": "One picture, rigged by warping the plane: it walks, sits, blinks and leaps. (placeholder copy)", "tags": ["animation", "shaders"], "links": [] },
+  { "n": 6, "title": "Magazine essays", "summary": "Ten essays as magazines you can fan through and flip. (placeholder copy)", "tags": ["editorial", "css 3d"], "links": [] }
+]
