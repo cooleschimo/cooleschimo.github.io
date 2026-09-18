@@ -74,6 +74,12 @@ function normalAt(x: number, z: number, out: THREE.Vector3) {
   out.set(H(x - e, z) - H(x + e, z), 2 * e, H(x, z - e) - H(x, z + e)).normalize(); return out
 }
 
+function moundGeometryRect(x0: number, x1: number, z0: number, z1: number, seg = 90) {
+  const geo = new THREE.PlaneGeometry(x1 - x0, z1 - z0, seg, seg); geo.rotateX(-Math.PI / 2); geo.translate((x0 + x1) / 2, 0, (z0 + z1) / 2)
+  const p = geo.attributes.position as THREE.BufferAttribute
+  for (let i = 0; i < p.count; i++) p.setY(i, H(p.getX(i), p.getZ(i)))
+  geo.computeVertexNormals(); return geo
+}
 function moundGeometry() {
   const seg = 180; const geo = new THREE.PlaneGeometry(G, G, seg, seg); geo.rotateX(-Math.PI / 2)
   const p = geo.attributes.position as THREE.BufferAttribute
@@ -342,8 +348,8 @@ function spawnSky(pos: Float32Array, vel: Float32Array, b: number) {
   pos[b] = (Math.random() - 0.5) * 60; pos[b + 2] = -30 + Math.random() * 48; pos[b + 1] = 7 + Math.random() * 14; vel[b + 1] = -0.45 - Math.random() * 0.7
 }
 
-function buildField(atlas: THREE.Texture): Field {
-  const total = N + NF
+function buildField(atlas: THREE.Texture, n = N, nf = NF, zMin = -32, zMax = 22, xHalf = 36): Field {
+  const total = n + nf
   const geo = new THREE.PlaneGeometry(1, 1)
   const glyph = new Float32Array(total), color = new Float32Array(total * 3), seed = new Float32Array(total)
   const pos = new Float32Array(total * 3), quat = new Float32Array(total * 4), scl = new Float32Array(total)
@@ -353,10 +359,10 @@ function buildField(atlas: THREE.Texture): Field {
     const c = PALETTE[Math.floor(Math.random() * PALETTE.length)]
     color[i * 3] = c[0]; color[i * 3 + 1] = c[1]; color[i * 3 + 2] = c[2]
     scl[i] = 0.17 + Math.random() * Math.random() * 0.6
-    if (i < N) {
-      // the letters lie where the camera looks, denser toward it
+    if (i < n) {
+      // the letters lie where the camera looks, denser toward it,
       // in layers: half on the surface, a quarter just under it, a quarter deeper, seen through the translucent snow
-      const x = (Math.random() - 0.5) * 72, z = -32 + 54 * Math.pow(Math.random(), 0.7); const layer = i % 8
+      const x = (Math.random() - 0.5) * 2 * xHalf, z = zMin + (zMax - zMin) * Math.pow(Math.random(), 0.7); const layer = i % 8
       const under = layer === 4 || layer === 5, deep = layer >= 6
       pos[i * 3] = x; pos[i * 3 + 2] = z; pos[i * 3 + 1] = H(x, z) + (deep ? -0.12 - Math.random() * 0.5 : under ? -0.05 : 0.01 + Math.random() * 0.06)
       if (under) { color[i * 3] *= 0.86; color[i * 3 + 1] *= 0.88; color[i * 3 + 2] *= 0.97 }
@@ -373,7 +379,7 @@ function buildField(atlas: THREE.Texture): Field {
   const mesh = new THREE.InstancedMesh(geo, letterMaterial(atlas), total); mesh.frustumCulled = false
   for (let i = 0; i < total; i++) { _p.set(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]); _q.set(quat[i * 4], quat[i * 4 + 1], quat[i * 4 + 2], quat[i * 4 + 3]); _s.setScalar(scl[i]); _m.compose(_p, _q, _s); mesh.setMatrixAt(i, _m) }
   mesh.instanceMatrix.needsUpdate = true
-  const list: number[] = []; for (let i = N; i < total; i++) list.push(i)
+  const list: number[] = []; for (let i = n; i < total; i++) list.push(i)
   return { mesh, pos, quat, scl, vel, ang, flying, falling, list }
 }
 
@@ -747,4 +753,39 @@ export function Letters({ onEnter, onAbout }: Props) {
       <div ref={darkRef} className="snow__dark" aria-hidden="true" />
     </div>
   )
+}
+
+
+// ------------------------------------------------------------------ the view through the igloo's window
+/**
+ * A small far field of the same letter snow, under the same sky, for the room to look out on: everything from the
+ * window's sill to the horizon. It eases the time of day on its own; `cur` is the room's reference for the light.
+ */
+export type SnowView = { group: THREE.Group; cur: Cur; tick: (dt: number, reduced: boolean) => void }
+export function makeSnowView(): SnowView {
+  const group = new THREE.Group()
+  const atlas = glyphAtlas(); const field = buildField(atlas, 22000, 160, -60, -9.5, 34)
+  const mound = new THREE.Mesh(moundGeometryRect(-40, 40, -70, -8.5), snowMaterial()); (mound.material as THREE.ShaderMaterial).uniforms.uAlpha.value = 1
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(140, 32, 16), skyMaterial()); sky.renderOrder = -1
+  const sparkles = makeSparkles(500); const dust = makeDust(200)
+  group.add(sky, mound, field.mesh, sparkles, dust)
+  const cur = newCur(), tgt = newCur(); setLook(cur, LOOKS[getMode()]); setLook(tgt, LOOKS[getMode()])
+  window.addEventListener('modechange', () => setLook(tgt, LOOKS[getMode()]))
+  const dummy = new THREE.Vector3(); let t0 = 0
+  const tick = (dt: number, reduced: boolean) => {
+    const d = Math.min(dt, 0.05); t0 += d; const k = Math.min(1, d * 2.2)
+    for (const key of ['white', 'shadow', 'light', 'sky', 'mid', 'horizon', 'band', 'sun'] as const) cur[key].lerp(tgt[key], k)
+    cur.bandI += (tgt.bandI - cur.bandI) * k; cur.sunDir.lerp(tgt.sunDir, k).normalize()
+    cur.sparkle += (tgt.sparkle - cur.sparkle) * k; cur.aurora += (tgt.aurora - cur.aurora) * k; cur.glow += (tgt.glow - cur.glow) * k; cur.stars += (tgt.stars - cur.stars) * k
+    for (const m of [mound.material as THREE.ShaderMaterial, field.mesh.material as THREE.ShaderMaterial]) {
+      const u = m.uniforms; u.uWhite.value.copy(cur.white).lerp(cur.mid, 0.16); u.uShadow.value.copy(cur.shadow).lerp(cur.sky, 0.12); u.uLight.value.copy(cur.light); u.uLightDir.value.copy(cur.sunDir)
+      u.uAurora.value = cur.aurora; u.uTime.value = reduced ? 0.3 : t0; u.uSparkle.value = cur.sparkle; u.fogColor.value.copy(cur.horizon); u.uCursor.value.copy(dummy); u.uCursorOn.value = 0; u.uDoorGlow.value = 0
+    }
+    const su = (sky.material as THREE.ShaderMaterial).uniforms; su.uTop.value.copy(cur.sky); su.uMid.value.copy(cur.mid); su.uBot.value.copy(cur.horizon); su.uSun.value.copy(cur.sun); su.uSunDir.value.copy(cur.sunDir)
+    su.uAurora.value = cur.aurora; su.uStars.value = cur.stars; su.uTime.value = t0; su.uBand.value.copy(cur.band); su.uBandI.value = cur.bandI
+    const sm = sparkles.material as THREE.ShaderMaterial; sm.uniforms.uTime.value = reduced ? 0.3 : t0; sm.uniforms.uGain.value = cur.sparkle; sm.uniforms.uColor.value.copy(cur.light).lerp(cur.white, 0.5)
+    const dm = dust.material as THREE.ShaderMaterial; dm.uniforms.uTime.value = reduced ? 0 : t0; dm.uniforms.uColor.value.copy(cur.white).multiplyScalar(0.8); dm.uniforms.uGain.value = 0.5
+    if (!reduced) stepField(field, d)
+  }
+  return { group, cur, tick }
 }

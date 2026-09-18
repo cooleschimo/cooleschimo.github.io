@@ -38,7 +38,12 @@ Chimin's first reference, restated after the diorama missed it: **snow that look
 - **The sky first.** Sunset and aurora are events in the sky, and the snow only reflects them: the evening sky carries a warm belt over the horizon toward the sun and the snow's white leans toward that sky; at night the aurora hangs as bright rayed curtains and only a faint wash of it lies on the snow. The camera holds enough sky to see it.
 - **The fox** goes straight to the cursor and stops when it gets there; it is held off the igloo and off Chimin, turns up to a three-quarter view as it comes toward you or goes away, and after a few seconds' wait it lies down and sleeps until it is called (the two pictures cross-dissolve).
 - **The igloo** is Chimin's three plates set into the middle mound. Its doorway glows warm and breathes, an invitation; scrolling forward walks in, so does a click.
-- **Inside (planned, Chimin's direction):** the same paper 2.5D language, travelling from the entryway to the window of the igloo room with three stations (entryway, middle, window); at each station the camera is close on the focal point of whatever is there to interact with.
+## Inside (three stations)
+The same paper hand, walked through: the camera travels from the entryway to the window and stops at three stations, each close on the thing there is to touch. Scroll, arrow keys or the row of names at the bottom right move between them.
+- **The entry.** A bench with the paints (about me) and a coffee, the fox asleep by the door, a drift of letters blown in over the floor.
+- **The table.** The camera (photographs), the sketchbook (writing), a candle that is the room's lamp at night.
+- **The window.** The letter snow and the sky outside, the same field and the same time of day as the outside scene, seen through the round hole in the wall; postcards from places pinned beside it; the vase on the chest below, with flowers to move in and out; a shutter that closes over the window and puts its light out.
+- **Light.** Every piece takes the day's tint, the window as one lamp (pale gold by day, orange in the evening, aurora green at night) and the candle as another. The pieces stand with relief, frost and grain like the ones outside; the walls are the generated wall plate on three sides under a plain ceiling.
 - The camera is in front and a little above, drifting with the pointer. Never a top view.
 
 ## The paper pieces (Chimin's generated art)

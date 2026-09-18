@@ -51,6 +51,8 @@ export type PieceProps = {
   relief?: number
   /** the scene's shadow colour, for the relief's turn */
   shadow?: THREE.Color
+  /** two lamps in the world: position + strength, and colour */
+  lampA?: THREE.Vector4; lampACol?: THREE.Color; lampB?: THREE.Vector4; lampBCol?: THREE.Color
 }
 
 /**
@@ -88,7 +90,7 @@ function heightMap(img: HTMLImageElement): THREE.DataTexture {
 }
 
 /** A painted picture standing on a plane. Arrives as ink and fills with watercolour; can dissolve into pigment; can be a puppet. */
-export function Piece({ url, width, position, rotation = [0, 0, 0], delay = 0, flip = false, opacity = 1, tint, onHover, onClick, control, renderOrder, solid = false, quaternion, sink = 0, snow, light, fog = false, frost = 0, grain = 0, glisten = 0, bones, pose, eye, puff = 0, relief = 0, shadow }: PieceProps) {
+export function Piece({ url, width, position, rotation = [0, 0, 0], delay = 0, flip = false, opacity = 1, tint, onHover, onClick, control, renderOrder, solid = false, quaternion, sink = 0, snow, light, fog = false, frost = 0, grain = 0, glisten = 0, bones, pose, eye, puff = 0, relief = 0, shadow, lampA, lampACol, lampB, lampBCol }: PieceProps) {
   const tex = useTexture(url); tex.colorSpace = THREE.SRGBColorSpace
   const scene = useThree(s => s.scene)
   const img = tex.image as HTMLImageElement
@@ -119,6 +121,7 @@ export function Piece({ url, width, position, rotation = [0, 0, 0], delay = 0, f
     const u = mat.uniforms
     u.uTime.value += dt; u.uFlip.value = flip ? 1 : 0; u.uOpacity.value = opacity; u.uSink.value = sink; u.uFrost.value = frost; u.uGrain.value = grain; u.uGlisten.value = glisten; u.uPuff.value = puff; u.uRelief.value = relief
     if (shadow) (u.uShadowCol.value as THREE.Color).copy(shadow)
+    if (lampA) u.uLampA.value.copy(lampA); if (lampACol) u.uLampACol.value.copy(lampACol); if (lampB) u.uLampB.value.copy(lampB); if (lampBCol) u.uLampBCol.value.copy(lampBCol)
     if (tint) (u.uTint.value as THREE.Color).lerp(tint, Math.min(1, dt * 3))
     if (snow) (u.uSnow.value as THREE.Color).copy(snow)
     if (light) (u.uLight.value as THREE.Color).copy(light)

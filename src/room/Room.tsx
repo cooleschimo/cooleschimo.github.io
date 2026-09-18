@@ -37,6 +37,7 @@ export function Room() {
           <Inside opened={opened} shut={shut} onShutter={() => setShut(v => !v)} onOpen={(thing) => {
             if (thing === 'camera') setOpen({ kind: 'photos' })
             else if (thing === 'notebook') setOpen({ kind: 'writing' })
+            else if (thing === 'paints') setOpen({ kind: 'about' })
             else { const i = nextPlace % places.length; setNextPlace(i + 1); setOpen({ kind: 'place', slug: places[i].slug, i }) }
           }} />
         </Suspense>

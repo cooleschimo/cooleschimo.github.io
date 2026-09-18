@@ -37,6 +37,8 @@ export function makePaintMaterial(map: THREE.Texture, seed = Math.random() * 100
       // relief: a height map inflated from the silhouette; the picture is shaded as a soft form and pushed out in depth
       uHeight: { value: null as THREE.Texture | null }, uPuff: { value: 0 }, uRelief: { value: 0 }, uShadowCol: { value: new THREE.Color('#a7b6ea') },
       uKey: { value: new THREE.Vector3(-0.45, 0.6, 0.65).normalize() }, uSunPic: { value: new THREE.Vector2(-0.6, 0.6).normalize() },
+      // two lamps in the world (xyz, strength): the window's light and a candle
+      uLampA: { value: new THREE.Vector4(0, 0, 0, 0) }, uLampACol: { value: new THREE.Color('#fff2d0') }, uLampB: { value: new THREE.Vector4(0, 0, 0, 0) }, uLampBCol: { value: new THREE.Color('#ffc27c') },
     },
     vertexShader: `
       varying vec2 vUv; varying vec3 vW; varying float vFog; uniform float uFlip, uBreath, uPuff; uniform vec2 uSize; uniform sampler2D uHeight;
@@ -61,7 +63,7 @@ export function makePaintMaterial(map: THREE.Texture, seed = Math.random() * 100
         vec4 mv = viewMatrix * w4; vFog = -mv.z; gl_Position = projectionMatrix * mv; }`,
     fragmentShader: `
       uniform sampler2D uMap; uniform float uReveal, uDissolve, uTime, uSeed, uFlip, uOpacity, uCut, uSink, uTopLight, uFrost, uGrain, uGlisten, uBlink, fogNear, fogFar;
-      uniform vec3 uTint, uSnow, uLight, fogColor, uShadowCol, uKey; uniform vec4 uEye; uniform sampler2D uHeight; uniform float uRelief; uniform vec2 uSunPic;
+      uniform vec3 uTint, uSnow, uLight, fogColor, uShadowCol, uKey, uLampACol, uLampBCol; uniform vec4 uEye, uLampA, uLampB; uniform sampler2D uHeight; uniform float uRelief; uniform vec2 uSunPic;
       varying vec2 vUv; varying vec3 vW; varying float vFog;
       ${NOISE_GLSL}
       void main(){
@@ -119,6 +121,9 @@ export function makePaintMaterial(map: THREE.Texture, seed = Math.random() * 100
           float dot_ = smoothstep(0.32, 0.0, dd); float tw = pow(0.5 + 0.5 * sin(uTime * 1.6 + h * 80.0), 12.0); float bright = smoothstep(0.5, 0.9, lum);
           col += uLight * dot_ * tw * step(0.6, h) * bright * 1.2 * uGlisten;
           col *= 1.0 + 0.04 * uGlisten * sin(uv.x * 4.0 + uv.y * 3.0 + uTime * 0.35) * bright; }
+        // the lamps: light that falls off with distance, brightening the picture where it is near
+        if (uLampA.w > 0.0) { float dl = distance(vW, uLampA.xyz); col += col * uLampACol * uLampA.w / (1.0 + dl * dl * 0.25); }
+        if (uLampB.w > 0.0) { float dl = distance(vW, uLampB.xyz); col += col * uLampBCol * uLampB.w / (1.0 + dl * dl * 0.9); }
         // sunk into the snow: the bottom of the picture takes the snow's colour
         if (uSink > 0.0) { float s = smoothstep(uSink, 0.0, vUv.y + (fbm(vUv * 9.0 + uSeed) - 0.5) * 0.12); col = mix(col, uSnow, s * 0.9); }
         float a = ta * max(painted, ink * inkShow) * uOpacity;

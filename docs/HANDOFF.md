@@ -197,6 +197,19 @@ Console: clean (art exists for every slot now). The verify scripts lived in the 
    the v5 painted-volume build and must be rebuilt in the same language (a table close up, few objects).
 1c. Headless screenshots are unreliable (frames captured mid-render, SwiftShader fps is meaningless for 82k instances); judge in a browser.
 1d. Letter snow to tune with Chimin: mound shapes, density per layer, letter size, kick strength, sky-fall rate. Real-GPU performance is unmeasured (SwiftShader reads 1 fps regardless); if a laptop struggles, lower N first, then the sparkle/dust counts.
+1j. **v9, the inside** (`Inside.tsx`, rewritten): `STATIONS` (pos, look, name, hint) = the entry (0.6, 2.7, 11.4) →
+   the table (0, 3.3, 6.2) → the window (0, 4.1, 1.6); `station` state in `Inside`, gsap-tweened `pos`/`look` in the
+   scene (1.7 s), wheel (throttled 1.1 s, |deltaY| ≥ 30), arrow keys, and `.inside__nav`. Room: floor piece ×2 (z 0.2 and
+   13.2), the wall (width 20, centre y 1.83, its hole at uv (0.503, 0.824) → `WIN` (0, 5.6, −6.6), r ≈ 1.7) plus the same
+   plate as side walls at x ±10 and a plain ceiling plane at y 7.6 in the room colour. `makeSnowView()` (exported from
+   Letters.tsx) is the world outside: sky sphere, a rect mound (x ±40, z −70…−8.5) and 22k letters (z −60…−9.5) at group
+   y 2.4, ticking its own `LOOKS` easing; it must stay behind the wall (z < −6.6). Light: `LOOKS[mode]` → `tint`,
+   `bg`, `shadow`, lamp A (the window, at WIN+0.3 z; ×0 when shut) and lamp B (the candle, flickering) via the paint
+   material's `uLampA/uLampB` (position + strength, colour; falloff 1/(1+d²k)). Things: paints → About, camera → photos,
+   sketchbook → writing, postcards → places, vase flowers toggle (localStorage `vase`), coffee/fox hover only, window
+   click → shutter (`shutterY` 9.4 → WIN y, behind the wall). Sizes: TY 1.9 (table-front width 6.4 at y 1.085), chest
+   width 4.8 (top 1.45), bench (`table`) width 3.0 (top 0.65). Debug: `window.__inside.gsap` (headless probes call
+   `lagSmoothing(0)`).
 1i. **v8.4**: the fox aims at the cursor held outside two keep-out circles (`keepOut`: igloo R+1.4 for the goal, R+1.0
    for the step; Chimin `KEEP_CHIMIN`), re-aims only when the cursor moves > 0.45, eases its speed (`F.speed`), stops at
    0.3, turns its heading smoothly, flips with hysteresis (|hx| > 0.2), and yaws its picture up to ±0.8 rad off the
@@ -230,7 +243,7 @@ Console: clean (art exists for every slot now). The verify scripts lived in the 
    were run through `tools/restyle.py` (Chimin `--rim 8 --body`, foxes `--rim 10`); new pictures: defringe → restyle.
    The snow angel now sweeps eight points along her arms and legs (`CHIMIN_TIPS`), mittens and boots hardest.
 1f. Chimin is unsure the paper-cut style is right for the outside pieces; `docs/PROMPTS.md` has a painted prefix B to regenerate igloo/Chimin/fox. If she regenerates, re-run `tools/defringe.py` on the new files and re-check the bone regions (they are in picture uv and assume the current compositions).
-1e. The inside (`Inside.tsx`) is still the paper-diorama room and has not had the v8 pass: it should show the letter snow through the window, take the same light, and its pieces already get the brushed edge/defringe.
+1e. The inside is rebuilt (1j). Open: a real entry arch seen from inside (looking back), more to touch at the entry, the fox indoors could breathe/blink like the one outside, phones (the stations are framed for landscape).
 2. Chimin's authored default postcard arrangements (replace `defaultPieces`) once pieces exist.
 3. Work has no object in the room (it's listed in About). Decide: a laptop on the table or a shelf. The fridge is furniture now; it could carry Work.
 3b. The 3D hero object (vase or bag) is planned for M2b with lazy three.js; not added yet.
