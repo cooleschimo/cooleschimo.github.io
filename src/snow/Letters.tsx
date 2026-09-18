@@ -145,6 +145,8 @@ const SNOW_GLSL = `
   vec3 trailTilt(vec2 xz, float depth){ float e = 0.12;
     float tx = trailAt(xz + vec2(e, 0.0)) - trailAt(xz - vec2(e, 0.0)); float tz = trailAt(xz + vec2(0.0, e)) - trailAt(xz - vec2(0.0, e));
     return vec3(tx, 0.0, tz) * (depth / (2.0 * e)); }
+  // the doorway's light on the snow: warm, falling off with distance, on the surfaces that face it
+  vec3 doorLight(vec3 w, vec3 n){ vec3 to = uDoor - w; float d = length(to); float f = smoothstep(9.0, 0.6, d) * (0.35 + 0.65 * max(0.0, dot(n, to / max(d, 1e-3)))); return uDoorCol * f * f * uDoorGlow; }
   // the aurora, as a wash on the ground
   vec3 auroraOn(vec3 w, float time){
     vec2 p = w.xz * 0.25; float b = pow(0.5 + 0.5 * sin(p.x * 1.4 + p.y * 0.8 + time * 0.3 + sin(p.y * 1.2 - time * 0.2) * 2.0), 3.0);
@@ -153,7 +155,7 @@ const SNOW_GLSL = `
 const snowUniforms = () => ({
   uLightDir: { value: new THREE.Vector3(-0.35, 0.42, -0.84).normalize() }, uWhite: { value: new THREE.Color('#fcfcff') }, uShadow: { value: new THREE.Color('#b4c1ee') }, uLight: { value: new THREE.Color('#fff4dc') },
   uAurora: { value: 0 }, uTime: { value: 0 }, uSparkle: { value: 1 }, fogColor: { value: new THREE.Color('#f3ecf3') }, fogNear: { value: 24 }, fogFar: { value: 72 },
-  uCursor: { value: new THREE.Vector3() }, uCursorOn: { value: 0 },
+  uCursor: { value: new THREE.Vector3() }, uCursorOn: { value: 0 }, uDoor: { value: new THREE.Vector3(0, 1.2, 4.2) }, uDoorGlow: { value: 0 }, uDoorCol: { value: new THREE.Color('#ffc27c') },
   uTrail: { value: null as THREE.Texture | null }, uTrailBox: { value: new THREE.Vector4(TX0, TZ0, 1 / (TX1 - TX0), 1 / (TZ1 - TZ0)) }, uTrailDepth: { value: 0.5 }, uDebug: { value: 0 }, uAlpha: { value: 0.74 },
 })
 
@@ -164,8 +166,8 @@ function snowMaterial() {
       float trailAt(vec2 xz){ vec2 uv = (xz - uTrailBox.xy) * uTrailBox.zw; if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return 0.0; return texture2D(uTrail, uv).r; }
       void main(){ vec4 w = modelMatrix * vec4(position, 1.0); float tr = trailAt(w.xz); w.y -= tr * uTrailDepth; vTrail = tr; vW = w.xyz; vN = normalize(mat3(modelMatrix) * normal); vec4 mv = viewMatrix * w; vFog = -mv.z; gl_Position = projectionMatrix * mv; }`,
     fragmentShader: `
-      uniform vec3 uLightDir, uWhite, uShadow, uLight, fogColor, uCursor; uniform float fogNear, fogFar, uAurora, uTime, uSparkle, uCursorOn, uTrailDepth, uDebug, uAlpha;
-      uniform sampler2D uTrail; uniform vec4 uTrailBox;
+      uniform vec3 uLightDir, uWhite, uShadow, uLight, fogColor, uCursor; uniform float fogNear, fogFar, uAurora, uTime, uSparkle, uCursorOn, uTrailDepth, uDebug, uAlpha, uDoorGlow;
+      uniform sampler2D uTrail; uniform vec4 uTrailBox; uniform vec3 uDoor, uDoorCol;
       varying vec3 vW; varying vec3 vN; varying float vFog; varying float vTrail;
       ${SNOW_GLSL}
       void main(){
@@ -184,6 +186,7 @@ function snowMaterial() {
           col = mix(col, uShadow, clamp(vTrail * 0.85 + max(0.0, edge) * 1.5, 0.0, 0.88));
           col += uLight * clamp(-edge * 2.0, 0.0, 1.0) * 0.4; }
         col += uLight * ring * 0.1;
+        col += doorLight(vW, n);
         col += uLight * glitter(vW, n, V, uLightDir, uTime) * uSparkle * (1.0 + ring * 2.5);
         if (uAurora > 0.001) col += auroraOn(vW, uTime) * uAurora;
         float f = smoothstep(fogNear, fogFar, vFog); col = mix(col, fogColor, f);
@@ -243,7 +246,7 @@ function letterMaterial(atlas: THREE.Texture) {
         vN = normalize(mat3(modelMatrix * instanceMatrix) * vec3(0.0, 0.0, 1.0));
         vec4 mv = viewMatrix * w; vFog = -mv.z; gl_Position = projectionMatrix * mv; }`,
     fragmentShader: `
-      uniform sampler2D uAtlas; uniform vec3 uLightDir, uWhite, uShadow, uLight, fogColor; uniform float fogNear, fogFar, uAurora, uTime, uSparkle, uTrailDepth;
+      uniform sampler2D uAtlas; uniform vec3 uLightDir, uWhite, uShadow, uLight, fogColor, uDoor, uDoorCol; uniform float fogNear, fogFar, uAurora, uTime, uSparkle, uTrailDepth, uDoorGlow;
       uniform sampler2D uTrail; uniform vec4 uTrailBox;
       varying vec2 vUv; varying vec3 vColor; varying vec3 vN; varying vec3 vW; varying float vFog; varying float vSeed; varying float vRing; varying float vTrail;
       ${SNOW_GLSL}
@@ -266,6 +269,7 @@ function letterMaterial(atlas: THREE.Texture) {
         col += uLight * glint * (0.3 + vSeed * 1.0) * uSparkle * (1.0 + vRing * 1.5);
         col += uLight * glitter(vW, n, V, uLightDir, uTime) * uSparkle * (0.5 + vRing * 1.5);
         col += uLight * vRing * 0.1;
+        col += doorLight(vW, n) * 0.9;
         if (uAurora > 0.001) col += auroraOn(vW, uTime) * uAurora;
         float f = smoothstep(fogNear, fogFar, vFog); col = mix(col, fogColor, f);
         gl_FragColor = vec4(col, 1.0); }`,
@@ -420,7 +424,7 @@ function skyMaterial() {
     uniforms: { uTop: { value: new THREE.Color('#9db2ea') }, uMid: { value: new THREE.Color('#d3dcf6') }, uBot: { value: new THREE.Color('#f3ecf3') }, uSun: { value: new THREE.Color('#fff0d0') }, uSunDir: { value: new THREE.Vector3(-0.35, 0.42, -0.84) },
       uAurora: { value: 0 }, uStars: { value: 0 }, uTime: { value: 0 }, uBand: { value: new THREE.Color('#f6e2ea') }, uBandI: { value: 0.35 } },
     vertexShader: `varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
-    fragmentShader: `uniform vec3 uTop, uMid, uBot, uSun, uSunDir, uBand; uniform float uAurora, uStars, uTime, uBandI; varying vec3 vP; uniform sampler2D uTrail; uniform vec4 uTrailBox;
+    fragmentShader: `uniform vec3 uTop, uMid, uBot, uSun, uSunDir, uBand, uDoor, uDoorCol; uniform float uAurora, uStars, uTime, uBandI, uDoorGlow; varying vec3 vP; uniform sampler2D uTrail; uniform vec4 uTrailBox;
       ${SNOW_GLSL}
       void main(){
         float h = clamp(vP.y, 0.0, 1.0);
@@ -484,7 +488,7 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
 
   // the fox
   const fox = useRef<THREE.Group>(null)
-  const f = useRef({ x: 9, z: 8, goal: new THREE.Vector3(9, 0, 8), speed: 0, heading: -Math.PI / 2, yaw: 0, gait: 0, idle: 0, flip: true, moving: false, leaving: false, nextBlink: 2, blinkT: 9, stepPh: 0, sitting: false, sitInit: false })
+  const f = useRef({ x: 9, z: 8, goal: new THREE.Vector3(9, 0, 8), speed: 0, heading: -Math.PI / 2, yaw: 0, gait: 0, idle: 0, flip: true, moving: false, leaving: false, nextBlink: 2, blinkT: 9, stepPh: 0, sitting: false, sitInit: false, leap: 0, leapT: 0, leapFrom: new THREE.Vector3(), leapTo: new THREE.Vector3(), lift: 0 })
   const sitCtl = useRef<PieceControl | null>(null)
   const [foxFlip, setFoxFlip] = useState(false)
   const foxPose = useRef<Pose>({ angles: [0, 0, 0, 0, 0, 0], breath: 0, blink: 0 })
@@ -500,11 +504,10 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
     const on = () => setLook(tgt, LOOKS[getMode()]); window.addEventListener('modechange', on); return () => window.removeEventListener('modechange', on)
   }, [cur, tgt])
   const pieceTint = useMemo(() => new THREE.Color('#ffffff'), [])
-  const glowMat = useMemo(() => new THREE.MeshBasicMaterial({ color: '#ffb36b', transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }), [])
   const glowTex = useMemo(() => { const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d')!; const gr = g.createRadialGradient(128, 128, 0, 128, 128, 128); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 256, 256); return new THREE.CanvasTexture(c) }, [])
   const doorMat = useMemo(() => new THREE.MeshBasicMaterial({ color: '#ffc27c', transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }), [])
   const doorRef = useRef<THREE.Mesh>(null)
-  useEffect(() => { glowMat.map = glowTex; glowMat.needsUpdate = true; doorMat.map = glowTex; doorMat.needsUpdate = true }, [glowMat, doorMat, glowTex])
+  useEffect(() => { doorMat.map = glowTex; doorMat.needsUpdate = true }, [doorMat, glowTex])
 
   // entering the igloo
   const timelines = useRef<gsap.core.Timeline[]>([])
@@ -561,7 +564,7 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
     for (const m of [moundMat, field.mesh.material as THREE.ShaderMaterial]) {
       const u = m.uniforms; u.uWhite.value.copy(cur.white).lerp(cur.mid, 0.16); u.uShadow.value.copy(cur.shadow).lerp(cur.sky, 0.12); u.uLight.value.copy(cur.light); u.uLightDir.value.copy(cur.sunDir)
       u.uAurora.value = cur.aurora; u.uTime.value = reduced ? 0.3 : t0.current; u.uSparkle.value = cur.sparkle; u.fogColor.value.copy(cur.horizon)
-      u.uTrail.value = trail.tex; u.uCursor.value.copy(cursor.current); u.uCursorOn.value += ((hasCursor.current && !entering.current && !reduced ? 1 : 0) - u.uCursorOn.value) * Math.min(1, d * 4)
+      u.uTrail.value = trail.tex; u.uDoorGlow.value = (0.2 + cur.glow * 0.8) * (0.85 + 0.15 * Math.sin(t0.current * 1.6)); u.uDoor.value.set(0, H(0, 3.9) + 1.0, 4.2); u.uCursor.value.copy(cursor.current); u.uCursorOn.value += ((hasCursor.current && !entering.current && !reduced ? 1 : 0) - u.uCursorOn.value) * Math.min(1, d * 4)
     }
     ;(scene.background as THREE.Color).copy(cur.horizon); (scene.fog as THREE.Fog).color.copy(cur.horizon)
     const su = skyMat.uniforms; su.uTop.value.copy(cur.sky); su.uMid.value.copy(cur.mid); su.uBot.value.copy(cur.horizon); su.uSun.value.copy(cur.sun); su.uSunDir.value.copy(cur.sunDir)
@@ -570,7 +573,7 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
     const dm = dust.material as THREE.ShaderMaterial; dm.uniforms.uTime.value = reduced ? 0 : t0.current; dm.uniforms.uPixel.value = gl.getPixelRatio(); dm.uniforms.uColor.value.copy(cur.white).multiplyScalar(0.8); dm.uniforms.uGain.value = 0.5 + cur.sparkle * 0.3
     // the doorway glows, and breathes a little, to say come in; the pool on the snow in front follows it
     const breathe = 0.85 + 0.15 * Math.sin(t0.current * 1.6)
-    doorMat.opacity = (0.28 + cur.glow * 0.5) * breathe; glowMat.opacity = (0.12 + cur.glow * 0.6) * breathe
+    doorMat.opacity = (0.28 + cur.glow * 0.5) * breathe
     if (doorRef.current) doorRef.current.quaternion.copy(camera.quaternion)
     // the painted pieces take the day's light: white by day, warm by evening, blue by night
     pieceTint.copy(cur.white).lerp(cur.light, 0.25)
@@ -588,32 +591,53 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
       if (_g.distanceTo(F.goal) > 0.45) F.goal.copy(_g)   // re-aim only when the cursor has really moved
     }
     const dx = F.goal.x - F.x, dz = F.goal.z - F.z; const dist = Math.hypot(dx, dz)
+    if (F.leap > 0) {
+      // mid-leap: an arc from one side of Chimin to the other, legs tucked, nothing pressed into the snow
+      F.leapT = Math.min(1, F.leapT + d / F.leap); const t = F.leapT, e = t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t)
+      F.x = F.leapFrom.x + (F.leapTo.x - F.leapFrom.x) * e; F.z = F.leapFrom.z + (F.leapTo.z - F.leapFrom.z) * e; F.lift = 4 * t * (1 - t) * 1.7
+      F.moving = true; F.idle = 0; F.speed = 5
+      if (t >= 1) { F.leap = 0; F.lift = 0; if (!reduced) { stamp(trail, F.x, F.z, 0.6, 0.8); kick(field, F.x, F.z, 1.6, 4.5, 40) } }
+    } else {
     const want = dist > 0.3 ? Math.min(5.5, 1.2 + dist * 1.1) : 0
     F.speed += (want - F.speed) * Math.min(1, d * (want > F.speed ? 3.5 : 7))
     F.moving = F.speed > 0.08 && dist > 0.02
     if (F.moving) {
       const step = Math.min(dist, F.speed * d); const hx = dx / dist, hz = dz / dist
-      _g.set(F.x + hx * step, 0, F.z + hz * step); keepOut(_g, 0, 0, R + 1.0); keepOut(_g, CHIMIN[0], CHIMIN[1], KEEP_CHIMIN)
-      F.x = _g.x; F.z = _g.z; F.gait += d * (3 + F.speed * 1.3); F.idle = 0
+      // if the straight way crosses Chimin's hollow, leap over her from its near edge to its far edge
+      const cx = CHIMIN[0] - F.x, cz = CHIMIN[1] - F.z; const along = cx * hx + cz * hz; const perp = Math.abs(cx * hz - cz * hx); const cd = Math.hypot(cx, cz)
+      if (along > 0 && along < dist && perp < KEEP_CHIMIN - 0.2 && cd < KEEP_CHIMIN + 0.7 && !reduced) {
+        const half = Math.sqrt(Math.max(0, KEEP_CHIMIN * KEEP_CHIMIN - perp * perp)); const exit = along + half + 0.5
+        F.leapFrom.set(F.x, 0, F.z); F.leapTo.set(F.x + hx * exit, 0, F.z + hz * exit); F.leap = Math.max(0.55, exit / 7); F.leapT = 0
+        kick(field, F.x, F.z, 1.2, 3.5, 30)
+      } else {
+        _g.set(F.x + hx * step, 0, F.z + hz * step)
+        // round the igloo: if the step lands inside its circle, walk along the circle toward the goal instead
+        const nd = Math.hypot(_g.x, _g.z); if (nd < R + 1.0) { const a0 = Math.atan2(F.x, F.z), ag = Math.atan2(F.goal.x, F.goal.z); let da = ag - a0; da = Math.atan2(Math.sin(da), Math.cos(da)); const a1 = a0 + Math.sign(da || 1) * step / (R + 1.0); _g.set(Math.sin(a1) * (R + 1.0), 0, Math.cos(a1) * (R + 1.0)) }
+        keepOut(_g, CHIMIN[0], CHIMIN[1], KEEP_CHIMIN)
+        F.x = _g.x; F.z = _g.z
+      }
+      F.gait += d * (3 + F.speed * 1.3); F.idle = 0
       // its heading turns smoothly; its picture flips only when it is clearly going the other way
       const want_h = Math.atan2(hx, hz); let dh = want_h - F.heading; dh = Math.atan2(Math.sin(dh), Math.cos(dh)); F.heading += dh * Math.min(1, d * 5)
       const flip = hx < -0.2 ? true : hx > 0.2 ? false : F.flip; if (flip !== F.flip) { F.flip = flip; setFoxFlip(flip) }
       // the fox wades a furrow, and each stride leaves a paw print: front and back paws, left and right in turn
-      if (!reduced) {
+      if (!reduced && F.leap === 0) {
         stamp(trail, F.x, F.z, 0.55, 0.32)
         const ph = Math.floor(F.gait / Math.PI); if (ph !== F.stepPh) { F.stepPh = ph; const fwd = ph % 2 === 0 ? 0.42 : -0.42, side = (ph % 4 < 2 ? 1 : -1) * 0.15
           stamp(trail, F.x + hx * fwd - hz * side, F.z + hz * fwd + hx * side, 0.27, 0.85) }
         kick(field, F.x - hx * 0.4, F.z - hz * 0.4, 1.2, 2.4 + F.speed * 0.5, Math.round(10 + F.speed * 4))
       }
     } else F.idle += d
+    }
+    // after a while it sits down    } else F.idle += d
     // after a while it sits down; when it is called again it gets up (the pictures cross-dissolve)
     if (sitCtl.current && !F.sitInit) { sitCtl.current.mat.uniforms.uDissolve.value = 1; F.sitInit = true }
     const wantSit = F.idle > 3.5 && !F.leaving && !reduced
     if (wantSit !== F.sitting && sitCtl.current && camCtl.current) { F.sitting = wantSit; camCtl.current.dissolve(wantSit ? 1 : 0, 1.1); sitCtl.current.dissolve(wantSit ? 0 : 1, 1.3) }
     if (fox.current) {
       const bob = F.moving ? Math.abs(Math.sin(F.gait)) * 0.1 * Math.min(1, F.speed / 2) : 0
-      fox.current.position.set(F.x, H(F.x, F.z) + 0.02 + bob - trailAt(trail, F.x, F.z) * 0.3, F.z)  // sunk to the belly: its legs are in the snow
-      fox.current.rotation.z = F.moving ? Math.sin(F.gait) * 0.05 : 0
+      fox.current.position.set(F.x, H(F.x, F.z) + 0.02 + bob + F.lift - trailAt(trail, F.x, F.z) * 0.3 * (1 - Math.min(1, F.lift)), F.z)  // sunk to the belly: its legs are in the snow; lifted mid-leap
+      fox.current.rotation.z = F.leap > 0 ? (F.flip ? 1 : -1) * (0.35 - 0.7 * F.leapT) : F.moving ? Math.sin(F.gait) * 0.05 : 0   // nose up on the way up, down on the way down
       // its picture turns with its heading, up to a three-quarter view, so it can come toward you and go away
       const bill = Math.atan2(camera.position.x - F.x, camera.position.z - F.z)
       const side1 = F.heading + Math.PI / 2, side2 = F.heading - Math.PI / 2
@@ -627,8 +651,10 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
       P.angles[0] = 0.05 * Math.sin(t * 1.7) + 0.07 * Math.sin(g) * mv                                  // head
       P.angles[1] = 0.16 * Math.sin(t * 2.1) + 0.22 * Math.sin(g * 0.5) * mv                            // tail
       const st = Math.min(1, F.speed / 2.5)                                                            // the stride eases in with its speed
-      P.angles[2] = 0.03 * Math.sin(t * 1.1) + 0.32 * Math.sin(g) * mv * st                             // front legs
-      P.angles[3] = -0.03 * Math.sin(t * 1.1 + 1.0) - 0.32 * Math.sin(g) * mv * st                      // back legs
+      const lp = F.leap > 0 ? 1 : 0                                                                  // mid-leap: front legs reach, back legs trail, tail up
+      P.angles[2] = (0.03 * Math.sin(t * 1.1) + 0.32 * Math.sin(g) * mv * st) * (1 - lp) + 0.55 * lp        // front legs
+      P.angles[3] = (-0.03 * Math.sin(t * 1.1 + 1.0) - 0.32 * Math.sin(g) * mv * st) * (1 - lp) - 0.5 * lp  // back legs
+      P.angles[1] += 0.35 * lp
       P.breath = 0.008 * Math.sin(t * 2.0)
       if (t > F.nextBlink) { F.blinkT = 0; F.nextBlink = t + 2.5 + Math.random() * 4 }
       F.blinkT += d; P.blink = F.blinkT < 0.16 ? Math.sin((F.blinkT / 0.16) * Math.PI) : 0
@@ -678,7 +704,6 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
       <Piece url={paper('igloo-back')} width={12.4} position={[0, iglooY + 2.6, -2.6]} rotation={[-0.06, 0, 0]} delay={0.2} glisten={1} puff={0.5} relief={0.7} solid sink={0.1} {...piece} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
       <Piece url={paper('igloo-front')} width={11.6} position={[0, iglooY + 2.2, 1.2]} rotation={[-0.05, 0, 0]} delay={0.5} glisten={1} puff={0.5} relief={0.7} solid sink={0.12} {...piece} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
       <Piece url={paper('igloo-arch')} width={4.6} position={[0, H(0, 3.9) + 1.2, 3.9]} rotation={[-0.04, 0, 0]} delay={0.8} glisten={1} puff={0.3} relief={0.7} solid sink={0.14} {...piece} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
-      <mesh position={[0, H(0, 6.4) + 0.08, 6.4]} rotation={[-Math.PI / 2, 0, 0]} material={glowMat}><planeGeometry args={[9, 7]} /></mesh>
       <mesh ref={doorRef} position={[0, H(0, 3.9) + 0.7, 4.08]} material={doorMat}><planeGeometry args={[1.5, 1.7]} /></mesh>
       {/* Chimin, lying in the snow */}
       <group ref={chiminGrp} position={[chiminPos.x, H(chiminPos.x, chiminPos.z) + 0.68, chiminPos.z]} quaternion={chiminQuat}>

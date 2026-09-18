@@ -83,10 +83,11 @@ export function makePaintMaterial(map: THREE.Texture, seed = Math.random() * 100
         float aU = texture2D(uMap, uv - vec2(0.0, px.y)).a, aD = texture2D(uMap, uv + vec2(0.0, px.y)).a;
         float outline = clamp(abs(aR - aL) + abs(aD - aU), 0.0, 1.0) * ta;
         float lum = dot(tex.rgb, vec3(0.3, 0.59, 0.11));
-        float lL = dot(texture2D(uMap, uv - vec2(px.x * 2.0, 0.0)).rgb, vec3(0.3, 0.59, 0.11));
-        float lU = dot(texture2D(uMap, uv - vec2(0.0, px.y * 2.0)).rgb, vec3(0.3, 0.59, 0.11));
-        float tone = clamp((abs(lum - lL) + abs(lum - lU)) * 3.0, 0.0, 1.0) * ta;
-        float ink = max(outline, tone * 0.6);
+        // the picture's own edges, centred (a difference either side of this pixel), so the ink sits on the drawn lines
+        vec3 W = vec3(0.3, 0.59, 0.11); float lx = dot(texture2D(uMap, uv + vec2(px.x, 0.0)).rgb, W) - dot(texture2D(uMap, uv - vec2(px.x, 0.0)).rgb, W);
+        float ly = dot(texture2D(uMap, uv + vec2(0.0, px.y)).rgb, W) - dot(texture2D(uMap, uv - vec2(0.0, px.y)).rgb, W);
+        float tone = smoothstep(0.04, 0.16, length(vec2(lx, ly))) * ta;
+        float ink = max(outline, tone * 0.7);
         // watercolour fill: colour arrives where the noise field is below the reveal, with a wet darker edge ahead of it
         float m = fbm(uv * 4.0 + uSeed) * 0.8 + uv.y * 0.15 + 0.05;
         float painted = smoothstep(m + 0.05, m - 0.05, 1.0 - uReveal);
