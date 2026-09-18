@@ -291,7 +291,8 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
 
   // Chimin lies in a hollow on the left; letters are heaped over her edges
   const chiminPos = useMemo(() => new THREE.Vector3(-6.6, 0, 5.4), [])
-  const chiminQuat = useMemo(() => { const q = new THREE.Quaternion(); normalAt(chiminPos.x, chiminPos.z, _n); q.setFromUnitVectors(new THREE.Vector3(0, 0, 1), _n); _q2.setFromAxisAngle(_n, 0.35); q.premultiply(_q2); return q }, [chiminPos])
+    // lying in a hollow, but propped toward the camera so she reads from the low front view
+  const chiminQuat = useMemo(() => { const q = new THREE.Quaternion(); normalAt(chiminPos.x, chiminPos.z, _n); const toCam = new THREE.Vector3(0.15, 0.55, 1).normalize(); const nn = _n.clone().add(toCam.multiplyScalar(1.6)).normalize(); q.setFromUnitVectors(new THREE.Vector3(0, 0, 1), nn); _q2.setFromAxisAngle(nn, 0.25); q.premultiply(_q2); return q }, [chiminPos])
   useEffect(() => {
     // heap: move a few hundred rest letters onto the rim of Chimin's silhouette, slightly above her plane
     let moved = 0
@@ -368,7 +369,7 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
       <Piece url={paper('igloo-arch')} width={4.6} position={[0, H(0, 3.9) + 1.35, 3.9]} rotation={[-0.04, 0, 0]} delay={0.8} solid onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
       <mesh position={[0, H(0, 6.4) + 0.08, 6.4]} rotation={[-Math.PI / 2, 0, 0]} material={glowMat}><planeGeometry args={[9, 7]} /></mesh>
       {/* Chimin, lying in the snow */}
-      <Piece url={paper('chimin')} width={4.6} position={[chiminPos.x, H(chiminPos.x, chiminPos.z) + 0.05, chiminPos.z]} quaternion={chiminQuat} delay={1.1} solid onHover={h => setHover(h ? 'chimin' : null)} onClick={onAbout} />
+      <Piece url={paper('chimin')} width={4.6} position={[chiminPos.x, H(chiminPos.x, chiminPos.z) + 0.9, chiminPos.z]} quaternion={chiminQuat} delay={1.1} solid onHover={h => setHover(h ? 'chimin' : null)} onClick={onAbout} />
       {/* the fox, wading */}
       <group ref={fox}>
         <Piece url={paper('fox-side')} width={3.2} position={[0, 0.5, 0]} delay={1.4} flip={foxFlip} solid control={camCtl} />
