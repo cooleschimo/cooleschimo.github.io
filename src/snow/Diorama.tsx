@@ -1,12 +1,13 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { Sparkles, useTexture } from '@react-three/drei'
+import { Sparkles } from '@react-three/drei'
 import { EffectComposer, Bloom, Noise, Vignette } from '@react-three/postprocessing'
 import { gsap } from '../lib/gsap'
 import { prefersReducedMotion } from '../lib/motion-prefs'
 import { getMode, type Mode } from '../lib/mode'
-import { makePaintMaterial, NOISE_GLSL } from './paint'
+import { NOISE_GLSL } from './paint'
+import { Piece, B, type PieceControl } from './Piece'
 
 /**
  * Outside, as a paper diorama: a real 3D space and camera, flat painted pieces inside it. The snow is a
@@ -16,7 +17,6 @@ import { makePaintMaterial, NOISE_GLSL } from './paint'
  */
 type Props = { onEnter: () => void; onAbout: () => void }
 
-const B = import.meta.env.BASE_URL.replace(/\/$/, '')
 const G = 64 // ground size, world units
 const R = 5.2 // igloo footprint radius (the fox keeps outside it)
 
@@ -110,29 +110,6 @@ function snowMaterial(letters: THREE.Texture) {
   })
 }
 
-// ------------------------------------------------------------------ a painted piece
-type PieceProps = { url: string; width: number; position: [number, number, number]; rotation?: [number, number, number]; delay?: number; flip?: boolean; opacity?: number; onHover?: (h: boolean) => void; onClick?: () => void; name?: string; control?: React.MutableRefObject<{ reveal: (to: number, d?: number) => void; dissolve: (to: number, d?: number) => void } | null> }
-function Piece({ url, width, position, rotation = [0, 0, 0], delay = 0, flip = false, opacity = 1, onHover, onClick, control }: PieceProps) {
-  const tex = useTexture(url); tex.colorSpace = THREE.SRGBColorSpace
-  const mat = useMemo(() => makePaintMaterial(tex), [tex])
-  const aspect = (tex.image as HTMLImageElement).height / (tex.image as HTMLImageElement).width
-  useEffect(() => {
-    mat.uniforms.uReveal.value = 0
-    const tw = gsap.to(mat.uniforms.uReveal, { value: 1, duration: prefersReducedMotion() ? 0.3 : 1.8, delay, ease: 'power2.out' })
-    if (control) control.current = {
-      reveal: (to, d = 1.6) => { gsap.killTweensOf(mat.uniforms.uReveal); gsap.to(mat.uniforms.uReveal, { value: to, duration: d, ease: 'power2.out' }) },
-      dissolve: (to, d = 1.4) => { gsap.killTweensOf(mat.uniforms.uDissolve); gsap.to(mat.uniforms.uDissolve, { value: to, duration: d, ease: 'power2.in' }) },
-    }
-    return () => { tw.kill() }
-  }, [mat, delay, control])
-  useFrame((_, dt) => { mat.uniforms.uTime.value += dt; mat.uniforms.uFlip.value = flip ? 1 : 0; mat.uniforms.uOpacity.value = opacity })
-  return (
-    <mesh position={position} rotation={rotation} material={mat} onPointerOver={onHover ? () => onHover(true) : undefined} onPointerOut={onHover ? () => onHover(false) : undefined} onClick={onClick}>
-      <planeGeometry args={[width, width * aspect]} />
-    </mesh>
-  )
-}
-
 // ------------------------------------------------------------------ the scene
 type SceneProps = Props & { setHover: (h: 'igloo' | 'chimin' | 'camera' | null) => void; enterRef: React.MutableRefObject<() => void>; darkRef: React.RefObject<HTMLDivElement | null> }
 function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
@@ -215,7 +192,7 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
   }, [camera, look, onEnter, enterRef, darkRef, reduced])
 
   // the object test: the camera on its table paints in, dissolves on click, paints back
-  const camCtl = useRef<{ reveal: (to: number, d?: number) => void; dissolve: (to: number, d?: number) => void } | null>(null)
+  const camCtl = useRef<PieceControl | null>(null)
   const [camGone, setCamGone] = useState(false)
   const onCameraClick = () => {
     if (camGone || !camCtl.current) return

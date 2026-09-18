@@ -1,7 +1,7 @@
 # DESIGN.md — Chimin Liu, personal site
 
 Single source of truth for look and feel. Overrides any installed design skill, component library default, or agent instinct. If something here conflicts with PRD.md, ask.
-Revision: 2026-09-17 (v6, "the paper diorama": flat textured pieces in real 3D space; paint as the motion language). Outside is built; inside follows the same language next. Hybrid: 2.5D room plus one real 3D hero object later. Chimin's own direction after three attempts: a 2.5D illustrated igloo room, simple but sophisticated, an aesthetic rather than realism. Art is generated from Chimin's photographs in one collage style (see `docs/ART-BRIEF.md`).
+Revision: 2026-09-18 (v6.1, "the paper diorama": flat textured pieces in real 3D space, outside and in; paint as the motion language). Hybrid: 2.5D room plus one real 3D hero object later. Chimin's own direction after three attempts: a 2.5D illustrated igloo room, simple but sophisticated, an aesthetic rather than realism. Art is generated from Chimin's photographs in one collage style (see `docs/ART-BRIEF.md`).
 
 ## Feel
 One illustrated room inside an igloo, drawn like a page from a good travel sketchbook: warm, low-contrast, quiet, with a lot of space around a few objects. The arctic is told through light, not props: by day the room is lit by natural light through the window, dreamy and pastel; in the evening the sunset comes in warm and low; at night the aurora colours the room and the lamps take over. The ice itself is **clean, crisp crystal**: pale cyan-white blocks that look painted but translucent, light caught inside them, white frosted edges (references: the ice-card igloo, the translucent-block igloo with foxes, the glowing igloo under the aurora). Not matte, not clay, not grey. Nothing is glossy. **Depth is felt, not implied**: a camera that slides with the pointer and dollies toward whatever you open, layers that occlude and grow at different rates, surfaces in perspective. One real 3D object (the vase or the bag) may live inside its own window later; the room itself never becomes 3D geometry.
@@ -36,23 +36,12 @@ Chimin's decision after the 3D builds looked like clay: **flat, textured patches
 - **One focal point at a time.** Outside it is the igloo; inside it will be a table close up with a few objects large enough to touch. Fewer, bigger pieces; calm.
 - Post: a little bloom on the sparkles, film grain, a soft vignette. Never more.
 
-## Light, by time of day (inside)
-Three modes, chosen by the visitor's clock on first visit and by the toggle top-right after that: **day**, **evening**, **night**. The room's lighting is a set of layers over the world, not per-object shading: a soft **beam** falling from the window (a blurred cone), a **pool** where it lands on the floor and table, a whole-room **tint** (multiply) and a pale **wash** (screen), and a warm **lamp** pool at the candle.
-- **Day**: the beam is pale warm-white, the wash is pastel lilac-cyan, the tint is barely there. Dreamy, light, magical; never dark.
-- **Evening**: the beam and pool are peach and rose, the tint is warm near the window and lilac away from it, the lamp is half on.
-- **Night**: the beam is aurora green and violet and slowly shifts hue and lean; the tint is navy with a warm island around the candle; the lamp is on. The room stays readable.
-- **The window is interactive**: click it and an ice shutter slides down; the beam, pool and wash go out and the room falls back on the paper (and at night on the lamp). Click again to open. The sky in the window follows the mode: soft clouds, a sunset with a low sun, stars with an aurora.
-Never the extreme of a dark room with one hard shaft (the Chinese window reference is too much); light here is generous and soft.
-
-## The room (2.5D with a camera)
-- A fixed viewport; a 1440×900 world scaled to fit. Layers by depth 0→1: ice wall + window (0), the postcard string (0.25), floor + rug (0.45), furniture and objects (0.7), the notebook and the entrance arc (1).
-- **Camera**: the visitor's. Scroll or pinch zooms toward the pointer (1× to 2.6×), dragging the room pans while zoomed, double-click jumps in or resets, `+`/`-`/`0` on the keyboard, a small reset control bottom-right. Pointer parallax of up to 56px at depth 1 and ~7px at depth 0 rides on top. Opening something **dollies** to it (near layers growing more than far ones) and closing returns to the view the visitor had. Under reduced motion the parallax is off; zoom and dolly snap.
-- **Postcard string**: a line sagging between two pegs across the upper room, fourteen cards clipped to it, each turned slightly in perspective by its position, swaying ±1.6° slowly. Hover tilts a card toward you and lifts it; click dollies to it and pulls it down into your hand, where it turns over to the collage canvas. Putting it back reverses both.
-- Objects, and what they open: the **camera** on the table (photographs), the **vase** (arrange flowers in the room), the **notebook** on the rug (essays; readers leave a sticker), the **fox** (asleep by the fridge; wakes and follows a fish cursor in its zone), the **window** (shut/open; the light goes out when shut). The **fridge** is furniture for now. At most seven interactive things.
-- Depth cues in the drawing: far layers slightly desaturated and lower-contrast, the entrance arc soft, near things crisp with deeper shadows. Every object carries its own ground shadow, cast to the lower right, so they sit on the floor and the table rather than float.
-
-- Hover: lift 4px, shadow deepens, mono label. Click: dolly, then a sheet (cream card, ink hairline, close dot) over the dimmed room.
-- Phones: the room scales to width; sheets go full height; parallax off; the fox chase off.
+## Inside (the room, real 3D, paper)
+One focal point: a low wooden table seen from the front, close, with a few paper objects on it large enough to touch: the **camera** (photographs), the **notebook** (writing), a **stack of postcards** (places, one per click), the **vase** with six stems you can take out and put back, a **candle**. Behind it the ice wall with the round **window**; the sky in it follows the time of day. The fox sleeps by the wall. Nothing else.
+- Hover lifts an object a little and names it bottom-left. Click: the object **dissolves into pigment** and its sheet opens; closing the sheet paints it back.
+- **Light, by time of day.** A soft beam falls from the window across the table, pools on the table top and the floor, a faint wash sits on the wall, and the candle's lamp glows in the evening and at night. Day is bright and pastel, evening peach and lilac, night navy with a warm island at the candle and stars and aurora in the window. All of it is gentle: light is additive planes at low opacity over paper, never a dark room with one hard shaft.
+- **The window is interactive.** Click it and an ice shutter slides down; the beam, pools and wash go out and the paper cools. Click again to open.
+- The camera drifts a little with the pointer. Bloom only on the brightest points, grain, a soft vignette.
 
 ## The postcard (signature)
 Front: the place's collage artefact and a typewriter caption. Back: a cream postcard with address lines and a stamp box, holding Chimin's default arrangement of that place's collage pieces (torn paper, washi, a stamp, a caption). Every piece can be dragged; the visitor's arrangement is kept in their browser; Reset restores Chimin's. This is the one interaction that must be perfect.

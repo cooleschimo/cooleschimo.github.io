@@ -110,7 +110,8 @@ Do NOT run `polish`, `normalize`, `quieter`, or any minimalist/high-end/brutalis
 ## 3. Site structure (one room, sheets on top)
 
 - **Outside** (`src/snow/Diorama.tsx`, R3F lazy chunk): the paper diorama: a letter-snow field the cursor and the fox push through, the igloo as three paper plates, Chimin pressed into the snow, pieces that watercolour in and dissolve out (DESIGN.md, "The paper diorama"). Click the igloo to go in. `sessionStorage` remembers; "outside" in the room goes back.
-- **The room**: fixed viewport, 1440×900 world scaled to fit, five depth layers under a 2.5D camera (pointer parallax + dolly on open). Objects: the postcard string (places), camera (photographs), vase (flower arranging, in-room), notebook (essays + reader stickers), fox (cursor chase in its zone), window (day/night). The fridge is furniture. Name and role line sit top-left; About is a sheet from the name.
+- **Inside** (`src/snow/Inside.tsx`, R3F): the paper-diorama room: a table close up with the camera (photographs), notebook (writing), a stack of postcards (places), the vase (flowers), a candle; the window with the shutter; light by time of day (DESIGN.md, "Inside").
+- **The room, earlier**: fixed viewport, 1440×900 world scaled to fit, five depth layers under a 2.5D camera (pointer parallax + dolly on open). Objects: the postcard string (places), camera (photographs), vase (flower arranging, in-room), notebook (essays + reader stickers), fox (cursor chase in its zone), window (day/night). The fridge is furniture. Name and role line sit top-left; About is a sheet from the name.
 - **Sheets**: rise over the dimmed room; Escape closes.
 - **Phones**: the room scales to width; sheets go full height; the fox chase is off.
 

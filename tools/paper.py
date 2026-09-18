@@ -22,6 +22,7 @@ random.seed(3); np.random.seed(3)
 CREAM = (238, 232, 222); SAND = (206, 188, 158); CLAY = (168, 122, 96); RUST = (150, 74, 52); ASH = (128, 122, 116); INK = (58, 54, 52)
 ICE_A = (232, 242, 246); ICE_B = (196, 222, 232); ICE_C = (160, 196, 214); ICE_D = (120, 160, 186)
 FOX_A = (244, 240, 232); FOX_B = (214, 208, 198); FOX_C = (170, 162, 152)
+ROSE = (206, 156, 146); MUSTARD = (208, 176, 108)
 
 def save(img, name):
     p = os.path.join(OUT, name); os.makedirs(os.path.dirname(p), exist_ok=True)
@@ -190,6 +191,107 @@ def fox_side():
     d.chord((560, 250, 700, 360), 0, 180, fill=FOX_B + (255,))  # the pale chest fur
     return finish(img, rough=3, rim=3)
 
+def wall_inside():
+    """The inside of the dome as one plate: pale ice courses, a round window hole at the top centre."""
+    W, H = 2400, 1400
+    img = Image.new('RGBA', (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(img)
+    d.rectangle((0, 0, W, H), fill=ICE_A + (255,))
+    rgb = np.asarray(img.convert('RGB')).astype(float); yy, xx = np.mgrid[0:H, 0:W]
+    for i, y0 in enumerate(range(0, H, 110)):
+        band = (yy >= y0) & (yy < y0 + 110); t = 0.975 + 0.04 * ((i % 2) - 0.5) + random.uniform(-0.012, 0.012); rgb[band] *= t
+        for x0 in range(-60 + (i % 2) * 110, W, 220):
+            rgb[(xx >= x0) & (xx < x0 + 4) & band] *= 0.9
+        rgb[(yy >= y0 + 107) & (yy < y0 + 111)] *= 0.9
+    # deeper cyan low down, whiter up top; a soft warm glow around the window
+    rgb *= (0.86 + 0.18 * (1 - yy / H))[..., None]
+    rgb *= np.stack([np.ones((H, W)), np.ones((H, W)) * (1 - 0.03 * yy / H), np.ones((H, W)) * (1 + 0.02 * yy / H)], 2)
+    img = Image.fromarray(np.clip(rgb, 0, 255).astype(np.uint8)).convert('RGBA')
+    a = Image.new('L', (W, H), 255); ImageDraw.Draw(a).ellipse((W // 2 - 240, 120, W // 2 + 240, 600), fill=0); img.putalpha(a)
+    img = apply_paper(img, 0.09, 0.0012)
+    # a paper rim around the hole
+    return paper_rim(img, 5, 0.3)
+
+def floor_inside():
+    W, H = 2400, 1200
+    img = Image.new('RGBA', (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(img)
+    d.rectangle((0, 0, W, H), fill=(240, 236, 226, 255))
+    rgb = np.asarray(img.convert('RGB')).astype(float); yy, xx = np.mgrid[0:H, 0:W]
+    rgb *= (0.93 + 0.08 * yy / H)[..., None]
+    img = Image.fromarray(np.clip(rgb, 0, 255).astype(np.uint8)).convert('RGBA')
+    # the rug: two ovals of kraft
+    rug = Image.new('RGBA', (W, H), (0, 0, 0, 0)); rd = ImageDraw.Draw(rug)
+    rd.polygon(torn_polygon(ellipse_pts(W // 2, 760, 560, 200, 60), 10, 30), fill=(196, 172, 140, 255))
+    rd.polygon(torn_polygon(ellipse_pts(W // 2, 760, 400, 140, 60), 8, 30), fill=(206, 184, 154, 255))
+    img.alpha_composite(rug)
+    return apply_paper(img, 0.1, 0.0015)
+
+def vase():
+    W, H = 420, 620
+    img = Image.new('RGBA', (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(img)
+    prof = [(0.26, 0), (0.40, 0.05), (0.46, 0.22), (0.44, 0.42), (0.36, 0.60), (0.28, 0.72), (0.30, 0.82), (0.34, 0.86)]
+    pts = [(W / 2 + r * W, H - 40 - t * (H - 80)) for r, t in prof] + [(W / 2 - r * W, H - 40 - t * (H - 80)) for r, t in reversed(prof)]
+    d.polygon(torn_polygon(pts, 4, 20), fill=(214, 202, 182, 255))
+    d.polygon(torn_polygon([(W / 2 - 0.30 * W, 60), (W / 2 + 0.30 * W, 60), (W / 2 + 0.26 * W, 84), (W / 2 - 0.26 * W, 84)], 3, 12), fill=(174, 160, 140, 255))
+    d.polygon(torn_polygon([(W / 2 + 0.12 * W, 140), (W / 2 + 0.32 * W, 240), (W / 2 + 0.28 * W, 420), (W / 2 + 0.16 * W, 300)], 4, 14), fill=(232, 224, 208, 255))  # a highlight patch
+    return finish(img, rough=3, rim=3)
+
+def flower(n):
+    """A single stem with a paper head, six colours."""
+    cols = [ROSE, MUSTARD, RUST, (150, 168, 184), (158, 168, 138), (222, 206, 190)]; c = cols[n - 1]
+    W, H = 200, 560 + (n % 3) * 60
+    img = Image.new('RGBA', (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(img)
+    pts = [(W / 2 + 14 * math.sin(t * 2.4 + n), H - t * (H - 90)) for t in np.linspace(0, 1, 12)]
+    d.line(pts, fill=(140, 150, 120, 255), width=9)
+    hx, hy = pts[-1]
+    if n % 3 == 0: d.polygon(torn_polygon(ellipse_pts(hx, hy - 10, 46, 42, 30), 4, 12), fill=c + (255,))
+    elif n % 3 == 1: d.polygon(torn_polygon([(hx - 40, hy + 20), (hx + 40, hy + 20), (hx + 30, hy - 60), (hx - 30, hy - 60)], 5, 14), fill=c + (255,))
+    else:
+        for k in range(5):
+            a = k / 5 * 2 * math.pi; d.ellipse((hx + 30 * math.cos(a) - 18, hy + 30 * math.sin(a) - 18, hx + 30 * math.cos(a) + 18, hy + 30 * math.sin(a) + 18), fill=c + (255,))
+        d.ellipse((hx - 14, hy - 14, hx + 14, hy + 14), fill=MUSTARD + (255,))
+    d.polygon(torn_polygon(ellipse_pts(W / 2 + 40, H * 0.55, 34, 10, 20), 3, 10), fill=(150, 160, 128, 255))
+    return finish(img, rough=2, rim=2)
+
+def postcards():
+    """A small stack of postcards, slightly fanned."""
+    W, H = 700, 520
+    img = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    for i, (deg, col) in enumerate(((-9, (236, 228, 214)), (-3, (232, 236, 240)), (5, (240, 232, 220)))):
+        card = Image.new('RGBA', (W, H), (0, 0, 0, 0)); cd = ImageDraw.Draw(card)
+        cd.rectangle((150, 120, 550, 400), fill=col + (255,))
+        cd.rectangle((178, 150, 400, 300), fill=[(180, 196, 210), (196, 150, 130), (160, 176, 140)][i] + (255,))
+        cd.rectangle((430, 150, 520, 230), fill=(210, 196, 176, 255))
+        img.alpha_composite(card.rotate(deg, resample=Image.BICUBIC, center=(350, 260)))
+    return finish(img, rough=2, rim=2)
+
+def candle():
+    W, H = 160, 320
+    img = Image.new('RGBA', (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(img)
+    d.polygon(torn_polygon([(52, 120), (108, 120), (104, 290), (56, 290)], 3, 12), fill=CREAM + (255,))
+    d.polygon(torn_polygon([(20, 280), (140, 280), (150, 306), (10, 306)], 3, 12), fill=(196, 194, 188, 255))
+    d.line([(80, 120), (80, 100)], fill=INK + (255,), width=4)
+    d.polygon(torn_polygon(ellipse_pts(80, 74, 16, 30, 20), 3, 10), fill=(240, 186, 110, 255))
+    return finish(img, rough=2, rim=2)
+
+def shutter():
+    W, H = 600, 600
+    img = Image.new('RGBA', (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(img)
+    d.polygon(torn_polygon(ellipse_pts(300, 300, 262, 262, 60), 6, 30), fill=ICE_B + (255,))
+    rgb = np.asarray(img.convert('RGB')).astype(float); yy, xx = np.mgrid[0:H, 0:W]
+    for y0 in range(0, H, 100): rgb[(yy >= y0 + 96) & (yy < y0 + 100)] *= 0.9
+    a = img.split()[3]; img = Image.fromarray(np.clip(rgb, 0, 255).astype(np.uint8)).convert('RGBA'); img.putalpha(a)
+    return finish(img, rough=3, rim=4, strength=0.1)
+
+def table_front():
+    """A low table seen from the front: a slab top, an apron, two legs. One paper piece."""
+    W, H = 1500, 640
+    img = Image.new('RGBA', (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(img)
+    d.polygon(torn_polygon([(120, 300), (1380, 300), (1360, 620), (140, 620)], 4, 20), fill=(232, 226, 214, 0))  # nothing: keeps bbox
+    for x0 in (170, 1250): d.polygon(torn_polygon([(x0, 180), (x0 + 80, 180), (x0 + 70, 620), (x0 + 10, 620)], 3, 14), fill=(150, 108, 84, 255))
+    d.polygon(torn_polygon([(60, 130), (1440, 130), (1420, 190), (80, 190)], 4, 24), fill=CLAY + (255,))
+    d.polygon(torn_polygon([(40, 60), (1460, 60), (1440, 134), (60, 134)], 5, 28), fill=(196, 150, 120, 255))
+    return finish(img, rough=3, rim=3)
+
 def table_patch():
     return patch((900, 420), [(80, 120), (820, 120), (860, 300), (40, 300)], CLAY, jitter=8)
 
@@ -205,3 +307,6 @@ if __name__ == '__main__':
     for k in ('back', 'front', 'arch'): save(igloo_plate(k), f'igloo-{k}.webp')
     for n in (1, 2, 3): save(drift(n), f'drift-{n}.webp')
     save(chimin(), 'chimin.webp'); save(table_patch(), 'table.webp'); save(pad(fox_side()), 'fox-side.webp')
+    save(wall_inside(), 'wall-inside.webp'); save(floor_inside(), 'floor-inside.webp'); save(pad(vase()), 'vase.webp')
+    for n in range(1, 7): save(pad(flower(n)), f'flower-{n}.webp')
+    save(postcards(), 'postcards.webp'); save(pad(candle()), 'candle.webp'); save(shutter(), 'shutter.webp'); save(table_front(), 'table-front.webp')

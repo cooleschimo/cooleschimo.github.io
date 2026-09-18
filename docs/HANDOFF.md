@@ -1,4 +1,4 @@
-# Handoff notes — Chimin Liu, personal site (v6, "the paper diorama")
+# Handoff notes — Chimin Liu, personal site (v6.1, "the paper diorama")
 
 Updated 2026-09-17 at the end of the second session. Read this, then `docs/PRD.md`,
 `docs/DESIGN.md` (v5) and `docs/ART-BRIEF.md`, before writing any code.
@@ -36,6 +36,11 @@ Updated 2026-09-17 at the end of the second session. Read this, then `docs/PRD.m
     snow, the fox pushing through it; asked whether to go textured 3D or flat textured patches in 2.5D.
     Recommended the flat patches (the paper diorama); Chimin: "that's what i want, make the design first".
     Built: `src/snow/Diorama.tsx` (React Three Fiber) + `src/snow/paint.ts` + `tools/paper.py`.
+11. Chimin: "yes rebuild the inside as such". Built `src/snow/Inside.tsx`: the room as a paper diorama
+    (table close up, camera / notebook / postcards / vase / candle / window / fox), light by mode, shutter.
+    `Room.tsx` is now only the switch between Outside and Inside plus the sheets. The old 2.5D room files
+    (`camera.ts`, `PostcardString.tsx`, `RoomObject.tsx`, `Vase.tsx`, `Fox.tsx`, `useArt.tsx`, `render.py`
+    output in `public/art/room|objects`) are unused and can be deleted once Chimin approves the inside.
 
 **Nothing is deployed.** The workflow runs only on pushes to `main`.
 
@@ -51,7 +56,9 @@ tools/collage.py             the postcard fronts, pieces and stickers (collage);
 tools/optimize-art.py        PNG/JPG under public/art → WebP q82, deletes sources
 src/room/art.ts              every image slot, by name
 src/room/useArt.tsx          useArt(src) probes whether a file exists; <Art> renders it or the blockout placeholder
-src/snow/Diorama.tsx         outside (R3F): the paper diorama. Trail render target, snow shader, Piece (paint material), fox, Chimin, igloo plates, object test, post
+src/snow/Diorama.tsx         outside (R3F): the paper diorama. Trail render target, snow shader, fox, Chimin, igloo plates, post
+src/snow/Inside.tsx          inside (R3F): table close up with the objects, light planes by mode, window + shutter, hover lift, dissolve on open
+src/snow/Piece.tsx           the painted plane (shared): paint material, reveal on mount, control ref (reveal/dissolve), tint, hover/click
 src/snow/paint.ts            the paint material: ink line → watercolour fill with a wet edge (uReveal), dissolve into drifting pigment (uDissolve)
 tools/paper.py               stand-in paper pieces: stylise(cut-out) → few tones + fibre + torn edge + rim; drawn igloo plates, drifts, Chimin, fox side view
 src/room/Room.tsx            world scaling, five depth layers (data-depth 0..1), camera dolly on open, the pulled postcard, sheets, assemble-on-arrival
@@ -100,6 +107,14 @@ src/styles/base.css          all room, blockout and sheet styles
   a 90-particle spray. Chimin is a Piece lying flat. Igloo = three Pieces leaning back (-0.42/-0.3/-0.18
   rad) over a blob shadow; `enterRef` runs the camera between them into the door. Post = Bloom + Noise
   + Vignette. Modes ease `LOOKS` (tint, light, sky, horizon, sparkle, aurora, door glow).
+- **Inside** (`Inside.tsx`): camera at (0,4.6,12.5) looking at (0,3,0), drifting with the pointer. Wall plate
+  (`wall-inside`, hole at world y 6) with the sky disc behind it and the shutter plate (`shutter`) that
+  tweens from y 9.3 to 6.0. `LOOKS[mode]` → eased `cur` → `tint` (a Color every Piece lerps toward via
+  its `tint` prop), scene background, and the additive planes: beam (window→table), two pools, wall wash,
+  candle lamp; all × 0 when `shut`. Objects sit on `TY = 2.35` (the `table-front` piece's top). Hover →
+  `hoverRef` → a group lifts 0.18; `opened` prop (from Room: photos→camera, writing→notebook,
+  place→postcards) → that piece's control `dissolve(1)`, and back to `reveal(1)` when it closes. The
+  vase's `inVase[]` is in localStorage under `vase`; postcards open places in order (`nextPlace` in Room).
 - The old three.js Snowfield (v5.4–5.5) is in git history if needed. Ground = a 2048 canvas of ~30k letters
   as a repeating texture (5.5×) + one non-repeating drift overlay; sparkles = `Points` with a twinkle
   shader (additive); igloo = one `InstancedMesh` of boxes on a sphere + tunnel, a joint sphere, a dark
