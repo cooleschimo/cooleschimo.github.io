@@ -197,6 +197,17 @@ Console: clean (art exists for every slot now). The verify scripts lived in the 
    the v5 painted-volume build and must be rebuilt in the same language (a table close up, few objects).
 1c. Headless screenshots are unreliable (frames captured mid-render, SwiftShader fps is meaningless for 82k instances); judge in a browser.
 1d. Letter snow to tune with Chimin: mound shapes, density per layer, letter size, kick strength, sky-fall rate. Real-GPU performance is unmeasured (SwiftShader reads 1 fps regardless); if a laptop struggles, lower N first, then the sparkle/dust counts.
+1l. **v11, the outside tuned**: terrain = 19 mounds (two negative hollows, tall steep ones at the sides and far) + four
+   octaves of value noise (2.0 / 0.8 / 0.3 / 0.1). Fox rig = six bones: head, tail, four legs on their own bones (the
+   picture shows all four); gait = a diagonal trot (near-front with far-back) that blends to a gallop (front pair, back
+   pair 1.1 rad behind) above speed 3.2, amplitude 0.42→0.64. Leap = crouch (16 % of the time, squash), spring (back
+   legs drive back, front legs fold), flight (all four stretched, a little stretch), landing (front legs reach down,
+   back legs tuck), body nose-up→level→nose-down; if `fox-leap.webp` exists (`useArt`) it cross-dissolves in for the
+   flight. Cursor: `kick()` takes a push vector; moving = a wide kick (r 2.4, 60–130 letters, thrown along the motion)
+   plus a bow wave ahead and a furrow (two stamps r 1.15 / 0.9); at rest a stir every 0.12 s (6 letters hop) and a slow
+   press; the shaders' ring is r 4.2 with a ripple (sin(dist·2.6 − t·3.2)) lifting the letters and lighting the ground.
+   Chimin: `CHIMIN_BODY` (18 points: head, torso, arms, legs, with bone index and radius) is stamped every frame so her
+   bed never fades, limbs deeper and wider while the angel plays; mittens/boots kick on the sweep.
 1k. **v10, the inside as Chimin specified** (`Inside.tsx` rewritten again, `sheets/room.tsx` new): stops = the coats
    (pos −3.2,2.9,9.4 looking at the left wall), the bed (looking right), the window (0,3.7,5.6 → the window whole). Pieces
    on the left wall are rotated `onLeft` (y +π/2) at x ≥ WALL_L+0.2 (the wall plate's relief reaches x −9.8; anything

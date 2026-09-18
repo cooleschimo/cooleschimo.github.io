@@ -28,6 +28,10 @@ The site already frosts, grains, glistens and shades every piece in the shader (
 | `igloo-front.png` | the near half of an igloo dome made of pale ice-white snow blocks in staggered courses, seen from the front, a flat semicircle plate, no door in it | 3:2 |
 | `igloo-arch.png` | the small entrance tunnel of an igloo: an arch of ice-white snow blocks with an open dark navy mouth, seen from the front | 4:3 |
 | `fox-side.png` | an arctic fox walking to the right, side view, white winter coat with a pale grey belly, bushy tail, small dark eye and nose, ears up | 3:2 |
+| `fox-leap.png` | an arctic fox in mid-leap to the right, side view, stretched out: front legs reaching forward, back legs trailing behind, tail streaming, ears back, white winter coat | 3:2 |
+| `fox-run.png` | an arctic fox at full gallop to the right, side view, body stretched long, all four legs off the ground, tail out straight | 3:2 |
+| `fox-front.png` | an arctic fox walking toward the viewer, three-quarter view from the front, white winter coat, ears up, looking at you | 3:4 |
+| `fox-back.png` | an arctic fox walking away from the viewer, three-quarter view from behind, white winter coat, bushy tail, head turned a little back | 3:4 |
 | `fox-sit.png` | an arctic fox sitting and asleep, curled slightly, tail wrapped round its paws, side view facing right, white coat, ears up | 3:4 |
 | `chimin.png` | a person lying on their back in the snow making a snow angel, seen from directly above, arms and legs out, a sand-coloured parka with a fur-trimmed hood, rust mittens, dark boots, a small calm face, black hair | 3:4 |
 | `drift-1.png`, `drift-2.png`, `drift-3.png` | a soft oval drift of snow, a single pale lavender-white paper patch with a torn edge, seen from above | 5:2 |

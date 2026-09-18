@@ -6,6 +6,7 @@ import { gsap } from '../lib/gsap'
 import { prefersReducedMotion } from '../lib/motion-prefs'
 import { getMode, type Mode } from '../lib/mode'
 import { Piece, paper, type Bone, type PieceControl, type Pose } from './Piece'
+import { useArt } from '../room/useArt'
 
 /**
  * Outside: snow that is really made of letters. Deep white snow, piled in mounds and drifts, whose surface
@@ -42,17 +43,24 @@ const CHIMIN_BONES: Bone[] = [
   { pivot: [0.42, 0.42], region: [0.27, 0.27, 0.20, 0.22] },   // left leg
   { pivot: [0.58, 0.42], region: [0.73, 0.27, 0.20, 0.22] },   // right leg
 ]
-// points along her arms and legs (uv and their bone): the whole limb sweeps the snow, the mitten and boot hardest
-const CHIMIN_TIPS: [number, number, number][] = [[0.08, 0.73, 1], [0.2, 0.72, 1], [0.92, 0.73, 2], [0.8, 0.72, 2], [0.16, 0.16, 3], [0.27, 0.28, 3], [0.84, 0.16, 4], [0.73, 0.28, 4]]
+// her body in the snow (uv, bone or -1 for the torso, radius): pressed in all the time, and swept by the angel
+const CHIMIN_BODY: [number, number, number, number][] = [
+  [0.5, 0.8, 0, 0.42], [0.5, 0.64, -1, 0.5], [0.5, 0.52, -1, 0.52], [0.44, 0.56, -1, 0.4], [0.56, 0.56, -1, 0.4], [0.5, 0.42, -1, 0.42],
+  [0.3, 0.72, 1, 0.3], [0.2, 0.73, 1, 0.3], [0.09, 0.74, 1, 0.34], [0.7, 0.72, 2, 0.3], [0.8, 0.73, 2, 0.3], [0.91, 0.73, 2, 0.34],
+  [0.37, 0.35, 3, 0.3], [0.28, 0.27, 3, 0.3], [0.18, 0.17, 3, 0.36], [0.63, 0.35, 4, 0.3], [0.72, 0.27, 4, 0.3], [0.82, 0.17, 4, 0.36],
+]
 // the fox's picture (side view walking right, 1505×995)
 const FOX_BONES: Bone[] = [
-  { pivot: [0.76, 0.58], region: [0.87, 0.72, 0.15, 0.20] },   // head
-  { pivot: [0.42, 0.52], region: [0.22, 0.38, 0.24, 0.30] },   // tail
-  { pivot: [0.74, 0.42], region: [0.74, 0.18, 0.13, 0.20] },   // front legs
-  { pivot: [0.50, 0.42], region: [0.50, 0.18, 0.13, 0.20] },   // back legs
+  { pivot: [0.78, 0.6], region: [0.88, 0.72, 0.14, 0.20] },    // head
+  { pivot: [0.42, 0.5], region: [0.20, 0.36, 0.22, 0.28] },    // tail
+  { pivot: [0.82, 0.42], region: [0.87, 0.2, 0.07, 0.17] },    // front near leg
+  { pivot: [0.70, 0.42], region: [0.69, 0.2, 0.06, 0.17] },    // front far leg
+  { pivot: [0.50, 0.42], region: [0.50, 0.2, 0.06, 0.17] },    // back near leg
+  { pivot: [0.40, 0.42], region: [0.34, 0.2, 0.07, 0.17] },    // back far leg
 ]
 const MOUNDS: [number, number, number, number][] = [ // x, z, radius, height
-  [0, 0, 9.5, 2.2], [-12, -6, 7, 1.6], [13, -9, 8, 1.9], [-10, 10, 5, 0.9], [11, 7, 5.5, 1.1], [-22, 2, 8, 1.4], [22, 4, 7, 1.2], [3, -18, 12, 2.4], [-3, 17, 6, 0.8], [0, 26, 10, 1.6],
+  [0, 0, 9.5, 2.2], [-12, -6, 7, 2.1], [13, -9, 8, 2.4], [-10, 10, 5, 0.9], [11, 7, 5.5, 1.3], [-22, 2, 8, 1.9], [22, 4, 7, 1.7], [3, -18, 12, 3.2], [-3, 17, 6, 1.0], [0, 26, 10, 2.2],
+  [-17, 5, 3.6, 2.9], [18, -1, 4.2, 2.6], [-6, -11, 3.4, 1.9], [9, 15, 3.2, 1.5], [-15, 15, 5, -0.9], [16, 12, 4.5, -0.7], [22, 14, 6, 2.4], [-24, -12, 9, 2.8], [26, -10, 8, 2.6],
   [CHIMIN[0], CHIMIN[1], 3.1, -0.65],
   [0, 2.8, 4.2, 0.55],   // the drift against the igloo's front
 ]
@@ -66,7 +74,7 @@ function noise2(x: number, z: number) {
 function H(x: number, z: number) {
   let y = 0
   for (const [mx, mz, r, h] of MOUNDS) { const d2 = ((x - mx) * (x - mx) + (z - mz) * (z - mz)) / (r * r); y += h * Math.exp(-d2 * 1.6) }
-  y += (noise2(x * 0.18 + 3.1, z * 0.18) - 0.5) * 0.9 + (noise2(x * 0.55, z * 0.55 + 7.3) - 0.5) * 0.3 + (noise2(x * 1.7 + 1.3, z * 1.7) - 0.5) * 0.1
+  y += (noise2(x * 0.12 + 3.1, z * 0.12) - 0.5) * 2.0 + (noise2(x * 0.3 + 5.5, z * 0.3 + 1.7) - 0.5) * 0.8 + (noise2(x * 0.55, z * 0.55 + 7.3) - 0.5) * 0.3 + (noise2(x * 1.7 + 1.3, z * 1.7) - 0.5) * 0.1
   return y
 }
 function normalAt(x: number, z: number, out: THREE.Vector3) {
@@ -178,7 +186,8 @@ function snowMaterial() {
       ${SNOW_GLSL}
       void main(){
         vec3 V = normalize(cameraPosition - vW); vec3 n = normalize(vN);
-        float ring = smoothstep(2.6, 0.3, distance(vW.xz, uCursor.xz)) * uCursorOn;
+        float cdist = distance(vW.xz, uCursor.xz); float ring = smoothstep(4.2, 0.4, cdist) * uCursorOn;
+        float ripple = ring * (0.5 + 0.5 * sin(cdist * 2.6 - uTime * 3.2));
         // a soft grain and a gentle pile pattern, so the surface between the letters is not flat paint
         float grain = fbm(vW.xz * 2.3) - 0.5; n = normalize(n + vec3(grain * 0.25, 0.0, (fbm(vW.zx * 2.9) - 0.5) * 0.25));
         n = normalize(n + trailTilt(vW.xz, uTrailDepth));
@@ -191,7 +200,7 @@ function snowMaterial() {
         { float s = 0.16; float edge = trailAt(vW.xz - uLightDir.xz * s) - trailAt(vW.xz + uLightDir.xz * s);
           col = mix(col, uShadow, clamp(vTrail * 0.85 + max(0.0, edge) * 1.5, 0.0, 0.88));
           col += uLight * clamp(-edge * 2.0, 0.0, 1.0) * 0.4; }
-        col += uLight * ring * 0.1;
+        col += uLight * ring * 0.08 + uLight * ripple * 0.08;
         col += doorLight(vW, n);
         col += uLight * glitter(vW, n, V, uLightDir, uTime) * uSparkle * (1.0 + ring * 2.5);
         if (uAurora > 0.001) col += auroraOn(vW, uTime) * uAurora;
@@ -244,8 +253,9 @@ function letterMaterial(atlas: THREE.Texture) {
         float col = mod(aGlyph, 8.0), row = floor(aGlyph / 8.0); vUv = (uv + vec2(col, row)) / 8.0; vColor = aColor; vSeed = aSeed;
         vec4 w = modelMatrix * instanceMatrix * vec4(position, 1.0);
         // under the cursor the letters stir: they lift a little and shimmer
-        vRing = smoothstep(2.6, 0.3, distance(w.xz, uCursor.xz)) * uCursorOn;
-        w.y += vRing * 0.16 * (0.5 + 0.5 * sin(uTime * 5.0 + aSeed * 40.0));
+        float cd = distance(w.xz, uCursor.xz); vRing = smoothstep(4.2, 0.4, cd) * uCursorOn;
+        // a ripple runs out from the cursor through the letters, and they lift and shiver on it
+        w.y += vRing * (0.14 * (0.5 + 0.5 * sin(cd * 2.6 - uTime * 3.2 + aSeed * 3.0)) + 0.1 * (0.5 + 0.5 * sin(uTime * 5.0 + aSeed * 40.0)));
         // pressed down where something has been: the letters sink with the ground
         float tr = trailAt(w.xz); w.y -= tr * uTrailDepth; vTrail = tr;
         vW = w.xyz;
@@ -383,8 +393,8 @@ function buildField(atlas: THREE.Texture, n = N, nf = NF, zMin = -32, zMax = 22,
   return { mesh, pos, quat, scl, vel, ang, flying, falling, list }
 }
 
-/** Kick the letters around a point: they leap up and away and tumble. */
-function kick(f: Field, x: number, z: number, radius: number, strength: number, maxCount: number) {
+/** Kick the letters around a point: they leap up and away and tumble; `px,pz` pushes them along with whatever moved. */
+function kick(f: Field, x: number, z: number, radius: number, strength: number, maxCount: number, px = 0, pz = 0) {
   let n = 0; const r2 = radius * radius
   // sample a window of indices rather than every letter, so one kick costs the same each frame
   const start = Math.floor(Math.random() * N)
@@ -392,7 +402,7 @@ function kick(f: Field, x: number, z: number, radius: number, strength: number, 
     const i = (start + k * 11) % N; if (f.flying[i]) continue
     const dx = f.pos[i * 3] - x, dz = f.pos[i * 3 + 2] - z; const d2 = dx * dx + dz * dz; if (d2 > r2) continue
     const d = Math.sqrt(d2) + 1e-3; const s = strength * (1 - d / radius) * (0.6 + Math.random() * 0.8)
-    f.vel[i * 3] = (dx / d) * s * 0.9 + (Math.random() - 0.5) * 0.6; f.vel[i * 3 + 1] = s * (0.9 + Math.random() * 0.7); f.vel[i * 3 + 2] = (dz / d) * s * 0.9 + (Math.random() - 0.5) * 0.6
+    f.vel[i * 3] = (dx / d) * s * 0.9 + (Math.random() - 0.5) * 0.6 + px * (0.6 + Math.random() * 0.8); f.vel[i * 3 + 1] = s * (0.9 + Math.random() * 0.7); f.vel[i * 3 + 2] = (dz / d) * s * 0.9 + (Math.random() - 0.5) * 0.6 + pz * (0.6 + Math.random() * 0.8)
     f.ang[i * 3] = (Math.random() - 0.5) * 14; f.ang[i * 3 + 1] = (Math.random() - 0.5) * 14; f.ang[i * 3 + 2] = (Math.random() - 0.5) * 14
     f.flying[i] = 1; f.list.push(i); n++
   }
@@ -477,7 +487,7 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
   const par = useRef({ x: 0, y: 0 }); const entering = useRef(false)
 
   // pointer on the ground (against the mound mesh, so the cursor really touches the snow)
-  const cursor = useRef(new THREE.Vector3()); const hasCursor = useRef(false); const lastCursor = useRef(new THREE.Vector3())
+  const cursor = useRef(new THREE.Vector3()); const hasCursor = useRef(false); const lastCursor = useRef(new THREE.Vector3()); const stir = useRef(0)
   const ray = useMemo(() => new THREE.Raycaster(), []); const moundRef = useRef<THREE.Mesh>(null)
   useEffect(() => {
     const el = gl.domElement
@@ -494,10 +504,11 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
 
   // the fox
   const fox = useRef<THREE.Group>(null)
-  const f = useRef({ x: 9, z: 8, goal: new THREE.Vector3(9, 0, 8), speed: 0, heading: -Math.PI / 2, yaw: 0, gait: 0, idle: 0, flip: true, moving: false, leaving: false, nextBlink: 2, blinkT: 9, stepPh: 0, sitting: false, sitInit: false, leap: 0, leapT: 0, leapFrom: new THREE.Vector3(), leapTo: new THREE.Vector3(), lift: 0 })
+  const f = useRef({ x: 9, z: 8, goal: new THREE.Vector3(9, 0, 8), speed: 0, heading: -Math.PI / 2, yaw: 0, gait: 0, idle: 0, flip: true, moving: false, leaving: false, nextBlink: 2, blinkT: 9, stepPh: 0, sitting: false, sitInit: false, leapInit: false, leap: 0, leapT: 0, leapFrom: new THREE.Vector3(), leapTo: new THREE.Vector3(), lift: 0 })
   const sitCtl = useRef<PieceControl | null>(null)
   const [foxFlip, setFoxFlip] = useState(false)
   const foxPose = useRef<Pose>({ angles: [0, 0, 0, 0, 0, 0], breath: 0, blink: 0 })
+  const leapCtl = useRef<PieceControl | null>(null); const hasLeapArt = useArt(paper('fox-leap'))
   // Chimin's rig: head, both arms, both legs (picture uv); the snow angel and her idling drive it
   const chiminPose = useRef<Pose>({ angles: [0, 0, 0, 0, 0, 0], breath: 0, blink: 0 })
   const angel = useRef({ on: 0, phase: 0 }); const chiminGrp = useRef<THREE.Group>(null)
@@ -586,8 +597,19 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
 
     // the cursor shifts the snow
     if (hasCursor.current && !entering.current && !reduced) {
-      const moved = lastCursor.current.distanceTo(cursor.current); lastCursor.current.copy(cursor.current)
-      if (moved > 0.02) { kick(field, cursor.current.x, cursor.current.z, 1.4, Math.min(5, 1.8 + moved * 3), 40); stamp(trail, cursor.current.x, cursor.current.z, 0.6, 0.3) }
+      const c = cursor.current; const moved = lastCursor.current.distanceTo(c)
+      if (moved > 0.02) {
+        // a wide wake: the letters leap up and are thrown along with the cursor, and a furrow is ploughed behind it
+        const mx = (c.x - lastCursor.current.x) / moved, mz = (c.z - lastCursor.current.z) / moved; const sp = Math.min(6, moved / Math.max(d, 1e-3) * 0.12)
+        kick(field, c.x, c.z, 2.4, Math.min(6, 2.0 + sp * 0.8), Math.round(60 + sp * 12), mx * sp * 1.2, mz * sp * 1.2)
+        kick(field, c.x + mx * 1.2, c.z + mz * 1.2, 1.4, 2.4 + sp * 0.5, 30, mx * sp, mz * sp)   // the bow wave, ahead
+        stamp(trail, c.x, c.z, 1.15, 0.5); stamp(trail, c.x - mx * 0.6, c.z - mz * 0.6, 0.9, 0.4)
+        stir.current = 0
+      } else {
+        // at rest the snow keeps stirring under the cursor: a few letters lift and settle, and it presses in slowly
+        stir.current += d; if (stir.current > 0.12) { stir.current = 0; kick(field, c.x + (Math.random() - 0.5) * 2.4, c.z + (Math.random() - 0.5) * 2.4, 0.9, 1.4 + Math.random() * 1.2, 6); stamp(trail, c.x, c.z, 1.3, 0.35) }
+      }
+      lastCursor.current.copy(c)
     }
     // the fox goes straight to the cursor, held outside the igloo and Chimin, and stops when it gets there
     const F = f.current
@@ -599,10 +621,12 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
     const dx = F.goal.x - F.x, dz = F.goal.z - F.z; const dist = Math.hypot(dx, dz)
     if (F.leap > 0) {
       // mid-leap: an arc from one side of Chimin to the other, legs tucked, nothing pressed into the snow
-      F.leapT = Math.min(1, F.leapT + d / F.leap); const t = F.leapT, e = t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t)
-      F.x = F.leapFrom.x + (F.leapTo.x - F.leapFrom.x) * e; F.z = F.leapFrom.z + (F.leapTo.z - F.leapFrom.z) * e; F.lift = 4 * t * (1 - t) * 1.7
+      // a crouch first (nothing moves, the body gathers), then the spring: the arc runs over the rest of the time
+      F.leapT = Math.min(1, F.leapT + d / F.leap); const t = F.leapT; const a = Math.max(0, (t - 0.16) / 0.84)
+      const e = a < 0.5 ? 2 * a * a : 1 - 2 * (1 - a) * (1 - a)
+      F.x = F.leapFrom.x + (F.leapTo.x - F.leapFrom.x) * e; F.z = F.leapFrom.z + (F.leapTo.z - F.leapFrom.z) * e; F.lift = 4 * a * (1 - a) * 1.8
       F.moving = true; F.idle = 0; F.speed = 5
-      if (t >= 1) { F.leap = 0; F.lift = 0; if (!reduced) { stamp(trail, F.x, F.z, 0.6, 0.8); kick(field, F.x, F.z, 1.6, 4.5, 40) } }
+      if (t >= 1) { F.leap = 0; F.lift = 0; if (!reduced) { stamp(trail, F.x, F.z, 0.7, 0.9); kick(field, F.x, F.z, 1.8, 5, 50) } leapCtl.current?.dissolve(1, 0.25); camCtl.current?.dissolve(0, 0.3) }
     } else {
     const want = dist > 0.3 ? Math.min(5.5, 1.2 + dist * 1.1) : 0
     F.speed += (want - F.speed) * Math.min(1, d * (want > F.speed ? 3.5 : 7))
@@ -613,8 +637,8 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
       const cx = CHIMIN[0] - F.x, cz = CHIMIN[1] - F.z; const along = cx * hx + cz * hz; const perp = Math.abs(cx * hz - cz * hx); const cd = Math.hypot(cx, cz)
       if (along > 0 && along < dist && perp < KEEP_CHIMIN - 0.2 && cd < KEEP_CHIMIN + 0.7 && !reduced) {
         const half = Math.sqrt(Math.max(0, KEEP_CHIMIN * KEEP_CHIMIN - perp * perp)); const exit = along + half + 0.5
-        F.leapFrom.set(F.x, 0, F.z); F.leapTo.set(F.x + hx * exit, 0, F.z + hz * exit); F.leap = Math.max(0.55, exit / 7); F.leapT = 0
-        kick(field, F.x, F.z, 1.2, 3.5, 30)
+        F.leapFrom.set(F.x, 0, F.z); F.leapTo.set(F.x + hx * exit, 0, F.z + hz * exit); F.leap = Math.max(0.75, exit / 6); F.leapT = 0
+        kick(field, F.x, F.z, 1.2, 3.5, 30); if (hasLeapArt) { leapCtl.current?.dissolve(0, 0.25); camCtl.current?.dissolve(1, 0.25) }
       } else {
         _g.set(F.x + hx * step, 0, F.z + hz * step)
         // round the igloo: if the step lands inside its circle, walk along the circle toward the goal instead
@@ -638,12 +662,14 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
     // after a while it sits down    } else F.idle += d
     // after a while it sits down; when it is called again it gets up (the pictures cross-dissolve)
     if (sitCtl.current && !F.sitInit) { sitCtl.current.mat.uniforms.uDissolve.value = 1; F.sitInit = true }
+    if (leapCtl.current && !F.leapInit) { leapCtl.current.mat.uniforms.uDissolve.value = 1; F.leapInit = true }
     const wantSit = F.idle > 3.5 && !F.leaving && !reduced
     if (wantSit !== F.sitting && sitCtl.current && camCtl.current) { F.sitting = wantSit; camCtl.current.dissolve(wantSit ? 1 : 0, 1.1); sitCtl.current.dissolve(wantSit ? 0 : 1, 1.3) }
     if (fox.current) {
       const bob = F.moving ? Math.abs(Math.sin(F.gait)) * 0.1 * Math.min(1, F.speed / 2) : 0
       fox.current.position.set(F.x, H(F.x, F.z) + 0.02 + bob + F.lift - trailAt(trail, F.x, F.z) * 0.3 * (1 - Math.min(1, F.lift)), F.z)  // sunk to the belly: its legs are in the snow; lifted mid-leap
-      fox.current.rotation.z = F.leap > 0 ? (F.flip ? 1 : -1) * (0.35 - 0.7 * F.leapT) : F.moving ? Math.sin(F.gait) * 0.05 : 0   // nose up on the way up, down on the way down
+      const la = F.leap > 0 ? Math.max(0, (F.leapT - 0.16) / 0.84) : 0
+      fox.current.rotation.z = F.leap > 0 ? (F.flip ? 1 : -1) * (0.4 - 0.8 * la) : F.moving ? Math.sin(F.gait) * 0.05 : 0   // nose up on the way up, level at the top, down on the way down
       // its picture turns with its heading, up to a three-quarter view, so it can come toward you and go away
       const bill = Math.atan2(camera.position.x - F.x, camera.position.z - F.z)
       const side1 = F.heading + Math.PI / 2, side2 = F.heading - Math.PI / 2
@@ -657,11 +683,27 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
       P.angles[0] = 0.05 * Math.sin(t * 1.7) + 0.07 * Math.sin(g) * mv                                  // head
       P.angles[1] = 0.16 * Math.sin(t * 2.1) + 0.22 * Math.sin(g * 0.5) * mv                            // tail
       const st = Math.min(1, F.speed / 2.5)                                                            // the stride eases in with its speed
-      const lp = F.leap > 0 ? 1 : 0                                                                  // mid-leap: front legs reach, back legs trail, tail up
-      P.angles[2] = (0.03 * Math.sin(t * 1.1) + 0.32 * Math.sin(g) * mv * st) * (1 - lp) + 0.55 * lp        // front legs
-      P.angles[3] = (-0.03 * Math.sin(t * 1.1 + 1.0) - 0.32 * Math.sin(g) * mv * st) * (1 - lp) - 0.5 * lp  // back legs
-      P.angles[1] += 0.35 * lp
-      P.breath = 0.008 * Math.sin(t * 2.0)
+      const gallop = Math.max(0, Math.min(1, (F.speed - 3.2) / 1.6))                                   // a trot at a walk, a gallop when it runs
+      const A = (0.42 + 0.22 * gallop) * mv * st
+      // trot: diagonal pairs swing together; gallop: the front pair together, the back pair together, a little behind
+      const trotN = Math.sin(g), trotF = -Math.sin(g); const galF = Math.sin(g), galB = -Math.sin(g - 1.1)
+      const idle = 0.03 * Math.sin(t * 1.1)
+      let fn = idle + A * (trotN * (1 - gallop) + galF * gallop), ff = idle + A * (trotF * (1 - gallop) + galF * gallop)
+      let bn = -idle + A * (trotF * (1 - gallop) + galB * gallop), bf = -idle + A * (trotN * (1 - gallop) + galB * gallop)
+      if (F.leap > 0) {
+        // the leap in three: the crouch (legs gathered under), the spring (back legs drive back, front legs fold),
+        // the flight (all four stretched), the landing (front legs reach down, back legs tuck under)
+        const lt = F.leapT
+        const ph = lt < 0.16 ? 0 : lt < 0.4 ? 1 : lt < 0.72 ? 2 : 3
+        const k = lt < 0.16 ? lt / 0.16 : lt < 0.4 ? (lt - 0.16) / 0.24 : lt < 0.72 ? (lt - 0.4) / 0.32 : (lt - 0.72) / 0.28
+        const F1 = [0.15, -0.45, 0.95, 0.35][ph], F0 = [0, 0.15, -0.45, 0.95][ph]; const B1 = [0.15, -0.95, -0.85, -0.1][ph], B0 = [0, 0.15, -0.95, -0.85][ph]
+        const fv = F0 + (F1 - F0) * k, bv = B0 + (B1 - B0) * k
+        fn = fv; ff = fv * 0.92; bn = bv; bf = bv * 0.92
+        P.breath = ph === 0 ? -0.06 * k : ph === 1 ? -0.06 + 0.09 * k : ph === 2 ? 0.03 : 0.03 - 0.03 * k
+        P.angles[1] = 0.16 * Math.sin(t * 2.1) + (ph <= 1 ? 0.25 : ph === 2 ? 0.45 : 0.2)
+      }
+      P.angles[2] = fn; P.angles[3] = ff; P.angles[4] = bn; P.angles[5] = bf
+      if (F.leap === 0) P.breath = 0.008 * Math.sin(t * 2.0)
       if (t > F.nextBlink) { F.blinkT = 0; F.nextBlink = t + 2.5 + Math.random() * 4 }
       F.blinkT += d; P.blink = F.blinkT < 0.16 ? Math.sin((F.blinkT / 0.16) * Math.PI) : 0
       if (reduced || dbg.current.noRig) { P.angles.fill(0); P.breath = 0 } }
@@ -676,14 +718,18 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
       P.angles[4] = -0.02 * Math.sin(t * 0.8 + 1.5) - 0.28 * sw                                         // right leg
       P.breath = 0.006 * Math.sin(t * 1.3)
       if (reduced || dbg.current.noRig) { P.angles.fill(0); P.breath = 0 }
-      // her mittens and boots sweep through the snow: kick the letters where they pass
-      if (A.on > 0.3 && Math.abs(Math.cos(A.phase)) > 0.3 && chiminGrp.current) {
-        for (const [u, v, bone] of CHIMIN_TIPS) {
-          const b = CHIMIN_BONES[bone]; const W = 4.2, Hh = 4.2 * CHIMIN_ASPECT
-          let x = (u - 0.5) * W, y = (v - 0.5) * Hh; const px = (b.pivot[0] - 0.5) * W, py = (b.pivot[1] - 0.5) * Hh; const a = P.angles[bone]
-          const qx = x - px, qy = y - py; x = px + qx * Math.cos(a) - qy * Math.sin(a); y = py + qx * Math.sin(a) + qy * Math.cos(a)
-          _p.set(x, y, 0); chiminGrp.current.localToWorld(_p); const tip = u < 0.1 || u > 0.9 || v < 0.2; kick(field, _p.x, _p.z, tip ? 0.9 : 0.6, (tip ? 3.0 : 2.0) * Math.abs(Math.cos(A.phase)), tip ? 7 : 4)
-          stamp(trail, _p.x, _p.z, tip ? 0.62 : 0.45, (tip ? 0.75 : 0.5) * A.on)  // and press the angel's wings into the snow
+      // she is pressed into the snow: her whole body leaves its bed, and when she makes the angel her arms and legs
+      // sweep it wider with every stroke (the mittens and boots throw the letters up)
+      if (chiminGrp.current && !reduced) {
+        const W = 4.2, Hh = 4.2 * CHIMIN_ASPECT; const sweep = Math.abs(Math.cos(A.phase)) * A.on
+        for (const [u, v, bone, r] of CHIMIN_BODY) {
+          let x = (u - 0.5) * W, y = (v - 0.5) * Hh
+          if (bone >= 0) { const b = CHIMIN_BONES[bone]; const px = (b.pivot[0] - 0.5) * W, py = (b.pivot[1] - 0.5) * Hh; const a = P.angles[bone]
+            const qx = x - px, qy = y - py; x = px + qx * Math.cos(a) - qy * Math.sin(a); y = py + qx * Math.sin(a) + qy * Math.cos(a) }
+          _p.set(x, y, 0); chiminGrp.current.localToWorld(_p)
+          const limb = bone > 0; const tip = limb && (u < 0.1 || u > 0.9 || v < 0.2)
+          stamp(trail, _p.x, _p.z, r + (limb ? 0.12 * A.on : 0), limb ? 0.55 + 0.35 * A.on : 0.6)
+          if (tip && sweep > 0.3) kick(field, _p.x, _p.z, 0.9, 3.0 * sweep, 6)
         }
       } }
     if (!reduced) { stepField(field, d); settleTrail(trail, d) }
@@ -719,6 +765,7 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
       <group ref={fox}>
         <Piece url={paper('fox-side')} width={3.2} position={[0, 0.5, 0]} delay={1.4} flip={foxFlip} solid sink={0.2} {...piece} glisten={0.4} puff={0.25} relief={1} bones={FOX_BONES} pose={foxPose} eye={[0.905, 0.705, 0.02, 0.018]} control={camCtl} />
         <Piece url={paper('fox-sit')} width={2.3} position={[0, 0.62, 0.02]} delay={0} flip={foxFlip} solid sink={0.25} {...piece} glisten={0.4} puff={0.25} relief={1} control={sitCtl} />
+        {hasLeapArt && <Piece url={paper('fox-leap')} width={3.6} position={[0, 0.55, 0.03]} delay={0} flip={foxFlip} solid {...piece} glisten={0.4} puff={0.25} relief={1} control={leapCtl} />}
       </group>
       <EffectComposer enableNormalPass={false}>
         <Bloom luminanceThreshold={0.96} luminanceSmoothing={0.08} intensity={0.55} mipmapBlur />
