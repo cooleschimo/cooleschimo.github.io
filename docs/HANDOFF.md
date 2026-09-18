@@ -138,7 +138,9 @@ src/styles/base.css          all room, blockout and sheet styles
 - **v8.1, alive**: the glyph atlas is drawn in Caveat (`src/fonts/caveat-latin.woff2`, registered in tokens.css; redrawn when
   `document.fonts.load` resolves) with a grain pass over the alpha (`drawAtlas`), and the letter shader cuts at 0.38 with a
   softer blue edge. The paint material (`paint.ts`) is also a puppet: `uPivot/uRegion/uAngle[BONES=6]` warp the plane's
-  vertices (a 48² plane when `bones` is given) by rotating each soft-ellipse region about its pivot; `uBreath` swells the
+  vertices (a 48² plane when `bones` is given) by rotating each limb about its pivot (v13.1: a limb is a capsule
+  `pivot → tip`, radius as a fraction of the width, weight 1 all the way past the tip so mittens, boots and paws come
+  along, fading in over `blend` at the joint and 0.6× thinner there; before it was a soft ellipse whose rim stayed still); `uBreath` swells the
   picture; `uEye`+`uBlink` draw fur over an eye. `Piece` takes `bones`, `pose` (a ref `{angles, breath, blink}` read every
   frame), `eye`, plus `frost`, `grain`, `glisten`, `light`. Rigs are in `Letters.tsx`: `CHIMIN_BONES` (head, arms, legs; the
   picture is 1086×1432) and `FOX_BONES` (head, tail, front legs, back legs; 1505×995), `CHIMIN_TIPS` = mitten/boot uv per
@@ -200,7 +202,10 @@ Console: clean (art exists for every slot now). The verify scripts lived in the 
 1o. **v13, Chimin's own drawing** (`chimin.webp`, 1086×1259 after the crop; cut out with rembg + matting, defringe,
    restyle `--rim 4 --smooth 3`, then a fleck pass that drops saturated matting flecks at the edge). `CHIMIN_ASPECT`
    1259/1086; `CHIMIN_BONES` re-placed (neck pivot 0.5,0.78 with the hair in the head region; shoulders 0.38/0.63 at
-   0.75; hips 0.45/0.56 at 0.5); `CHIMIN_BODY` 19 points (a second head point for the spilled hair). The prompt for
+   0.75; hips 0.45/0.56 at 0.5); `CHIMIN_BODY` 19 points (a second head point for the spilled hair). v13.1: the rig
+   became capsules (see `paint.ts` above) because her mittens and boots sat outside the old ellipses and stayed still
+   while the upper limb turned: arms reach the mitten tips 0.07/0.94 at 0.83 (radius 0.1), legs the boots 0.15/0.86 at
+   0.08 (radius 0.13, blend 0.08), head tip 0.52,0.96 (radius 0.17). `FOX_BONES` converted the same way. The prompt for
    the drawing is in PROMPTS.md (pale-yellow puffer, saggy beanie, tan gloves, navy jeans, off-white boots, side part).
 1n. **v12.2, one fox**: the six-picture switching read as several animals, so the fox is one drawing again: the side
    view, rigged, turned toward its heading up to ±0.7 rad; the leap picture only while airborne (quick fade), the

@@ -8,9 +8,9 @@ import * as THREE from 'three'
  * its fog, and can sink into the snow (uSink: the bottom of the picture blends toward uSnow), give up
  * contrast to the snow (uFrost), carry the snow's grain (uGrain) and glisten like it (uGlisten).
  *
- * A picture can also be a puppet: up to BONES regions of the picture (an arm, a leg, a head, a tail) that
- * rotate about a pivot by warping the plane's vertices, with a soft falloff so nothing is cut. Angles are
- * set per frame. An eye can blink (uEye, uBlink: fur from just above the eye is drawn over it).
+ * A picture can also be a puppet: up to BONES limbs of the picture (an arm, a leg, a head, a tail), each a capsule
+ * from a pivot out through a tip and on past it, that rotate about the pivot by warping the plane's vertices, fading
+ * in at the joint so nothing is cut. Angles are set per frame. An eye can blink (uEye, uBlink: fur from just above the eye is drawn over it).
  */
 export const BONES = 6
 
@@ -48,14 +48,18 @@ export function makePaintMaterial(map: THREE.Texture, seed = Math.random() * 100
         vec2 p = position.xy;
         // breathing: the picture swells a little about its middle
         p *= 1.0 + uBreath;
-        // bones: each region turns about its pivot, weighted by a soft ellipse so the picture bends rather than cuts
+        // bones: a limb is a capsule from its pivot out through its tip and on past it (a mitten, a boot, a paw all
+        // come along); it fades in over a short blend at the joint and is a little thinner there, so the picture bends
         for (int i = 0; i < ${BONES}; i++) {
           if (uRegion[i].z <= 0.0) continue;
-          vec2 pu = uPivot[i], cu = uRegion[i].xy; float a = uAngle[i];
-          if (uFlip > 0.5) { pu.x = 1.0 - pu.x; cu.x = 1.0 - cu.x; a = -a; }
-          vec2 piv = (pu - 0.5) * uSize, c = (cu - 0.5) * uSize, r = uRegion[i].zw * uSize;
-          vec2 d = (p - c) / r; float w = 1.0 - smoothstep(0.55, 1.0, length(d));
-          a *= w; vec2 q = p - piv; float cs = cos(a), sn = sin(a);
+          vec2 pu = uPivot[i], tu = uRegion[i].xy; float a = uAngle[i];
+          if (uFlip > 0.5) { pu.x = 1.0 - pu.x; tu.x = 1.0 - tu.x; a = -a; }
+          vec2 piv = (pu - 0.5) * uSize, tip = (tu - 0.5) * uSize; float r = uRegion[i].z * uSize.x, bl = uRegion[i].w * uSize.x;
+          vec2 s = tip - piv; float L = max(length(s), 1e-4); s /= L;
+          vec2 q = p - piv; float t = dot(q, s); float perp = length(q - s * t);
+          float rr = r * mix(0.6, 1.0, smoothstep(0.0, L, t));
+          float w = smoothstep(-0.3 * bl, bl, t) * (1.0 - smoothstep(rr, rr * 1.35, perp));
+          a *= w; float cs = cos(a), sn = sin(a);
           p = piv + vec2(q.x * cs - q.y * sn, q.x * sn + q.y * cs);
         }
         float hz = uPuff > 0.0 ? texture2D(uHeight, vUv).r * uPuff : 0.0;

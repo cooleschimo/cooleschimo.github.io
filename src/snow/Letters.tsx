@@ -33,15 +33,15 @@ const LOOKS: Record<Mode, Look> = {
 // ------------------------------------------------------------------ the ground: mounds, drifts, and a hollow where Chimin lies
 const CHIMIN: [number, number] = [-6.0, 6.2]
 const KEEP_CHIMIN = 3.7   // the fox never comes closer to her than this
-// Chimin's picture (a snow angel from above, 1086×1432): pivots and regions in picture uv, origin bottom left
+// Chimin's picture (lying in the snow from above, 1086×1259): pivots and limb tips in picture uv, origin bottom left
 const CHIMIN_ASPECT = 1259 / 1086
 // Chimin's own drawing (1086×1259): the beanie and hair, the arms out to the mittens, the legs to the boots
 const CHIMIN_BONES: Bone[] = [
-  { pivot: [0.5, 0.78], region: [0.53, 0.88, 0.22, 0.14] },    // head (with the hair)
-  { pivot: [0.38, 0.75], region: [0.21, 0.79, 0.21, 0.11] },   // left arm
-  { pivot: [0.63, 0.75], region: [0.80, 0.79, 0.21, 0.11] },   // right arm
-  { pivot: [0.45, 0.50], region: [0.30, 0.30, 0.18, 0.24] },   // left leg
-  { pivot: [0.56, 0.50], region: [0.71, 0.30, 0.18, 0.24] },   // right leg
+  { pivot: [0.5, 0.78], tip: [0.52, 0.96], radius: 0.17, blend: 0.05 },    // head (with the hair and the beanie)
+  { pivot: [0.38, 0.75], tip: [0.07, 0.83], radius: 0.1 },                // left arm, out to the mitten
+  { pivot: [0.63, 0.75], tip: [0.94, 0.83], radius: 0.1 },                // right arm
+  { pivot: [0.45, 0.50], tip: [0.15, 0.08], radius: 0.13, blend: 0.08 },  // left leg, down to the boot
+  { pivot: [0.56, 0.50], tip: [0.86, 0.08], radius: 0.13, blend: 0.08 },  // right leg
 ]
 // her body in the snow (uv, bone or -1 for the torso, radius): pressed in all the time, and swept by the angel
 const CHIMIN_BODY: [number, number, number, number][] = [
@@ -52,12 +52,12 @@ const CHIMIN_BODY: [number, number, number, number][] = [
 // the fox's picture (side view walking right, 1505×995)
 // Chimin's fox, walking (1400×826): head, tail, and the four legs the picture shows
 const FOX_BONES: Bone[] = [
-  { pivot: [0.8, 0.62], region: [0.9, 0.76, 0.13, 0.22] },     // head
-  { pivot: [0.36, 0.5], region: [0.16, 0.46, 0.2, 0.28] },     // tail
-  { pivot: [0.86, 0.38], region: [0.88, 0.15, 0.08, 0.18] },   // front near leg
-  { pivot: [0.72, 0.38], region: [0.72, 0.15, 0.06, 0.18] },   // front far leg
-  { pivot: [0.56, 0.38], region: [0.55, 0.15, 0.07, 0.18] },   // back near leg
-  { pivot: [0.40, 0.38], region: [0.38, 0.15, 0.06, 0.18] },   // back far leg
+  { pivot: [0.8, 0.62], tip: [0.94, 0.82], radius: 0.14 },     // head
+  { pivot: [0.36, 0.5], tip: [0.08, 0.44], radius: 0.2, blend: 0.08 },  // tail
+  { pivot: [0.86, 0.38], tip: [0.89, 0.02], radius: 0.06 },    // front near leg
+  { pivot: [0.72, 0.38], tip: [0.72, 0.02], radius: 0.05 },    // front far leg
+  { pivot: [0.56, 0.38], tip: [0.55, 0.02], radius: 0.06 },    // back near leg
+  { pivot: [0.40, 0.38], tip: [0.38, 0.02], radius: 0.05 },    // back far leg
 ]
 type FoxView = 'side' | 'leap' | 'sit'
 const MOUNDS: [number, number, number, number][] = [ // x, z, radius, height

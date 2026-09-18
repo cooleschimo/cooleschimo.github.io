@@ -12,8 +12,12 @@ export const paper = (name: string) => `${B}/art/paper/${name}.webp`
 
 export type PieceControl = { reveal: (to: number, d?: number) => void; dissolve: (to: number, d?: number) => void; fade: (to: number, d?: number) => void; mat: THREE.ShaderMaterial }
 
-/** A region of the picture that turns about a pivot. All in picture uv (0–1, origin bottom left). */
-export type Bone = { pivot: [number, number]; region: [number, number, number, number] }
+/**
+ * A limb of the picture that turns about a pivot: a capsule from the pivot out through the tip and on past it, of the
+ * given radius (as a fraction of the picture's width), fading in at the joint over `blend`. All in picture uv (0–1,
+ * origin bottom left).
+ */
+export type Bone = { pivot: [number, number]; tip: [number, number]; radius: number; blend?: number }
 
 /** Per-frame animation state for a puppet, written by the scene and read here without re-rendering. */
 export type Pose = { angles: number[]; breath: number; blink: number }
@@ -103,7 +107,7 @@ export function Piece({ url, width, position, rotation = [0, 0, 0], delay = 0, f
   }, [tex, solid])
   useEffect(() => {
     const u = mat.uniforms; u.uSize.value.set(width, width * aspect)
-    if (bones) bones.slice(0, BONES).forEach((b, i) => { u.uPivot.value[i].set(b.pivot[0], b.pivot[1]); u.uRegion.value[i].set(b.region[0], b.region[1], b.region[2], b.region[3]) })
+    if (bones) bones.slice(0, BONES).forEach((b, i) => { u.uPivot.value[i].set(b.pivot[0], b.pivot[1]); u.uRegion.value[i].set(b.tip[0], b.tip[1], b.radius, b.blend ?? 0.06) })
     if (eye) u.uEye.value.set(eye[0], eye[1], eye[2], eye[3])
     if (puff > 0 || relief > 0) u.uHeight.value = heightMap(img)
   }, [mat, width, aspect, bones, eye, puff, relief, img])
