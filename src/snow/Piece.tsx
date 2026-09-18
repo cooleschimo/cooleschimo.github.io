@@ -10,7 +10,7 @@ import { BONES, makePaintMaterial } from './paint'
 export const B = import.meta.env.BASE_URL.replace(/\/$/, '')
 export const paper = (name: string) => `${B}/art/paper/${name}.webp`
 
-export type PieceControl = { reveal: (to: number, d?: number) => void; dissolve: (to: number, d?: number) => void; mat: THREE.ShaderMaterial }
+export type PieceControl = { reveal: (to: number, d?: number) => void; dissolve: (to: number, d?: number) => void; fade: (to: number, d?: number) => void; mat: THREE.ShaderMaterial }
 
 /** A region of the picture that turns about a pivot. All in picture uv (0–1, origin bottom left). */
 export type Bone = { pivot: [number, number]; region: [number, number, number, number] }
@@ -114,12 +114,15 @@ export function Piece({ url, width, position, rotation = [0, 0, 0], delay = 0, f
       mat,
       reveal: (to, d = 1.6) => { gsap.killTweensOf(mat.uniforms.uReveal); gsap.to(mat.uniforms.uReveal, { value: to, duration: d, ease: 'power2.out' }) },
       dissolve: (to, d = 1.4) => { gsap.killTweensOf(mat.uniforms.uDissolve); gsap.to(mat.uniforms.uDissolve, { value: to, duration: d, ease: 'power2.in' }) },
+      fade: (to, d = 0.4) => { gsap.killTweensOf(mat.uniforms.uOpacity); gsap.to(mat.uniforms.uOpacity, { value: to, duration: d, ease: 'sine.inOut' }) },
     }
+    mat.uniforms.uOpacity.value = opacity
     return () => { tw.kill() }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mat, delay, control])
   useFrame((_, dt) => {
     const u = mat.uniforms
-    u.uTime.value += dt; u.uFlip.value = flip ? 1 : 0; u.uOpacity.value = opacity; u.uSink.value = sink; u.uFrost.value = frost; u.uGrain.value = grain; u.uGlisten.value = glisten; u.uPuff.value = puff; u.uRelief.value = relief
+    u.uTime.value += dt; u.uFlip.value = flip ? 1 : 0; if (!control) u.uOpacity.value = opacity; u.uSink.value = sink; u.uFrost.value = frost; u.uGrain.value = grain; u.uGlisten.value = glisten; u.uPuff.value = puff; u.uRelief.value = relief
     if (shadow) (u.uShadowCol.value as THREE.Color).copy(shadow)
     if (lampA) u.uLampA.value.copy(lampA); if (lampACol) u.uLampACol.value.copy(lampACol); if (lampB) u.uLampB.value.copy(lampB); if (lampBCol) u.uLampBCol.value.copy(lampBCol)
     if (tint) (u.uTint.value as THREE.Color).lerp(tint, Math.min(1, dt * 3))

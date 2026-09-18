@@ -207,6 +207,12 @@ Console: clean (art exists for every slot now). The verify scripts lived in the 
    picture (legs at uv x 0.86/0.72/0.56/0.40, pivots y 0.38; eye 0.9,0.72); `FOX_RUN_BONES` rig the gallop picture's
    pairs (bones 2 and 4). Debug: `__snow.views`, `__snow.viewState`, `__snow.clock()`. Headless renders here run at a
    frame every few seconds, so a view switch needs ~15–45 s of wall time in a probe.
+   v12.1: the switch is an opacity crossfade (`PieceControl.fade`, the fox pieces are transparent, not solid) with
+   enter/leave hysteresis (front < 0.5 in, > 0.85 out; back > 2.65 in, < 2.3 out; run > 4.3 in, < 3.0 out), a hold
+   of 0.3 s on the wanted view and a dwell of 0.8 s in the current one (the leap is immediate); the gallop picture's
+   legs are not rigged (head and tail only) and it bounds higher; facing comes from the lateral component of the
+   heading against the camera's right (±0.25 dead band) and never changes mid-leap or in the front/back views; the
+   side turn is ±0.45 rad. `Piece` leaves `uOpacity` alone when a `control` is given.
 1l. **v11, the outside tuned**: terrain = 19 mounds (two negative hollows, tall steep ones at the sides and far) + four
    octaves of value noise (2.0 / 0.8 / 0.3 / 0.1). Fox rig = six bones: head, tail, four legs on their own bones (the
    picture shows all four); gait = a diagonal trot (near-front with far-back) that blends to a gallop (front pair, back
