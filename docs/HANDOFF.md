@@ -197,6 +197,19 @@ Console: clean (art exists for every slot now). The verify scripts lived in the 
    the v5 painted-volume build and must be rebuilt in the same language (a table close up, few objects).
 1c. Headless screenshots are unreliable (frames captured mid-render, SwiftShader fps is meaningless for 82k instances); judge in a browser.
 1d. Letter snow to tune with Chimin: mound shapes, density per layer, letter size, kick strength, sky-fall rate. Real-GPU performance is unmeasured (SwiftShader reads 1 fps regardless); if a laptop struggles, lower N first, then the sparkle/dust counts.
+1i. **v8.4**: the fox aims at the cursor held outside two keep-out circles (`keepOut`: igloo R+1.4 for the goal, R+1.0
+   for the step; Chimin `KEEP_CHIMIN`), re-aims only when the cursor moves > 0.45, eases its speed (`F.speed`), stops at
+   0.3, turns its heading smoothly, flips with hysteresis (|hx| > 0.2), and yaws its picture up to ±0.8 rad off the
+   billboard toward the side perpendicular to its heading (a three-quarter view). After `idle > 3.5 s` it sits: the walking
+   piece dissolves (`camCtl`), the sitting piece (`fox-sit`, `sitCtl`, started at uDissolve 1) paints in; reversed when called.
+   Sky: `LOOKS.band/bandI` (a horizon belt toward the sun, strongest in evening), aurora curtains ×2 with rays, ground
+   aurora wash 0.2; the snow's `uWhite` leans 16% toward the mid sky and `uShadow` 12% toward the zenith. Camera look
+   y 3.0. Doorway: an additive sprite in the arch mouth (`doorMat`, faces the camera) + the pool plane, both breathing,
+   0.28 opacity by day to ~0.8 at night. Scroll: `onWheel` on `.snow` accumulates deltaY; > 260 enters. Letters: N 128k
+   (56k phones) in layers (surface / just under / deep, `i % 8`), the mound is translucent (`uAlpha` 0.74, transparent pass)
+   so the deep layers show through; fallers are flagged by colour 1.2 and drawn bright. Chimin at H+0.68, tilt 0.42.
+   The igloo base is a mound term ([0, 2.8, 4.2, 0.55]) with the drift letters lying on it.
+   Next: the inside as Chimin describes it: paper 2.5D, entryway → middle → window, three stations, each close on its focal thing.
 1h. **Prints and paper** (v8.3): `Trail` in `Letters.tsx` is a 512×384 pressure map over x −32…32, z −26…22 (a
    Float32 master + a Uint8 `DataTexture`, RedFormat). `stamp()` presses a soft disc (max blend), `settleTrail()` fades it
    (τ 45 s: the snow fills the prints back in) and uploads. Both snow shaders take `uTrail/uTrailBox/uTrailDepth` (0.5):
