@@ -251,7 +251,6 @@ button { font: inherit; color: inherit; }
 .inside canvas { display: block; width: 100% !important; height: 100% !important; }
 .inside--hover { cursor: pointer; }
 .inside__hint { position: fixed; left: 24px; bottom: 22px; margin: 0; color: var(--ink-2); pointer-events: none; min-height: 1em; z-index: 50; }
-.room--dim .inside { filter: brightness(0.86); transition: filter 300ms ease; }
 
 /* ---------- outside: the letter snowfield (three.js), under the sheets, over the room UI ---------- */
 .snow { position: fixed; inset: 0; z-index: 58; background: #98a6e4; overflow: hidden; }
