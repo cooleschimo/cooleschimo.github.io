@@ -46,10 +46,49 @@ export type PieceProps = {
   pose?: React.MutableRefObject<Pose>
   /** an eye that can blink: centre and radii in picture uv */
   eye?: [number, number, number, number]
+  /** relief: how far (world units) the picture's inflated form pushes out toward the viewer, and how strongly it is shaded (0–1) */
+  puff?: number
+  relief?: number
+  /** the scene's shadow colour, for the relief's turn */
+  shadow?: THREE.Color
+}
+
+/**
+ * A height map inflated from the picture's silhouette: distance to the nearest transparent pixel, with a square-root
+ * profile so forms round off like a cushion and thin parts (an arm, a leg, a tail) stay lower than the body.
+ */
+const heightCache = new WeakMap<HTMLImageElement, THREE.DataTexture>()
+function heightMap(img: HTMLImageElement): THREE.DataTexture {
+  const hit = heightCache.get(img); if (hit) return hit
+  const W = 384, Hh = Math.max(8, Math.round((W * img.height) / img.width))
+  const c = document.createElement('canvas'); c.width = W; c.height = Hh; const g = c.getContext('2d')!
+  g.drawImage(img, 0, 0, W, Hh); const d = g.getImageData(0, 0, W, Hh).data
+  const INF = 1e9; const dist = new Float32Array(W * Hh)
+  for (let i = 0; i < W * Hh; i++) dist[i] = d[i * 4 + 3] > 128 ? INF : 0
+  // chamfer distance transform, two passes
+  for (let y = 0; y < Hh; y++) for (let x = 0; x < W; x++) { const i = y * W + x; if (dist[i] === 0) continue
+    let v = (x === 0 || y === 0) ? 1 : INF
+    if (x > 0) v = Math.min(v, dist[i - 1] + 1); if (y > 0) v = Math.min(v, dist[i - W] + 1)
+    if (x > 0 && y > 0) v = Math.min(v, dist[i - W - 1] + 1.41); if (x < W - 1 && y > 0) v = Math.min(v, dist[i - W + 1] + 1.41)
+    dist[i] = Math.min(dist[i], v) }
+  for (let y = Hh - 1; y >= 0; y--) for (let x = W - 1; x >= 0; x--) { const i = y * W + x; if (dist[i] === 0) continue
+    let v = (x === W - 1 || y === Hh - 1) ? 1 : dist[i]
+    if (x < W - 1) v = Math.min(v, dist[i + 1] + 1); if (y < Hh - 1) v = Math.min(v, dist[i + W] + 1)
+    if (x < W - 1 && y < Hh - 1) v = Math.min(v, dist[i + W + 1] + 1.41); if (x > 0 && y < Hh - 1) v = Math.min(v, dist[i + W - 1] + 1.41)
+    dist[i] = Math.min(dist[i], v) }
+  const scale = 0.32 * Math.min(W, Hh)
+  const h = new Float32Array(W * Hh); for (let i = 0; i < h.length; i++) h[i] = Math.sqrt(Math.min(1, dist[i] / scale))
+  // a little blur so the shading is soft
+  const out = new Uint8Array(W * Hh)
+  for (let y = 0; y < Hh; y++) for (let x = 0; x < W; x++) { let s = 0, n = 0
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { const xx = x + dx, yy = y + dy; if (xx < 0 || yy < 0 || xx >= W || yy >= Hh) continue; s += h[yy * W + xx]; n++ }
+    out[y * W + x] = Math.round((s / n) * 255) }
+  const t = new THREE.DataTexture(out, W, Hh, THREE.RedFormat, THREE.UnsignedByteType); t.flipY = true; t.minFilter = t.magFilter = THREE.LinearFilter; t.needsUpdate = true
+  heightCache.set(img, t); return t
 }
 
 /** A painted picture standing on a plane. Arrives as ink and fills with watercolour; can dissolve into pigment; can be a puppet. */
-export function Piece({ url, width, position, rotation = [0, 0, 0], delay = 0, flip = false, opacity = 1, tint, onHover, onClick, control, renderOrder, solid = false, quaternion, sink = 0, snow, light, fog = false, frost = 0, grain = 0, glisten = 0, bones, pose, eye }: PieceProps) {
+export function Piece({ url, width, position, rotation = [0, 0, 0], delay = 0, flip = false, opacity = 1, tint, onHover, onClick, control, renderOrder, solid = false, quaternion, sink = 0, snow, light, fog = false, frost = 0, grain = 0, glisten = 0, bones, pose, eye, puff = 0, relief = 0, shadow }: PieceProps) {
   const tex = useTexture(url); tex.colorSpace = THREE.SRGBColorSpace
   const scene = useThree(s => s.scene)
   const img = tex.image as HTMLImageElement
@@ -64,7 +103,8 @@ export function Piece({ url, width, position, rotation = [0, 0, 0], delay = 0, f
     const u = mat.uniforms; u.uSize.value.set(width, width * aspect)
     if (bones) bones.slice(0, BONES).forEach((b, i) => { u.uPivot.value[i].set(b.pivot[0], b.pivot[1]); u.uRegion.value[i].set(b.region[0], b.region[1], b.region[2], b.region[3]) })
     if (eye) u.uEye.value.set(eye[0], eye[1], eye[2], eye[3])
-  }, [mat, width, aspect, bones, eye])
+    if (puff > 0 || relief > 0) u.uHeight.value = heightMap(img)
+  }, [mat, width, aspect, bones, eye, puff, relief, img])
   useEffect(() => {
     mat.uniforms.uReveal.value = 0
     const tw = gsap.to(mat.uniforms.uReveal, { value: 1, duration: prefersReducedMotion() ? 0.3 : 1.8, delay, ease: 'power2.out' })
@@ -77,7 +117,8 @@ export function Piece({ url, width, position, rotation = [0, 0, 0], delay = 0, f
   }, [mat, delay, control])
   useFrame((_, dt) => {
     const u = mat.uniforms
-    u.uTime.value += dt; u.uFlip.value = flip ? 1 : 0; u.uOpacity.value = opacity; u.uSink.value = sink; u.uFrost.value = frost; u.uGrain.value = grain; u.uGlisten.value = glisten
+    u.uTime.value += dt; u.uFlip.value = flip ? 1 : 0; u.uOpacity.value = opacity; u.uSink.value = sink; u.uFrost.value = frost; u.uGrain.value = grain; u.uGlisten.value = glisten; u.uPuff.value = puff; u.uRelief.value = relief
+    if (shadow) (u.uShadowCol.value as THREE.Color).copy(shadow)
     if (tint) (u.uTint.value as THREE.Color).lerp(tint, Math.min(1, dt * 3))
     if (snow) (u.uSnow.value as THREE.Color).copy(snow)
     if (light) (u.uLight.value as THREE.Color).copy(light)
@@ -85,7 +126,7 @@ export function Piece({ url, width, position, rotation = [0, 0, 0], delay = 0, f
     if (fog && f) { u.fogColor.value.copy(f.color); u.fogNear.value = f.near; u.fogFar.value = f.far }
     if (pose) { const p = pose.current; const ang = u.uAngle.value as Float32Array; for (let i = 0; i < BONES; i++) ang[i] = p.angles[i] || 0; u.uBreath.value = p.breath; u.uBlink.value = p.blink }
   })
-  const seg = bones ? 48 : 1
+  const seg = bones || puff > 0 ? 48 : 1
   return (
     <mesh position={position} rotation={rotation} quaternion={quaternion} material={mat} renderOrder={renderOrder}
       onPointerOver={onHover ? (e) => { e.stopPropagation(); onHover(true) } : undefined} onPointerOut={onHover ? () => onHover(false) : undefined}

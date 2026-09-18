@@ -57,6 +57,7 @@ tools/optimize-art.py        PNG/JPG under public/art → WebP q82, deletes sour
 src/room/art.ts              every image slot, by name
 src/room/useArt.tsx          useArt(src) probes whether a file exists; <Art> renders it or the blockout placeholder
 src/snow/Letters.tsx         outside (R3F): letter snow. H(x,z) mounds + value noise, glyph atlas, InstancedMesh of letters and the mound with one snow shader (SNOW_GLSL), particle sim, sparkles, dust, sky shader, fox, Chimin, igloo plates
+tools/restyle.py             paper-cut → painted, as far as pixels allow: cuts the rim, smooths fibre, feathers; `--body` keeps only the person (drops drawn snow)
 tools/defringe.py            takes the white fringe off a cut-out piece (nearest-solid colour bleed + 1px alpha erosion); run once per new piece
 src/snow/Inside.tsx          inside (R3F): table close up with the objects, light planes by mode, window + shutter, hover lift, dissolve on open
 src/snow/Piece.tsx           the painted plane (shared): paint material, reveal on mount, control ref (reveal/dissolve), tint, hover/click
@@ -196,6 +197,13 @@ Console: clean (art exists for every slot now). The verify scripts lived in the 
    the v5 painted-volume build and must be rebuilt in the same language (a table close up, few objects).
 1c. Headless screenshots are unreliable (frames captured mid-render, SwiftShader fps is meaningless for 82k instances); judge in a browser.
 1d. Letter snow to tune with Chimin: mound shapes, density per layer, letter size, kick strength, sky-fall rate. Real-GPU performance is unmeasured (SwiftShader reads 1 fps regardless); if a laptop struggles, lower N first, then the sparkle/dust counts.
+1g. **Relief** (v8.2): every outside piece gets a height map inflated from its silhouette at load (`heightMap` in
+   `Piece.tsx`: chamfer distance transform at 384 px wide, square-root profile, small blur, a `DataTexture` cached per
+   image). The paint shader shades the form from it (`uRelief`: key light upper-left front, blue in the turn, a rim
+   toward the sun, shadow at the base) and the vertex shader pushes the plane out by `uPuff` × height, so the pieces
+   have volume and parallax. Chimin puff 0.28, fox 0.25, igloo plates 0.5/0.5/0.3 with relief 0.7. The current pictures
+   were run through `tools/restyle.py` (Chimin `--rim 8 --body`, foxes `--rim 10`); new pictures: defringe → restyle.
+   The snow angel now sweeps eight points along her arms and legs (`CHIMIN_TIPS`), mittens and boots hardest.
 1f. Chimin is unsure the paper-cut style is right for the outside pieces; `docs/PROMPTS.md` has a painted prefix B to regenerate igloo/Chimin/fox. If she regenerates, re-run `tools/defringe.py` on the new files and re-check the bone regions (they are in picture uv and assume the current compositions).
 1e. The inside (`Inside.tsx`) is still the paper-diorama room and has not had the v8 pass: it should show the letter snow through the window, take the same light, and its pieces already get the brushed edge/defringe.
 2. Chimin's authored default postcard arrangements (replace `defaultPieces`) once pieces exist.

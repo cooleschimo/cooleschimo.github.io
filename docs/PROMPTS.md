@@ -19,7 +19,7 @@ The snow outside is soft, luminous and grainy; a flat paper cut-out with a torn 
 igloo, Chimin and the fox, generate again with this prefix instead, same prompts, same file names:
 > Soft gouache and pastel illustration with visible grain, painted light: pale forms modelled with gentle tonal shading, no outlines, no paper texture, no torn edges, no rim, edges soft and slightly dry-brushed, a few muted tones, matte, no gloss, lit from behind and above by a low pale sun so the top and far edges catch a faint glow and the shadows are pale blue, no cast shadow on the ground, no background, transparent, centred with generous margin. Palette: white, ice blue, lilac shadow, sand, rust, ink. Not a 3D render, not clip art, not a sticker, not paper.
 
-The site already frosts, grains and glistens every piece in the shader, so a painted piece needs no sparkle drawn in.
+The site already frosts, grains, glistens and shades every piece in the shader (a relief inflated from its silhouette), so a painted piece needs no sparkle or heavy modelling drawn in; flat soft tones with a little shading are best. Drop new files in by name, then run `python3 tools/defringe.py <file>` and `python3 tools/restyle.py <file> --rim 6` (add `--body` for Chimin if the model draws snow around her: the letter snow makes the angel).
 
 ## Outside (the snowfield)
 | File | Prompt (after the prefix) | Aspect |

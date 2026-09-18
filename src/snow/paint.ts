@@ -34,9 +34,12 @@ export function makePaintMaterial(map: THREE.Texture, seed = Math.random() * 100
       uRegion: { value: Array.from({ length: BONES }, () => new THREE.Vector4(0.5, 0.5, 0, 0)) },
       uAngle: { value: new Float32Array(BONES) },
       uEye: { value: new THREE.Vector4(0, 0, 0, 0) }, uBlink: { value: 0 },
+      // relief: a height map inflated from the silhouette; the picture is shaded as a soft form and pushed out in depth
+      uHeight: { value: null as THREE.Texture | null }, uPuff: { value: 0 }, uRelief: { value: 0 }, uShadowCol: { value: new THREE.Color('#a7b6ea') },
+      uKey: { value: new THREE.Vector3(-0.45, 0.6, 0.65).normalize() }, uSunPic: { value: new THREE.Vector2(-0.6, 0.6).normalize() },
     },
     vertexShader: `
-      varying vec2 vUv; varying vec3 vW; varying float vFog; uniform float uFlip, uBreath; uniform vec2 uSize;
+      varying vec2 vUv; varying vec3 vW; varying float vFog; uniform float uFlip, uBreath, uPuff; uniform vec2 uSize; uniform sampler2D uHeight;
       uniform vec2 uPivot[${BONES}]; uniform vec4 uRegion[${BONES}]; uniform float uAngle[${BONES}];
       void main(){
         vUv = uv; if (uFlip > 0.5) vUv.x = 1.0 - vUv.x;
@@ -53,11 +56,12 @@ export function makePaintMaterial(map: THREE.Texture, seed = Math.random() * 100
           a *= w; vec2 q = p - piv; float cs = cos(a), sn = sin(a);
           p = piv + vec2(q.x * cs - q.y * sn, q.x * sn + q.y * cs);
         }
-        vec4 w4 = modelMatrix * vec4(p, 0.0, 1.0); vW = w4.xyz;
+        float hz = uPuff > 0.0 ? texture2D(uHeight, vUv).r * uPuff : 0.0;
+        vec4 w4 = modelMatrix * vec4(p, hz, 1.0); vW = w4.xyz;
         vec4 mv = viewMatrix * w4; vFog = -mv.z; gl_Position = projectionMatrix * mv; }`,
     fragmentShader: `
       uniform sampler2D uMap; uniform float uReveal, uDissolve, uTime, uSeed, uFlip, uOpacity, uCut, uSink, uTopLight, uFrost, uGrain, uGlisten, uBlink, fogNear, fogFar;
-      uniform vec3 uTint, uSnow, uLight, fogColor; uniform vec4 uEye;
+      uniform vec3 uTint, uSnow, uLight, fogColor, uShadowCol, uKey; uniform vec4 uEye; uniform sampler2D uHeight; uniform float uRelief; uniform vec2 uSunPic;
       varying vec2 vUv; varying vec3 vW; varying float vFog;
       ${NOISE_GLSL}
       void main(){
@@ -94,6 +98,17 @@ export function makePaintMaterial(map: THREE.Texture, seed = Math.random() * 100
         col = mix(col, vec3(0.28, 0.22, 0.2), ink * inkShow * 0.45);
         // the scene's light: a little brighter toward the top, and the day's tint
         col *= uTint * (1.0 + uTopLight * (vUv.y - 0.5) * 2.0);
+        // relief: the form is shaded from its height map (a soft key light from the upper left, blue in the turn), its edges
+        // toward the sun catch a rim, and the base of each form sits in a little shadow
+        if (uRelief > 0.0) { vec2 hp = 1.0 / vec2(textureSize(uHeight, 0)); float h = texture2D(uHeight, vUv).r;
+          float hx = texture2D(uHeight, vUv + vec2(hp.x, 0.0)).r - texture2D(uHeight, vUv - vec2(hp.x, 0.0)).r;
+          float hy = texture2D(uHeight, vUv + vec2(0.0, hp.y)).r - texture2D(uHeight, vUv - vec2(0.0, hp.y)).r;
+          vec3 n = normalize(vec3(-hx * 7.0, -hy * 7.0, 1.0)); float lam = dot(n, uKey) * 0.5 + 0.5;
+          vec3 shade = mix(uShadowCol / max(lum, 0.35) * 0.55 + 0.25, vec3(1.04), smoothstep(0.25, 0.95, lam));
+          col *= mix(vec3(1.0), shade, uRelief);
+          vec2 g2 = vec2(-hx, -hy); float gl = length(g2); float rim = pow(1.0 - h, 2.5) * max(0.0, dot(g2 / max(gl, 1e-4), uSunPic)) * smoothstep(0.0, 0.02, gl);
+          col += uLight * rim * 0.4 * uRelief;
+          col *= 1.0 - (1.0 - h) * 0.14 * uRelief; }
         // frost: the picture gives up some of its own contrast to the snow's colour; grain: the same dry speckle as the snow
         col = mix(col, uSnow, uFrost * (0.6 + 0.4 * (1.0 - lum)));
         col *= 1.0 + (fbm(uv * 70.0 + uSeed) - 0.5) * uGrain;

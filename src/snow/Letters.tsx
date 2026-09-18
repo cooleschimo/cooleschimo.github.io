@@ -42,7 +42,8 @@ const CHIMIN_BONES: Bone[] = [
   { pivot: [0.42, 0.42], region: [0.27, 0.27, 0.20, 0.22] },   // left leg
   { pivot: [0.58, 0.42], region: [0.73, 0.27, 0.20, 0.22] },   // right leg
 ]
-const CHIMIN_TIPS: [number, number, number][] = [[0.08, 0.73, 1], [0.92, 0.73, 2], [0.16, 0.16, 3], [0.84, 0.16, 4]] // mittens and boots: uv and their bone
+// points along her arms and legs (uv and their bone): the whole limb sweeps the snow, the mitten and boot hardest
+const CHIMIN_TIPS: [number, number, number][] = [[0.08, 0.73, 1], [0.2, 0.72, 1], [0.92, 0.73, 2], [0.8, 0.72, 2], [0.16, 0.16, 3], [0.27, 0.28, 3], [0.84, 0.16, 4], [0.73, 0.28, 4]]
 // the fox's picture (side view walking right, 1505×995)
 const FOX_BONES: Bone[] = [
   { pivot: [0.76, 0.58], region: [0.87, 0.72, 0.15, 0.20] },   // head
@@ -544,12 +545,12 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
       P.breath = 0.006 * Math.sin(t * 1.3)
       if (reduced || dbg.current.noRig) { P.angles.fill(0); P.breath = 0 }
       // her mittens and boots sweep through the snow: kick the letters where they pass
-      if (A.on > 0.3 && Math.abs(Math.cos(A.phase)) > 0.4 && chiminGrp.current) {
+      if (A.on > 0.3 && Math.abs(Math.cos(A.phase)) > 0.3 && chiminGrp.current) {
         for (const [u, v, bone] of CHIMIN_TIPS) {
           const b = CHIMIN_BONES[bone]; const W = 4.2, Hh = 4.2 * CHIMIN_ASPECT
           let x = (u - 0.5) * W, y = (v - 0.5) * Hh; const px = (b.pivot[0] - 0.5) * W, py = (b.pivot[1] - 0.5) * Hh; const a = P.angles[bone]
           const qx = x - px, qy = y - py; x = px + qx * Math.cos(a) - qy * Math.sin(a); y = py + qx * Math.sin(a) + qy * Math.cos(a)
-          _p.set(x, y, 0); chiminGrp.current.localToWorld(_p); kick(field, _p.x, _p.z, 0.8, 2.4, 5)
+          _p.set(x, y, 0); chiminGrp.current.localToWorld(_p); const tip = u < 0.1 || u > 0.9 || v < 0.2; kick(field, _p.x, _p.z, tip ? 0.9 : 0.6, (tip ? 3.0 : 2.0) * Math.abs(Math.cos(A.phase)), tip ? 7 : 4)
         }
       } }
     if (!reduced) stepField(field, d)
@@ -561,7 +562,7 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
 
   const iglooY = H(0, 0)
   const camCtl = useRef<PieceControl | null>(null)
-  const piece = { tint: pieceTint, snow: cur.white, light: cur.light, fog: true, frost: 0.2, grain: 0.35 }
+  const piece = { tint: pieceTint, snow: cur.white, light: cur.light, shadow: cur.shadow, fog: true, frost: 0.16, grain: 0.3 }
   return (
     <>
       <color attach="background" args={['#e8e3f1']} />
@@ -573,17 +574,17 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
       <primitive object={sparkles} />
       <primitive object={dust} />
       {/* the igloo, set into the middle mound, its base in the snow */}
-      <Piece url={paper('igloo-back')} width={12.4} position={[0, iglooY + 2.6, -2.6]} rotation={[-0.06, 0, 0]} delay={0.2} glisten={1} solid sink={0.1} {...piece} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
-      <Piece url={paper('igloo-front')} width={11.6} position={[0, iglooY + 2.2, 1.2]} rotation={[-0.05, 0, 0]} delay={0.5} glisten={1} solid sink={0.12} {...piece} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
-      <Piece url={paper('igloo-arch')} width={4.6} position={[0, H(0, 3.9) + 1.2, 3.9]} rotation={[-0.04, 0, 0]} delay={0.8} glisten={1} solid sink={0.14} {...piece} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
+      <Piece url={paper('igloo-back')} width={12.4} position={[0, iglooY + 2.6, -2.6]} rotation={[-0.06, 0, 0]} delay={0.2} glisten={1} puff={0.5} relief={0.7} solid sink={0.1} {...piece} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
+      <Piece url={paper('igloo-front')} width={11.6} position={[0, iglooY + 2.2, 1.2]} rotation={[-0.05, 0, 0]} delay={0.5} glisten={1} puff={0.5} relief={0.7} solid sink={0.12} {...piece} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
+      <Piece url={paper('igloo-arch')} width={4.6} position={[0, H(0, 3.9) + 1.2, 3.9]} rotation={[-0.04, 0, 0]} delay={0.8} glisten={1} puff={0.3} relief={0.7} solid sink={0.14} {...piece} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
       <mesh position={[0, H(0, 6.4) + 0.08, 6.4]} rotation={[-Math.PI / 2, 0, 0]} material={glowMat}><planeGeometry args={[9, 7]} /></mesh>
       {/* Chimin, lying in the snow */}
       <group ref={chiminGrp} position={[chiminPos.x, H(chiminPos.x, chiminPos.z) + 0.5, chiminPos.z]} quaternion={chiminQuat}>
-        <Piece url={paper('chimin')} width={4.2} position={[0, 0, 0]} delay={1.1} solid {...piece} glisten={0.5} bones={CHIMIN_BONES} pose={chiminPose} onHover={h => { setHover(h ? 'chimin' : null); setChiminHover(h) }} onClick={onAbout} />
+        <Piece url={paper('chimin')} width={4.2} position={[0, 0, 0]} delay={1.1} solid {...piece} glisten={0.35} puff={0.28} relief={1} bones={CHIMIN_BONES} pose={chiminPose} onHover={h => { setHover(h ? 'chimin' : null); setChiminHover(h) }} onClick={onAbout} />
       </group>
       {/* the fox, wading */}
       <group ref={fox}>
-        <Piece url={paper('fox-side')} width={3.2} position={[0, 0.5, 0]} delay={1.4} flip={foxFlip} solid sink={0.2} {...piece} glisten={0.4} bones={FOX_BONES} pose={foxPose} eye={[0.905, 0.705, 0.02, 0.018]} control={camCtl} />
+        <Piece url={paper('fox-side')} width={3.2} position={[0, 0.5, 0]} delay={1.4} flip={foxFlip} solid sink={0.2} {...piece} glisten={0.4} puff={0.25} relief={1} bones={FOX_BONES} pose={foxPose} eye={[0.905, 0.705, 0.02, 0.018]} control={camCtl} />
       </group>
       <EffectComposer enableNormalPass={false}>
         <Bloom luminanceThreshold={0.96} luminanceSmoothing={0.08} intensity={0.55} mipmapBlur />
