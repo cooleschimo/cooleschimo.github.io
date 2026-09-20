@@ -150,10 +150,10 @@ function trailAt(t: Trail, x: number, z: number) {
 }
 /**
  * The snow settles: prints, holes and heaps all fade slowly toward level ground; and anything deeper than a print
- * (past FILL_FROM) fills back in fast, the faster the deeper, as its loose sides pour in. A hole you stop digging is a
- * shallow dip within seconds, a paw print lasts. Then upload.
+ * (past FILL_FROM, deeper than a pressed trench) fills back in fast, the faster the deeper, as its loose sides pour in.
+ * A hole you stop digging comes back to a trench's depth within seconds; a trench and a paw print last. Then upload.
  */
-const FILL_FROM = 0.7, FILL = 0.5
+const FILL_FROM = 1.2, FILL = 0.4
 function settleTrail(t: Trail, dt: number, tau = 70) {
   const k = Math.exp(-dt / tau); const d = t.data, b = t.bytes
   for (let i = 0; i < d.length; i++) { const v0 = d[i]; let v = v0 * k; const deep = Math.abs(v0) - FILL_FROM; if (deep > 0) v -= Math.sign(v0) * deep * Math.abs(v0) * FILL * dt; d[i] = Math.abs(v) < 0.004 ? 0 : v; b[i] = (v + 1) * 85 }
@@ -691,8 +691,9 @@ function Scene({ onEnter, onAbout, setHover: setHoverProp, enterRef, darkRef }: 
         kick(field, c.x, c.z, 2.6, Math.min(3.6, 1.6 + sp * 0.4) + (press ? 0.8 : 0), Math.round(70 + sp * 16) + (press ? 40 : 0), mx * push, mz * push, 0.25)
         kick(field, c.x + mx * 1.2, c.z + mz * 1.2, 1.5, 1.6 + sp * 0.3, 36, mx * push * 0.8, mz * push * 0.8, 0.3)   // the bow wave, ahead
         // each pass takes more snow out (it adds up: a track worn deeper the more you go over it)
-        const rate = press ? 4.5 : 1.7
-        heap(trail, c.x, c.z, press ? 1.5 : 1.25, rate * d); heap(trail, c.x - mx * 0.6, c.z - mz * 0.6, 1.0, rate * 0.6 * d)
+        // pressed, it cuts a trench: about a full print's depth in one pass, deeper each pass
+        const rate = press ? 8 : 1.7
+        heap(trail, c.x, c.z, press ? 1.6 : 1.25, rate * d); heap(trail, c.x - mx * 0.6, c.z - mz * 0.6, press ? 1.2 : 1.0, rate * 0.6 * d)
         dig.current = press ? Math.max(dig.current, 1.2) : 0.4; stir.current = 0
       } else {
         // held still, the cursor digs: the hole deepens the longer it stays (fast when pressed), and the snow it lifts flies out and lands around

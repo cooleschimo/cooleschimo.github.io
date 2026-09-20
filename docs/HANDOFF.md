@@ -207,6 +207,8 @@ Console: clean (art exists for every slot now). The verify scripts lived in the 
    than 0.3, so a heap pours into a hole and swept-aside snow returns. `launch()` is the shared "one letter flies" step.
    Letters lie 0.005–0.055 above the surface again (the 0.16 lift read as floating), the white surface letters keep 55%
    of the snow's shading, and the cursor ring lift is halved. `sim-sweep.cjs` in the scratchpad models this at 60 fps.
+   v13.5.1: a pressed drag cuts a trench (dig rate 8/s, radius 1.6; ~1.7 in one pass, wider each pass) and the fast
+   refill starts only past `FILL_FROM` 1.2 (`FILL` 0.4), so a trench settles to ~1.2 in seconds and then lasts.
 1r. **v13.4, snow that slides and fills, white letters on top.** `slump()` runs an angle-of-repose flow over the whole
    map (one row in six each frame, flow scaled to match; `REPOSE` 0.08 per texel, `SLIDE` 10): steep walls pour in, a
    heap slumps. `settleTrail` also fills anything deeper than a print (`FILL_FROM` 0.7) fast and faster the deeper
