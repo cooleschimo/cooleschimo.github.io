@@ -199,6 +199,13 @@ Console: clean (art exists for every slot now). The verify scripts lived in the 
    the v5 painted-volume build and must be rebuilt in the same language (a table close up, few objects).
 1c. Headless screenshots are unreliable (frames captured mid-render, SwiftShader fps is meaningless for 82k instances); judge in a browser.
 1d. Letter snow to tune with Chimin: mound shapes, density per layer, letter size, kick strength, sky-fall rate. Real-GPU performance is unmeasured (SwiftShader reads 1 fps regardless); if a laptop struggles, lower N first, then the sparkle/dust counts.
+1r. **v13.4, snow that slides and fills, white letters on top.** `slump()` runs an angle-of-repose flow over the whole
+   map (one row in six each frame, flow scaled to match; `REPOSE` 0.08 per texel, `SLIDE` 10): steep walls pour in, a
+   heap slumps. `settleTrail` also fills anything deeper than a print (`FILL_FROM` 0.7) fast and faster the deeper
+   (`FILL` 0.5, quadratic), so a hole you stop digging is a shallow dip within seconds while paw prints keep their τ 70 s.
+   `GRAIN` 0.03; pressed-still dig 1.2/s. `tools`: `sim-trail.cjs` in the scratchpad was the 60 fps model used to tune
+   these (not in the repo). Surface letters: 60% flagged 1.08 (white, lifted to the snow's white, glint × 2.4, twinkle),
+   heights up to 0.16 above the surface; mound alpha 0.58, its glitter 0.15×, a fine crust in its normal.
 1q. **v13.3, snow that adds up.** The surface map is signed and additive: −1 (heaped) to 2 (dug), stored as
    (v + 1) · 85, shaders read `.r * 3.0 - 1.0` (so an untouched map must be filled with 85; `makeSnowView` gets one).
    `stamp` still max-blends (prints); `heap(t, x, z, r, amount)` adds (positive digs, negative heaps). The cursor uses

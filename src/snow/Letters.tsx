@@ -128,14 +128,35 @@ function heap(t: Trail, x: number, z: number, r: number, amount: number) {
     const i = iz * TW + ix; t.data[i] = Math.max(-1, Math.min(2, t.data[i] + amount * (1 - d2) * (1 - d2)))
   }
 }
+/**
+ * The snow slides: where the surface is steeper than it can hold, snow moves from the high side to the low side, so a
+ * hole's walls fall in and fill it part way (and it widens), and a heap slumps.
+ * `REPOSE` is the height step (map units per texel) the snow holds before it slides; `SLIDE` how much of the excess moves a second.
+ */
+const REPOSE = 0.08, SLIDE = 10, BANDS = 6
+let slumpFrame = 0
+function slump(t: Trail, dt: number) {
+  // the whole map, one row in BANDS each frame, so it costs little; the flow is scaled up to match
+  const k = Math.min(0.3, SLIDE * dt * BANDS); const d = t.data; const band = slumpFrame++ % BANDS
+  for (let iz = band; iz < TH - 1; iz += BANDS) for (let ix = 0; ix < TW - 1; ix++) {
+    const i = iz * TW + ix
+    // depth is positive downward, so snow flows from the smaller value to the larger one
+    for (const j of [i + 1, i + TW]) { const diff = d[j] - d[i]; if (diff > REPOSE) { const m = (diff - REPOSE) * k * 0.5; d[i] += m; d[j] -= m } else if (diff < -REPOSE) { const m = (-diff - REPOSE) * k * 0.5; d[i] -= m; d[j] += m } }
+  }
+}
 function trailAt(t: Trail, x: number, z: number) {
   const ix = Math.round((x - TX0) * TW / (TX1 - TX0)), iz = Math.round((z - TZ0) * TH / (TZ1 - TZ0))
   if (ix < 0 || iz < 0 || ix >= TW || iz >= TH) return 0; return t.data[iz * TW + ix]
 }
-/** the snow settles: prints, holes and heaps all fade toward level ground, then upload */
+/**
+ * The snow settles: prints, holes and heaps all fade slowly toward level ground; and anything deeper than a print
+ * (past FILL_FROM) fills back in fast, the faster the deeper, as its loose sides pour in. A hole you stop digging is a
+ * shallow dip within seconds, a paw print lasts. Then upload.
+ */
+const FILL_FROM = 0.7, FILL = 0.5
 function settleTrail(t: Trail, dt: number, tau = 70) {
   const k = Math.exp(-dt / tau); const d = t.data, b = t.bytes
-  for (let i = 0; i < d.length; i++) { const v = d[i] * k; d[i] = Math.abs(v) < 0.004 ? 0 : v; b[i] = (v + 1) * 85 }
+  for (let i = 0; i < d.length; i++) { const v0 = d[i]; let v = v0 * k; const deep = Math.abs(v0) - FILL_FROM; if (deep > 0) v -= Math.sign(v0) * deep * Math.abs(v0) * FILL * dt; d[i] = Math.abs(v) < 0.004 ? 0 : v; b[i] = (v + 1) * 85 }
   t.tex.needsUpdate = true
 }
 
@@ -184,7 +205,7 @@ const snowUniforms = () => ({
   uLightDir: { value: new THREE.Vector3(-0.35, 0.42, -0.84).normalize() }, uWhite: { value: new THREE.Color('#fcfcff') }, uShadow: { value: new THREE.Color('#b4c1ee') }, uLight: { value: new THREE.Color('#fff4dc') },
   uAurora: { value: 0 }, uTime: { value: 0 }, uSparkle: { value: 1 }, fogColor: { value: new THREE.Color('#f3ecf3') }, fogNear: { value: 24 }, fogFar: { value: 72 },
   uCursor: { value: new THREE.Vector3() }, uCursorOn: { value: 0 }, uDoor: { value: new THREE.Vector3(0, 1.2, 4.2) }, uDoorGlow: { value: 0 }, uDoorCol: { value: new THREE.Color('#ffc27c') },
-  uTrail: { value: null as THREE.Texture | null }, uTrailBox: { value: new THREE.Vector4(TX0, TZ0, 1 / (TX1 - TX0), 1 / (TZ1 - TZ0)) }, uTrailDepth: { value: 0.5 }, uDebug: { value: 0 }, uAlpha: { value: 0.66 },
+  uTrail: { value: null as THREE.Texture | null }, uTrailBox: { value: new THREE.Vector4(TX0, TZ0, 1 / (TX1 - TX0), 1 / (TZ1 - TZ0)) }, uTrailDepth: { value: 0.5 }, uDebug: { value: 0 }, uAlpha: { value: 0.58 },
 })
 
 function snowMaterial() {
@@ -204,10 +225,11 @@ function snowMaterial() {
         float ripple = ring * (0.5 + 0.5 * sin(cdist * 2.6 - uTime * 3.2));
         // a soft grain and a gentle pile pattern, so the surface between the letters is not flat paint
         float grain = fbm(vW.xz * 2.3) - 0.5; n = normalize(n + vec3(grain * 0.25, 0.0, (fbm(vW.zx * 2.9) - 0.5) * 0.25));
+        n = normalize(n + vec3(fbm(vW.xz * 11.0 + 5.0) - 0.5, 0.0, fbm(vW.zx * 13.0 + 9.0) - 0.5) * 0.3);   // and a fine crust
         n = normalize(n + trailTilt(vW.xz, uTrailDepth));
         float depth = smoothstep(1.2, -0.6, vW.y);
         vec3 col = snowShade(n, V, uLightDir, uWhite, uShadow, uLight, depth);
-        col *= 0.96 + 0.08 * fbm(vW.xz * 9.0);
+        col *= 0.94 + 0.12 * fbm(vW.xz * 9.0);
         col = paperize(col, vW.xz, 1.0);
         if (uDebug > 0.5) { gl_FragColor = vec4(vTrail, trailAt(vW.xz), 0.3, 1.0); return; }
         // the prints: the trough is in shadow, its near wall darker, its far wall catches the light
@@ -216,7 +238,7 @@ function snowMaterial() {
           col += uLight * clamp(-edge * 2.0, 0.0, 1.0) * 0.4; col += uLight * clamp(-vTrail, 0.0, 1.0) * 0.12; }
         col += uLight * ring * 0.08 + uLight * ripple * 0.08;
         col += doorLight(vW, n);
-        col += uLight * glitter(vW, n, V, uLightDir, uTime) * uSparkle * 0.4 * (1.0 + ring * 2.5);
+        col += uLight * glitter(vW, n, V, uLightDir, uTime) * uSparkle * 0.15 * (1.0 + ring * 2.5);
         if (uAurora > 0.001) col += auroraOn(vW, uTime) * uAurora;
         float f = smoothstep(fogNear, fogFar, vFog); col = mix(col, fogColor, f);
         gl_FragColor = vec4(col, uAlpha); }`,
@@ -292,12 +314,13 @@ function letterMaterial(atlas: THREE.Texture) {
         float edge = 1.0 - smoothstep(0.38, 0.8, a); float rim = smoothstep(0.38, 0.55, a) * (1.0 - smoothstep(0.55, 0.75, a));
         col = mix(col, uShadow, edge * 0.26); col = mix(col, uWhite, rim * 0.35);
         // falling snow: fresh, bright, unshadowed
-        if (vColor.r > 1.1) col = mix(col, uWhite * 1.05 + uLight * 0.12, 0.85);
+        bool bright = vColor.r > 1.05;   // the white letters on top, and the falling ones: fresh, unshadowed, and they are the sparkle
+        if (bright) col = mix(col, uWhite * 1.05 + uLight * 0.12, 0.85);
         col = mix(col, uShadow, clamp(vTrail * 0.75, 0.0, 0.8));
         // each letter is a facet: some catch the light hard as the camera moves
         vec3 Rf = reflect(-uLightDir, n); float glint = pow(max(0.0, dot(Rf, V)), 24.0 + vSeed * 40.0);
         float tw = 0.55 + 0.45 * sin(uTime * (1.5 + vSeed * 4.0) + vSeed * 60.0);   // and they twinkle: the glisten of the snow is the letters
-        col += uLight * glint * (0.5 + vSeed * 1.6) * tw * uSparkle * (1.0 + vRing * 1.5);
+        col += uLight * glint * (0.5 + vSeed * 1.6) * tw * uSparkle * (1.0 + vRing * 1.5) * (bright ? 2.4 : 0.6);
         col += uLight * glitter(vW, n, V, uLightDir, uTime) * uSparkle * (0.5 + vRing * 1.5);
         col += uLight * vRing * 0.1;
         col += doorLight(vW, n) * 0.9;
@@ -350,7 +373,9 @@ function buildField(atlas: THREE.Texture, n = N, nf = NF, zMin = -32, zMax = 22,
       // in layers: half on the surface, a quarter just under it, a quarter deeper, seen through the translucent snow
       const x = (Math.random() - 0.5) * 2 * xHalf, z = zMin + (zMax - zMin) * Math.pow(Math.random(), 0.7); const layer = i % 8
       const under = layer === 4 || layer === 5, deep = layer >= 6
-      pos[i * 3] = x; pos[i * 3 + 2] = z; pos[i * 3 + 1] = H(x, z) + (deep ? -0.12 - Math.random() * 0.5 : under ? -0.05 : 0.01 + Math.random() * 0.06)
+      pos[i * 3] = x; pos[i * 3 + 2] = z; pos[i * 3 + 1] = H(x, z) + (deep ? -0.12 - Math.random() * 0.5 : under ? -0.05 : Math.random() * Math.random() * 0.16)
+      // most of the surface is bright white letters (flag 1.08: the shader lifts them to the snow's white and lets them sparkle)
+      if (!under && !deep && Math.random() < 0.6) { color[i * 3] = 1.08; color[i * 3 + 1] = 1.08; color[i * 3 + 2] = 1.08 }
       if (under) { color[i * 3] *= 0.86; color[i * 3 + 1] *= 0.88; color[i * 3 + 2] *= 0.97 }
       if (deep) { color[i * 3] *= 0.72; color[i * 3 + 1] *= 0.76; color[i * 3 + 2] *= 0.92; scl[i] *= 0.9 }
       restOrientation(x, z, _q); quat.set([_q.x, _q.y, _q.z, _q.w], i * 4)
@@ -369,7 +394,7 @@ function buildField(atlas: THREE.Texture, n = N, nf = NF, zMin = -32, zMax = 22,
   return { mesh, pos, quat, scl, vel, ang, flying, falling, list }
 }
 
-const GRAIN = 0.05   // how much surface one moving letter carries
+const GRAIN = 0.03   // how much surface one moving letter carries
 /** Kick the letters around a point: they leap up and away and tumble; `px,pz` pushes them along with whatever moved. */
 function kick(f: Field, x: number, z: number, radius: number, strength: number, maxCount: number, px = 0, pz = 0) {
   let n = 0; const r2 = radius * radius
@@ -643,8 +668,8 @@ function Scene({ onEnter, onAbout, setHover: setHoverProp, enterRef, darkRef }: 
         dig.current = press ? Math.max(dig.current, 1.2) : 0.4; stir.current = 0
       } else {
         // held still, the cursor digs: the hole deepens the longer it stays (fast when pressed), and the snow it lifts flies out and lands around
-        dig.current = Math.min(press ? 2.0 : 1.3, dig.current + d * (press ? 1.6 : 0.35))
-        heap(trail, c.x, c.z, 1.1 + dig.current * 0.35, (press ? 1.6 : 0.35) * d)
+        dig.current = Math.min(press ? 2.0 : 1.3, dig.current + d * (press ? 1.2 : 0.35))
+        heap(trail, c.x, c.z, 1.1 + dig.current * 0.35, (press ? 1.2 : 0.35) * d)
         stir.current += d; if (stir.current > (press ? 0.06 : 0.12)) { stir.current = 0
           const dg = dig.current
           const a = Math.random() * Math.PI * 2, rr = Math.random() * 1.2
@@ -794,7 +819,7 @@ function Scene({ onEnter, onAbout, setHover: setHoverProp, enterRef, darkRef }: 
           if (tip && sweep > 0.3) kick(field, _p.x, _p.z, 0.9, 3.0 * sweep, 6)
         }
       } }
-    if (!reduced) { stepField(field, d); settleTrail(trail, d) }
+    if (!reduced) { stepField(field, d); slump(trail, d); settleTrail(trail, d) }
 
     if (!entering.current && !reduced) { camera.position.x += (home.x + par.current.x * 2.2 - camera.position.x) * 0.04; camera.position.y += (home.y - par.current.y * 0.9 - camera.position.y) * 0.04 }
     camera.lookAt(look)
