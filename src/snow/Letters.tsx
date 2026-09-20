@@ -205,7 +205,7 @@ const snowUniforms = () => ({
   uLightDir: { value: new THREE.Vector3(-0.35, 0.42, -0.84).normalize() }, uWhite: { value: new THREE.Color('#fcfcff') }, uShadow: { value: new THREE.Color('#b4c1ee') }, uLight: { value: new THREE.Color('#fff4dc') },
   uAurora: { value: 0 }, uTime: { value: 0 }, uSparkle: { value: 1 }, fogColor: { value: new THREE.Color('#f3ecf3') }, fogNear: { value: 24 }, fogFar: { value: 72 },
   uCursor: { value: new THREE.Vector3() }, uCursorOn: { value: 0 }, uDoor: { value: new THREE.Vector3(0, 1.2, 4.2) }, uDoorGlow: { value: 0 }, uDoorCol: { value: new THREE.Color('#ffc27c') },
-  uTrail: { value: null as THREE.Texture | null }, uTrailBox: { value: new THREE.Vector4(TX0, TZ0, 1 / (TX1 - TX0), 1 / (TZ1 - TZ0)) }, uTrailDepth: { value: 0.5 }, uDebug: { value: 0 }, uAlpha: { value: 0.58 },
+  uTrail: { value: null as THREE.Texture | null }, uTrailBox: { value: new THREE.Vector4(TX0, TZ0, 1 / (TX1 - TX0), 1 / (TZ1 - TZ0)) }, uTrailDepth: { value: 0.5 }, uDebug: { value: 0 }, uAlpha: { value: 1.0 }, uGap: { value: 0.6 },
 })
 
 function snowMaterial() {
@@ -215,7 +215,7 @@ function snowMaterial() {
       float trailAt(vec2 xz){ vec2 uv = (xz - uTrailBox.xy) * uTrailBox.zw; if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return 0.0; return texture2D(uTrail, uv).r * 3.0 - 1.0; }
       void main(){ vec4 w = modelMatrix * vec4(position, 1.0); float tr = trailAt(w.xz); w.y -= tr * uTrailDepth; vTrail = tr; vW = w.xyz; vN = normalize(mat3(modelMatrix) * normal); vec4 mv = viewMatrix * w; vFog = -mv.z; gl_Position = projectionMatrix * mv; }`,
     fragmentShader: `
-      uniform vec3 uLightDir, uWhite, uShadow, uLight, fogColor, uCursor; uniform float fogNear, fogFar, uAurora, uTime, uSparkle, uCursorOn, uTrailDepth, uDebug, uAlpha, uDoorGlow;
+      uniform vec3 uLightDir, uWhite, uShadow, uLight, fogColor, uCursor; uniform float fogNear, fogFar, uAurora, uTime, uSparkle, uCursorOn, uTrailDepth, uDebug, uAlpha, uGap, uDoorGlow;
       uniform sampler2D uTrail; uniform vec4 uTrailBox; uniform vec3 uDoor, uDoorCol;
       varying vec3 vW; varying vec3 vN; varying float vFog; varying float vTrail;
       ${SNOW_GLSL}
@@ -241,6 +241,8 @@ function snowMaterial() {
         col += uLight * glitter(vW, n, V, uLightDir, uTime) * uSparkle * 0.15 * (1.0 + ring * 2.5);
         if (uAurora > 0.001) col += auroraOn(vW, uTime) * uAurora;
         float f = smoothstep(fogNear, fogFar, vFog); col = mix(col, fogColor, f);
+        // the smooth snow is only the gaps between the letters, in their shadow; past the letter field (the far hills) it is the snow itself
+        col *= mix(1.0, uGap, smoothstep(-34.0, -26.0, vW.z) * (1.0 - smoothstep(30.0, 36.0, abs(vW.x))));
         gl_FragColor = vec4(col, uAlpha); }`,
     transparent: true,
   })
@@ -351,7 +353,7 @@ function restOrientation(x: number, z: number, out: THREE.Quaternion) {
   // lie along the slope: the letter's face (+z) points along the surface normal, then a random yaw, then a little random tilt so the heap looks strewn
   normalAt(x, z, _n); out.setFromUnitVectors(_up, _n)
   _q2.setFromAxisAngle(_n, Math.random() * Math.PI * 2); out.premultiply(_q2)
-  _e.set((Math.random() - 0.5) * 0.9, (Math.random() - 0.5) * 0.9, 0); _q2.setFromEuler(_e); out.multiply(_q2)
+  _e.set((Math.random() - 0.5) * 0.7, (Math.random() - 0.5) * 0.7, 0); _q2.setFromEuler(_e); out.multiply(_q2)
   return out
 }
 
@@ -369,17 +371,14 @@ function buildField(atlas: THREE.Texture, n = N, nf = NF, zMin = -32, zMax = 22,
     glyph[i] = Math.floor(Math.random() * 64); seed[i] = Math.random()
     const c = PALETTE[Math.floor(Math.random() * PALETTE.length)]
     color[i * 3] = c[0]; color[i * 3 + 1] = c[1]; color[i * 3 + 2] = c[2]
-    scl[i] = 0.17 + Math.random() * Math.random() * 0.6
+    scl[i] = 0.3 + Math.random() * Math.random() * 0.75
     if (i < n) {
-      // the letters lie where the camera looks, denser toward it,
-      // in layers: half on the surface, a quarter just under it, a quarter deeper, seen through the translucent snow
-      const x = (Math.random() - 0.5) * 2 * xHalf, z = zMin + (zMax - zMin) * Math.pow(Math.random(), 0.7); const layer = i % 8
-      const under = layer === 4 || layer === 5, deep = layer >= 6
-      pos[i * 3] = x; pos[i * 3 + 2] = z; pos[i * 3 + 1] = H(x, z) + (deep ? -0.12 - Math.random() * 0.5 : under ? -0.05 : 0.005 + Math.random() * 0.05)
-      // most of the surface is bright white letters (flag 1.08: the shader lifts them to the snow's white and lets them sparkle)
-      if (!under && !deep && Math.random() < 0.6) { color[i * 3] = 1.08; color[i * 3 + 1] = 1.08; color[i * 3 + 2] = 1.08 }
-      if (under) { color[i * 3] *= 0.86; color[i * 3 + 1] *= 0.88; color[i * 3 + 2] *= 0.97 }
-      if (deep) { color[i * 3] *= 0.72; color[i * 3 + 1] *= 0.76; color[i * 3 + 2] *= 0.92; scl[i] *= 0.9 }
+      // the ground is built of letters: all of them on the surface, big enough to tile it, denser toward the camera;
+      // the smooth snow under them is only the shadowed gaps between
+      const x = (Math.random() - 0.5) * 2 * xHalf, z = zMin + (zMax - zMin) * Math.pow(Math.random(), 0.7)
+      pos[i * 3] = x; pos[i * 3 + 2] = z; pos[i * 3 + 1] = H(x, z) + 0.005 + Math.random() * 0.05
+      // most of them bright white (flag 1.08: the shader lifts them to the snow's white and lets them sparkle)
+      if (Math.random() < 0.7) { color[i * 3] = 1.08; color[i * 3 + 1] = 1.08; color[i * 3 + 2] = 1.08 }
       restOrientation(x, z, _q); quat.set([_q.x, _q.y, _q.z, _q.w], i * 4)
     } else {
       falling[i] = 1; flying[i] = 1; spawnSky(pos, vel, i * 3); pos[i * 3 + 1] = Math.random() * 20; scl[i] *= 0.65

@@ -199,6 +199,10 @@ Console: clean (art exists for every slot now). The verify scripts lived in the 
    the v5 painted-volume build and must be rebuilt in the same language (a table close up, few objects).
 1c. Headless screenshots are unreliable (frames captured mid-render, SwiftShader fps is meaningless for 82k instances); judge in a browser.
 1d. Letter snow to tune with Chimin: mound shapes, density per layer, letter size, kick strength, sky-fall rate. Real-GPU performance is unmeasured (SwiftShader reads 1 fps regardless); if a laptop struggles, lower N first, then the sparkle/dust counts.
+1t. **v14, the ground built of letters.** Every letter is on the surface now (no under/deep layers), sized 0.3–1.05
+   so they tile it, 70% flagged white, tilt ±0.35; the mound is solid (`uAlpha` 1) and darkened by `uGap` 0.6 so it is
+   only the shadowed gaps between letters, fading back to plain snow past the letter field (z < −26, |x| > 30: the far
+   hills). The letters carry the light and the sparkle; the mound still carries the raycast, the door pool and the prints.
 1s. **v13.5, sweeps that bring the snow back; letters grounded.** The wake now carries letters along the sweep
    (`kick` takes `radial` 0.25 and a push along the motion; strength 1.6+0.4·sp, push 1.4+0.6·sp, so flights are ~0.4–2
    units) instead of blowing them out; a landed letter is not kicked again for `COOL` 0.3 s (`field.landed`, `field.time`),
