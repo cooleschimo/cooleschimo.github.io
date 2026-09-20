@@ -199,6 +199,22 @@ Console: clean (art exists for every slot now). The verify scripts lived in the 
    the v5 painted-volume build and must be rebuilt in the same language (a table close up, few objects).
 1c. Headless screenshots are unreliable (frames captured mid-render, SwiftShader fps is meaningless for 82k instances); judge in a browser.
 1d. Letter snow to tune with Chimin: mound shapes, density per layer, letter size, kick strength, sky-fall rate. Real-GPU performance is unmeasured (SwiftShader reads 1 fps regardless); if a laptop struggles, lower N first, then the sparkle/dust counts.
+1u. **v15, the letters as grains on the GPU** (`src/snow/grains.ts`, `createGrains`). Every letter (N 380000, phone
+   120000; `?grains=N` in the URL overrides, for probes) lives in three float textures (position + state, velocity +
+   landing time, quaternion) stepped by `GPUComputationRenderer` (part of three, no new dependency). States: 0 at rest
+   (lies on the ground, face settles to the ground's normal + its own yaw/tilt), 1 flying (gravity, tumble, lands),
+   2 falling from the sky (drifts, respawns; stays if it lands in a hole). The ground = baked terrain height (640×480
+   float over x −40..40, z −36..24) + pile − trail·0.5. The **pile** is (density − density0) · `PILE_K` 0.02, where the
+   density is the rest letters rendered as 1-px points into a 160×120 half-float target every frame and density0 the same
+   at the start: take letters away and the ground drops, land them and it rises. Letters on a pile slope past `uRepose`
+   0.5 hop downhill (`uSlide`). Kicks are a per-frame list (up to 8: centre, radius, strength, `frac` = share of the
+   letters inside that go, push, radial share); a landed letter waits `uCool` 0.3 s. The scene calls `grains.kick`
+   (cursor wake and dig, fox steps and leap landing, the angel's tips) and `grains.step(dt, t)`; the mound follows the
+   pile too (`uDensity/uDensity0/uHBox/uPileK` in `snowUniforms`). The drawn letters are one instanced quad per grain
+   placed from the textures (`aRef`), with the shared `LETTER_FRAG`. The CPU field (`buildField`/`stepField`) remains only
+   for the static window view. Probes: `grains.readStates()`, `readPile(x,z)`, `readCell(x,z,r)` read the GPU back.
+   Verified headless at 40k grains: a kick launches ~65% of the letters inside it, they land, and the density cell they
+   left reads one grain lower; the full count is untested on a real GPU (this container has none).
 1t. **v14, the ground built of letters.** Every letter is on the surface now (no under/deep layers), sized 0.3–1.05
    so they tile it, 70% flagged white, tilt ±0.35; the mound is solid (`uAlpha` 1) and darkened by `uGap` 0.6 so it is
    only the shadowed gaps between letters, fading back to plain snow past the letter field (z < −26, |x| > 30: the far

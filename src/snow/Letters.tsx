@@ -7,6 +7,7 @@ import { gsap } from '../lib/gsap'
 import { prefersReducedMotion } from '../lib/motion-prefs'
 import { getMode, type Mode } from '../lib/mode'
 import { Piece, paper, type Bone, type PieceControl, type Pose } from './Piece'
+import { createGrains } from './grains'
 
 /**
  * Outside: snow that is really made of letters. Deep white snow, piled in mounds and drifts, whose surface
@@ -20,8 +21,9 @@ type Props = { onEnter: () => void; onAbout: () => void }
 
 const G = 80            // field size
 const PHONE = typeof window !== 'undefined' && window.innerWidth < 760
-const N = PHONE ? 70000 : 180000   // letters at rest on the field (fewer on a phone)
-const NF = PHONE ? 900 : 2400      // letters falling from the sky: all the snowfall is letters
+const GRAINS_Q = typeof window !== 'undefined' ? Number(new URLSearchParams(window.location.search).get('grains')) : 0   // ?grains=N to try another count
+const N = GRAINS_Q || (PHONE ? 120000 : 380000)   // letters on the field: fine grains, simulated on the GPU (fewer on a phone)
+const NF = PHONE ? 1500 : 4000      // letters falling from the sky: all the snowfall is letters
 const R = 5.6           // igloo footprint radius
 const CHARS = 'AaBbCcdDeEfFgGhHiJjkKLMmnNoOPpqrRsStTuvVwWxyzZ'
 
@@ -205,17 +207,19 @@ const snowUniforms = () => ({
   uLightDir: { value: new THREE.Vector3(-0.35, 0.42, -0.84).normalize() }, uWhite: { value: new THREE.Color('#fcfcff') }, uShadow: { value: new THREE.Color('#b4c1ee') }, uLight: { value: new THREE.Color('#fff4dc') },
   uAurora: { value: 0 }, uTime: { value: 0 }, uSparkle: { value: 1 }, fogColor: { value: new THREE.Color('#f3ecf3') }, fogNear: { value: 24 }, fogFar: { value: 72 },
   uCursor: { value: new THREE.Vector3() }, uCursorOn: { value: 0 }, uDoor: { value: new THREE.Vector3(0, 1.2, 4.2) }, uDoorGlow: { value: 0 }, uDoorCol: { value: new THREE.Color('#ffc27c') },
+  uDensity: { value: null as THREE.Texture | null }, uDensity0: { value: null as THREE.Texture | null }, uHBox: { value: new THREE.Vector4() }, uPileK: { value: 0 },
   uTrail: { value: null as THREE.Texture | null }, uTrailBox: { value: new THREE.Vector4(TX0, TZ0, 1 / (TX1 - TX0), 1 / (TZ1 - TZ0)) }, uTrailDepth: { value: 0.5 }, uDebug: { value: 0 }, uAlpha: { value: 1.0 }, uGap: { value: 0.72 }, uPile: { value: 1 },
 })
 
 function snowMaterial() {
   return new THREE.ShaderMaterial({
     uniforms: snowUniforms(),
-    vertexShader: `varying vec3 vW; varying vec3 vN; varying float vFog; varying float vTrail; varying float vIn; uniform sampler2D uTrail; uniform vec4 uTrailBox; uniform float uTrailDepth, uPile;
+    vertexShader: `varying vec3 vW; varying vec3 vN; varying float vFog; varying float vTrail; varying float vIn; uniform sampler2D uTrail, uDensity, uDensity0; uniform vec4 uTrailBox, uHBox; uniform float uTrailDepth, uPile, uPileK;
+      float pileAt(vec2 xz){ vec2 uv = (xz - uHBox.xy) * uHBox.zw; return (texture2D(uDensity, uv).r - texture2D(uDensity0, uv).r) * uPileK; }
       float trailAt(vec2 xz){ vec2 uv = (xz - uTrailBox.xy) * uTrailBox.zw; if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return 0.0; return texture2D(uTrail, uv).r * 3.0 - 1.0; }
       void main(){ vec4 w = modelMatrix * vec4(position, 1.0); float tr = trailAt(w.xz); w.y -= tr * uTrailDepth; vTrail = tr;
         // inside the letter field the painted snow is only the floor under the heap of letters, well below them
-        vIn = uPile * smoothstep(-34.0, -26.0, w.z) * (1.0 - smoothstep(30.0, 36.0, abs(w.x))); w.y -= 0.8 * vIn; vW = w.xyz; vN = normalize(mat3(modelMatrix) * normal); vec4 mv = viewMatrix * w; vFog = -mv.z; gl_Position = projectionMatrix * mv; }`,
+        vIn = uPile * smoothstep(-34.0, -26.0, w.z) * (1.0 - smoothstep(30.0, 36.0, abs(w.x))); w.y += (pileAt(w.xz) - 0.5) * vIn; vW = w.xyz; vN = normalize(mat3(modelMatrix) * normal); vec4 mv = viewMatrix * w; vFog = -mv.z; gl_Position = projectionMatrix * mv; }`,
     fragmentShader: `
       uniform vec3 uLightDir, uWhite, uShadow, uLight, fogColor, uCursor; uniform float fogNear, fogFar, uAurora, uTime, uSparkle, uCursorOn, uTrailDepth, uDebug, uAlpha, uGap, uDoorGlow;
       uniform sampler2D uTrail; uniform vec4 uTrailBox; uniform vec3 uDoor, uDoorCol;
@@ -282,26 +286,8 @@ function glyphAtlas() {
   return t
 }
 
-function letterMaterial(atlas: THREE.Texture) {
-  return new THREE.ShaderMaterial({
-    uniforms: { ...snowUniforms(), uAtlas: { value: atlas } },
-    vertexShader: `
-      attribute float aGlyph; attribute vec3 aColor; attribute float aSeed; uniform vec3 uCursor; uniform float uCursorOn, uTime, uTrailDepth; uniform sampler2D uTrail; uniform vec4 uTrailBox;
-      varying vec2 vUv; varying vec3 vColor; varying vec3 vN; varying vec3 vW; varying float vFog; varying float vSeed; varying float vRing; varying float vTrail;
-      float trailAt(vec2 xz){ vec2 uv = (xz - uTrailBox.xy) * uTrailBox.zw; if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return 0.0; return texture2D(uTrail, uv).r * 3.0 - 1.0; }
-      void main(){
-        float col = mod(aGlyph, 8.0), row = floor(aGlyph / 8.0); vUv = (uv + vec2(col, row)) / 8.0; vColor = aColor; vSeed = aSeed;
-        vec4 w = modelMatrix * instanceMatrix * vec4(position, 1.0);
-        // under the cursor the letters stir: they lift a little and shimmer
-        float cd = distance(w.xz, uCursor.xz); vRing = smoothstep(4.2, 0.4, cd) * uCursorOn;
-        // a ripple runs out from the cursor through the letters, and they lift and shiver on it
-        w.y += vRing * (0.07 * (0.5 + 0.5 * sin(cd * 2.6 - uTime * 3.2 + aSeed * 3.0)) + 0.05 * (0.5 + 0.5 * sin(uTime * 5.0 + aSeed * 40.0)));
-        // pressed down where something has been: the letters sink with the ground
-        float tr = trailAt(w.xz); w.y -= tr * uTrailDepth; vTrail = tr;
-        vW = w.xyz;
-        vN = normalize(mat3(modelMatrix * instanceMatrix) * vec3(0.0, 0.0, 1.0));
-        vec4 mv = viewMatrix * w; vFog = -mv.z; gl_Position = projectionMatrix * mv; }`,
-    fragmentShader: `
+/** the letters' colour: cut paper, snow-shaded, sparkling; shared by the letters on the ground (the grains) and the static view */
+const LETTER_FRAG = `
       uniform sampler2D uAtlas; uniform vec3 uLightDir, uWhite, uShadow, uLight, fogColor, uDoor, uDoorCol; uniform float fogNear, fogFar, uAurora, uTime, uSparkle, uTrailDepth, uDoorGlow;
       uniform sampler2D uTrail; uniform vec4 uTrailBox;
       varying vec2 vUv; varying vec3 vColor; varying vec3 vN; varying vec3 vW; varying float vFog; varying float vSeed; varying float vRing; varying float vTrail;
@@ -330,7 +316,28 @@ function letterMaterial(atlas: THREE.Texture) {
         col += doorLight(vW, n) * 0.9;
         if (uAurora > 0.001) col += auroraOn(vW, uTime) * uAurora;
         float f = smoothstep(fogNear, fogFar, vFog); col = mix(col, fogColor, f);
-        gl_FragColor = vec4(col, 1.0); }`,
+        gl_FragColor = vec4(col, 1.0); }`
+
+function letterMaterial(atlas: THREE.Texture) {
+  return new THREE.ShaderMaterial({
+    uniforms: { ...snowUniforms(), uAtlas: { value: atlas } },
+    vertexShader: `
+      attribute float aGlyph; attribute vec3 aColor; attribute float aSeed; uniform vec3 uCursor; uniform float uCursorOn, uTime, uTrailDepth; uniform sampler2D uTrail; uniform vec4 uTrailBox;
+      varying vec2 vUv; varying vec3 vColor; varying vec3 vN; varying vec3 vW; varying float vFog; varying float vSeed; varying float vRing; varying float vTrail;
+      float trailAt(vec2 xz){ vec2 uv = (xz - uTrailBox.xy) * uTrailBox.zw; if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return 0.0; return texture2D(uTrail, uv).r * 3.0 - 1.0; }
+      void main(){
+        float col = mod(aGlyph, 8.0), row = floor(aGlyph / 8.0); vUv = (uv + vec2(col, row)) / 8.0; vColor = aColor; vSeed = aSeed;
+        vec4 w = modelMatrix * instanceMatrix * vec4(position, 1.0);
+        // under the cursor the letters stir: they lift a little and shimmer
+        float cd = distance(w.xz, uCursor.xz); vRing = smoothstep(4.2, 0.4, cd) * uCursorOn;
+        // a ripple runs out from the cursor through the letters, and they lift and shiver on it
+        w.y += vRing * (0.07 * (0.5 + 0.5 * sin(cd * 2.6 - uTime * 3.2 + aSeed * 3.0)) + 0.05 * (0.5 + 0.5 * sin(uTime * 5.0 + aSeed * 40.0)));
+        // pressed down where something has been: the letters sink with the ground
+        float tr = trailAt(w.xz); w.y -= tr * uTrailDepth; vTrail = tr;
+        vW = w.xyz;
+        vN = normalize(mat3(modelMatrix * instanceMatrix) * vec3(0.0, 0.0, 1.0));
+        vec4 mv = viewMatrix * w; vFog = -mv.z; gl_Position = projectionMatrix * mv; }`,
+    fragmentShader: LETTER_FRAG,
     side: THREE.DoubleSide,
   })
 }
@@ -341,8 +348,6 @@ type Field = {
   flying: Uint8Array; falling: Uint8Array; list: number[]
   /** the field's clock and when each letter last landed: a letter just landed is not kicked again at once, so a sweep moves it one hop, not to the end */
   time: number; landed: Float32Array
-  /** the surface map the letters carry snow across: a kicked letter takes some with it, a landing one leaves it */
-  trail?: Trail
 }
 // mostly white; a few cooler letters give the snow its blue shadows
 const PALETTE = [[1, 1, 1], [1, 1, 1], [0.97, 0.97, 1], [0.93, 0.95, 1.0], [0.88, 0.91, 1.0], [0.96, 0.92, 0.98]]
@@ -400,47 +405,6 @@ function buildField(atlas: THREE.Texture, n = N, nf = NF, zMin = -32, zMax = 22,
   return { mesh, pos, quat, scl, vel, ang, flying, falling, list, time: 0, landed }
 }
 
-const GRAIN = 0.03   // how much surface one moving letter carries
-const COOL = 0.3     // seconds after landing before a letter can be kicked again
-/** send one letter flying with this velocity, tumbling; the snow it was part of goes with it */
-function launch(f: Field, i: number, vx: number, vy: number, vz: number) {
-  f.vel[i * 3] = vx; f.vel[i * 3 + 1] = vy; f.vel[i * 3 + 2] = vz
-  f.ang[i * 3] = (Math.random() - 0.5) * 14; f.ang[i * 3 + 1] = (Math.random() - 0.5) * 14; f.ang[i * 3 + 2] = (Math.random() - 0.5) * 14
-  f.flying[i] = 1; f.list.push(i)
-  if (f.trail) heap(f.trail, f.pos[i * 3], f.pos[i * 3 + 2], 0.45, GRAIN)
-}
-/**
- * Letters lying on a slope too steep for them hop downhill (a sample of those near a point): a heap pours into a
- * hole, and snow swept aside comes back into the lane. Only the letters on the surface; the buried ones stay buried.
- */
-function slide(f: Field, x: number, z: number, radius: number, maxCount: number) {
-  const t = f.trail; if (!t) return
-  let n = 0; const r2 = radius * radius; const start = Math.floor(Math.random() * N); const e = 0.3
-  for (let k = 0; k < 6000 && n < maxCount; k++) {
-    const i = (start + k * 13) % N; if (f.flying[i] || f.time - f.landed[i] < COOL) continue
-    const lx = f.pos[i * 3], lz = f.pos[i * 3 + 2]; const dx = lx - x, dz = lz - z; if (dx * dx + dz * dz > r2) continue
-    if (f.pos[i * 3 + 1] < H(lx, lz) - 0.03) continue
-    const gx = trailAt(t, lx + e, lz) - trailAt(t, lx - e, lz), gz = trailAt(t, lx, lz + e) - trailAt(t, lx, lz - e)   // toward the deeper side
-    const gl = Math.hypot(gx, gz); const slope = gl * 0.5 / (2 * e); if (slope < 0.3) continue
-    const v = Math.min(3, 1.0 + slope * 1.5); launch(f, i, (gx / gl) * v + (Math.random() - 0.5) * 0.4, 0.9 + slope * 0.5, (gz / gl) * v + (Math.random() - 0.5) * 0.4); n++
-  }
-}
-/**
- * Kick the letters around a point: they leap up and tumble. `px,pz` pushes them along with whatever moved (a sweep carries
- * snow with it, and a sweep back carries it back); `radial` is how much they also fly out from the point (1 for a dig).
- */
-function kick(f: Field, x: number, z: number, radius: number, strength: number, maxCount: number, px = 0, pz = 0, radial = 1, lift = 1) {
-  let n = 0; const r2 = radius * radius
-  // sample a window of indices rather than every letter, so one kick costs the same each frame
-  const start = Math.floor(Math.random() * N)
-  for (let k = 0; k < 9000 && n < maxCount; k++) {
-    const i = (start + k * 11) % N; if (f.flying[i] || f.time - f.landed[i] < COOL) continue
-    const dx = f.pos[i * 3] - x, dz = f.pos[i * 3 + 2] - z; const d2 = dx * dx + dz * dz; if (d2 > r2) continue
-    const d = Math.sqrt(d2) + 1e-3; const s = strength * (1 - d / radius) * (0.6 + Math.random() * 0.8)
-    launch(f, i, (dx / d) * s * 0.9 * radial + (Math.random() - 0.5) * 0.6 + px * (0.6 + Math.random() * 0.8), s * (0.9 + Math.random() * 0.7) * lift, (dz / d) * s * 0.9 * radial + (Math.random() - 0.5) * 0.6 + pz * (0.6 + Math.random() * 0.8)); n++
-  }
-}
-
 function stepField(f: Field, dt: number) {
   f.time += dt; const keep: number[] = []
   for (const i of f.list) {
@@ -451,9 +415,8 @@ function stepField(f: Field, dt: number) {
     const ground = H(f.pos[b], f.pos[b + 2]) + 0.02
     _q.set(f.quat[i * 4], f.quat[i * 4 + 1], f.quat[i * 4 + 2], f.quat[i * 4 + 3])
     if (f.pos[b + 1] <= ground && f.vel[b + 1] <= 0) {
-      if (f.falling[i]) { if (f.trail) heap(f.trail, f.pos[b], f.pos[b + 2], 0.4, -GRAIN * 0.3); spawnSky(f.pos, f.vel, b); keep.push(i) } // landed from the sky, a little more snow here: start again up high
+      if (f.falling[i]) { spawnSky(f.pos, f.vel, b); keep.push(i) } // landed from the sky, a little more snow here: start again up high
       else { // settle on the slope, and the snow it carried lands with it: a heap, or a hole filling back
-        if (f.trail) heap(f.trail, f.pos[b], f.pos[b + 2], 0.45, -GRAIN)
         f.pos[b + 1] = ground + Math.random() * 0.04; f.vel[b] = f.vel[b + 1] = f.vel[b + 2] = 0; f.flying[i] = 0; f.landed[i] = f.time
         restOrientation(f.pos[b], f.pos[b + 2], _q)
       }
@@ -558,10 +521,12 @@ function Scene({ onEnter, onAbout, setHover: setHoverProp, enterRef, darkRef }: 
   const { camera, gl, scene } = useThree()
   const reduced = useMemo(() => prefersReducedMotion(), [])
   const atlas = useMemo(() => glyphAtlas(), [])
-  const field = useMemo(() => buildField(atlas), [atlas])
+
   const mound = useMemo(() => moundGeometry(), [])
   const moundMat = useMemo(() => snowMaterial(), []); const pickMat = useMemo(() => new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false }), [])
-  const trail = useMemo(() => makeTrail(), []); field.trail = trail
+  const trail = useMemo(() => makeTrail(), [])
+  const grains = useMemo(() => createGrains({ renderer: gl, atlas, count: N, fallers: NF, H, snowGlsl: SNOW_GLSL, snowUniforms, letterFragment: LETTER_FRAG, trailTex: trail.tex, trailBox: moundMat.uniforms.uTrailBox.value, trailDepth: 0.5, xHalf: 36, zMin: -32, zMax: 22 }), [gl, atlas, trail, moundMat])
+  useEffect(() => { const u = moundMat.uniforms; u.uDensity.value = grains.density; u.uDensity0.value = grains.density0; u.uHBox.value.copy(grains.hBox); u.uPileK.value = 0.02; return () => grains.dispose() }, [grains, moundMat])
   const skyMat = useMemo(() => skyMaterial(), [])
 
   const home = useMemo(() => new THREE.Vector3(0, 8.2, 23), [])
@@ -636,29 +601,10 @@ function Scene({ onEnter, onAbout, setHover: setHoverProp, enterRef, darkRef }: 
   // Chimin lies in the hollow on the left: nearly flat, tipped a little toward the camera, with the rim of the hollow heaped over her feet
   const chiminPos = useMemo(() => new THREE.Vector3(CHIMIN[0], 0, CHIMIN[1]), [])
   const chiminQuat = useMemo(() => { const q = new THREE.Quaternion(); normalAt(chiminPos.x, chiminPos.z, _n); const toCam = new THREE.Vector3(0.12, 0.45, 1).normalize(); const nn = _n.clone().add(toCam.multiplyScalar(0.42)).normalize(); q.setFromUnitVectors(new THREE.Vector3(0, 0, 1), nn); _q2.setFromAxisAngle(nn, 0.2); q.premultiply(_q2); return q }, [chiminPos])
-  useEffect(() => {
-    // heap: move a few hundred rest letters onto the rim of the hollow, a little above the ground
-    let moved = 0
-    for (let i = 0; i < N && moved < 520; i += 3) {
-      const t = Math.random() * Math.PI * 2; const rr = 2.2 + Math.random() * 1.1; const ex = Math.cos(t) * rr * 1.05, ez = Math.sin(t) * rr * 0.95
-      const x = chiminPos.x + ex, z = chiminPos.z + ez
-      field.pos[i * 3] = x; field.pos[i * 3 + 2] = z; field.pos[i * 3 + 1] = H(x, z) + 0.08 + Math.random() * 0.12
-      restOrientation(x, z, _q); field.quat.set([_q.x, _q.y, _q.z, _q.w], i * 4)
-      _p.set(x, field.pos[i * 3 + 1], z); _s.setScalar(field.scl[i]); _m.compose(_p, _q, _s); field.mesh.setMatrixAt(i, _m); moved++
-    }
-    // and a drift heaped against the igloo's front, where the plates meet the snow
-    for (let i = 1; i < N && moved < 1400; i += 3) {
-      const x = (Math.random() - 0.5) * 12.5, z = 1.0 + Math.random() * Math.random() * 3.2
-      field.pos[i * 3] = x; field.pos[i * 3 + 2] = z; field.pos[i * 3 + 1] = H(x, z) + 0.02 + Math.random() * 0.08
-      restOrientation(x, z, _q); field.quat.set([_q.x, _q.y, _q.z, _q.w], i * 4)
-      _p.set(x, field.pos[i * 3 + 1], z); _s.setScalar(field.scl[i]); _m.compose(_p, _q, _s); field.mesh.setMatrixAt(i, _m); moved++
-    }
-    field.mesh.instanceMatrix.needsUpdate = true
-  }, [field, chiminPos])
 
   const dbg = useRef({ noRig: false })
   const t0 = useRef(0)
-  useEffect(() => { (window as unknown as { __snow?: unknown }).__snow = { f: f.current, chiminPose: chiminPose.current, foxPose: foxPose.current, angel: angel.current, dbg: dbg.current, cursor: cursor.current, gsap, trail, moundMat, letterMat: field.mesh.material, field, gl, views, viewState: viewState.current, clock: () => t0.current, stamp: (x: number, z: number, r: number, depth: number) => stamp(trail, x, z, r, depth), dig, pressing } }, [])
+  useEffect(() => { (window as unknown as { __snow?: unknown }).__snow = { f: f.current, chiminPose: chiminPose.current, foxPose: foxPose.current, angel: angel.current, dbg: dbg.current, cursor: cursor.current, gsap, trail, moundMat, letterMat: grains.material, grains, gl, views, viewState: viewState.current, clock: () => t0.current, stamp: (x: number, z: number, r: number, depth: number) => stamp(trail, x, z, r, depth), dig, pressing } }, [])
   useFrame((_, dt) => {
     const d = Math.min(dt, 0.05); t0.current += d; const k = Math.min(1, d * 2.2)
     for (const key of ['white', 'shadow', 'light', 'sky', 'mid', 'horizon', 'band', 'sun'] as const) cur[key].lerp(tgt[key], k)
@@ -667,7 +613,7 @@ function Scene({ onEnter, onAbout, setHover: setHoverProp, enterRef, darkRef }: 
     cur.sparkle += (tgt.sparkle - cur.sparkle) * k; cur.aurora += (tgt.aurora - cur.aurora) * k; cur.glow += (tgt.glow - cur.glow) * k; cur.stars += (tgt.stars - cur.stars) * k
     // the lamp inside the igloo flickers: a slow breath with quicker unevenness over it
     const tt = t0.current; const flick = reduced ? 0.9 : 0.82 + 0.1 * Math.sin(tt * 1.6) + 0.05 * Math.sin(tt * 5.3 + 1.0) + 0.035 * Math.sin(tt * 9.1 + 2.0) + 0.025 * Math.sin(tt * 14.7 + 0.5)
-    for (const m of [moundMat, field.mesh.material as THREE.ShaderMaterial]) {
+    for (const m of [moundMat, grains.material]) {
       const u = m.uniforms; u.uWhite.value.copy(cur.white).lerp(cur.mid, 0.16); u.uShadow.value.copy(cur.shadow).lerp(cur.sky, 0.12); u.uLight.value.copy(cur.light); u.uLightDir.value.copy(cur.sunDir)
       u.uAurora.value = cur.aurora; u.uTime.value = reduced ? 0.3 : t0.current; u.uSparkle.value = cur.sparkle; u.fogColor.value.copy(cur.horizon)
       u.uTrail.value = trail.tex; u.uDoorGlow.value = (0.2 + cur.glow * 0.8) * flick; u.uDoor.value.set(0, H(0, 3.9) + 1.0, 4.2); u.uCursor.value.copy(cursor.current); u.uCursorOn.value += ((hasCursor.current && !entering.current && !reduced ? 1 : 0) - u.uCursorOn.value) * Math.min(1, d * 4)
@@ -692,8 +638,8 @@ function Scene({ onEnter, onAbout, setHover: setHoverProp, enterRef, darkRef }: 
         const mx = (c.x - lastCursor.current.x) / moved, mz = (c.z - lastCursor.current.z) / moved; const sp = Math.min(6, moved / Math.max(d, 1e-3) * 0.12)
         // the snow is carried along with the sweep (so a sweep back brings it back), lifted, and lands within the next sweep's reach
         const push = Math.min(4.5, 1.4 + sp * 0.6) + (press ? 1.0 : 0)
-        kick(field, c.x, c.z, 2.6, Math.min(3.6, 1.6 + sp * 0.4) + (press ? 0.8 : 0), Math.round(70 + sp * 16) + (press ? 40 : 0), mx * push, mz * push, 0.25)
-        kick(field, c.x + mx * 1.2, c.z + mz * 1.2, 1.5, 1.6 + sp * 0.3, 36, mx * push * 0.8, mz * push * 0.8, 0.3)   // the bow wave, ahead
+        grains.kick({ x: c.x, z: c.z, r: 2.6, strength: Math.min(3.6, 1.6 + sp * 0.4) + (press ? 0.8 : 0), frac: (0.3 + sp * 0.05 + (press ? 0.3 : 0)) * d * 30, px: mx * push, pz: mz * push, radial: 0.25 })
+        grains.kick({ x: c.x + mx * 1.2, z: c.z + mz * 1.2, r: 1.5, strength: 1.6 + sp * 0.3, frac: 0.2 * d * 30, px: mx * push * 0.8, pz: mz * push * 0.8, radial: 0.3 })   // the bow wave, ahead
         // each pass takes more snow out (it adds up: a track worn deeper the more you go over it)
         // pressed, it cuts a trench: about a full print's depth in one pass, deeper each pass
         const rate = press ? 8 : 1.7
@@ -706,7 +652,7 @@ function Scene({ onEnter, onAbout, setHover: setHoverProp, enterRef, darkRef }: 
         stir.current += d; if (stir.current > (press ? 0.06 : 0.12)) { stir.current = 0
           const dg = dig.current
           const a = Math.random() * Math.PI * 2, rr = Math.random() * 1.2
-          kick(field, c.x + Math.cos(a) * rr, c.z + Math.sin(a) * rr, 1.0 + dg * 0.4, (press ? 3.2 : 1.3) + dg * 0.8, press ? 26 : 5 + Math.round(dg * 4)) }
+          grains.kick({ x: c.x + Math.cos(a) * rr, z: c.z + Math.sin(a) * rr, r: 1.0 + dg * 0.4, strength: (press ? 3.2 : 1.3) + dg * 0.8, frac: press ? 0.5 : 0.12 + dg * 0.1 }) }
       }
       lastCursor.current.copy(c)
     }
@@ -725,7 +671,7 @@ function Scene({ onEnter, onAbout, setHover: setHoverProp, enterRef, darkRef }: 
       const e = a < 0.5 ? 2 * a * a : 1 - 2 * (1 - a) * (1 - a)
       F.x = F.leapFrom.x + (F.leapTo.x - F.leapFrom.x) * e; F.z = F.leapFrom.z + (F.leapTo.z - F.leapFrom.z) * e; F.lift = 4 * a * (1 - a) * 1.8
       F.moving = true; F.idle = 0; F.speed = 4
-      if (t >= 1) { F.leap = 0; F.lift = 0; if (!reduced) { stamp(trail, F.x, F.z, 0.7, 0.9); kick(field, F.x, F.z, 1.8, 5, 50) } }
+      if (t >= 1) { F.leap = 0; F.lift = 0; if (!reduced) { stamp(trail, F.x, F.z, 0.7, 0.9); grains.kick({ x: F.x, z: F.z, r: 1.8, strength: 5, frac: 0.45 }) } }
     } else {
     const want = dist > 0.3 ? Math.min(4.0, 1.0 + dist * 0.8) : 0
     F.speed += (want - F.speed) * Math.min(1, d * (want > F.speed ? 3.5 : 7))
@@ -737,7 +683,7 @@ function Scene({ onEnter, onAbout, setHover: setHoverProp, enterRef, darkRef }: 
       if (along > 0 && along < dist && perp < KEEP_CHIMIN - 0.2 && cd < KEEP_CHIMIN + 0.7 && !reduced) {
         const half = Math.sqrt(Math.max(0, KEEP_CHIMIN * KEEP_CHIMIN - perp * perp)); const exit = along + half + 0.5
         F.leapFrom.set(F.x, 0, F.z); F.leapTo.set(F.x + hx * exit, 0, F.z + hz * exit); F.leap = Math.max(0.9, exit / 4.5); F.leapT = 0
-        kick(field, F.x, F.z, 1.2, 3.5, 30)
+        grains.kick({ x: F.x, z: F.z, r: 1.2, strength: 3.5, frac: 0.4 })
       } else {
         _g.set(F.x + hx * step, 0, F.z + hz * step)
         // round the igloo: if the step lands inside its circle, walk along the circle toward the goal instead
@@ -756,7 +702,7 @@ function Scene({ onEnter, onAbout, setHover: setHoverProp, enterRef, darkRef }: 
         stamp(trail, F.x, F.z, 0.55, 0.32)
         const ph = Math.floor(F.gait / Math.PI); if (ph !== F.stepPh) { F.stepPh = ph; const fwd = ph % 2 === 0 ? 0.42 : -0.42, side = (ph % 4 < 2 ? 1 : -1) * 0.15
           stamp(trail, F.x + hx * fwd - hz * side, F.z + hz * fwd + hx * side, 0.27, 0.85) }
-        kick(field, F.x - hx * 0.4, F.z - hz * 0.4, 1.2, 2.4 + F.speed * 0.5, Math.round(10 + F.speed * 4))
+        grains.kick({ x: F.x - hx * 0.4, z: F.z - hz * 0.4, r: 1.2, strength: 2.4 + F.speed * 0.5, frac: 0.12 + F.speed * 0.04 })
       }
     } else F.idle += d
     }
@@ -849,10 +795,10 @@ function Scene({ onEnter, onAbout, setHover: setHoverProp, enterRef, darkRef }: 
           _p.set(x, y, 0); chiminGrp.current.localToWorld(_p)
           const limb = bone > 0; const tip = limb && (u < 0.1 || u > 0.9 || v < 0.2)
           stamp(trail, _p.x, _p.z, r + (limb ? 0.12 * A.on : 0), limb ? 0.55 + 0.35 * A.on : 0.6)
-          if (tip && sweep > 0.3) kick(field, _p.x, _p.z, 0.9, 3.0 * sweep, 6)
+          if (tip && sweep > 0.3) grains.kick({ x: _p.x, z: _p.z, r: 0.9, strength: 3.0 * sweep, frac: 0.25 * sweep })
         }
       } }
-    if (!reduced) { if (hasCursor.current) slide(field, cursor.current.x, cursor.current.z, 5, 30); slide(field, F.x, F.z, 2.5, 8); stepField(field, d); slump(trail, d); settleTrail(trail, d) }
+    if (!reduced) { slump(trail, d); settleTrail(trail, d); grains.step(d, t0.current) }
 
     if (!entering.current && !reduced) { camera.position.x += (home.x + par.current.x * 2.2 - camera.position.x) * 0.04; camera.position.y += (home.y - par.current.y * 0.9 - camera.position.y) * 0.04 }
     camera.lookAt(look)
@@ -869,7 +815,7 @@ function Scene({ onEnter, onAbout, setHover: setHoverProp, enterRef, darkRef }: 
       {/* the snow: the piled ground and the letters on it; the snow in the air is letters too */}
       <mesh ref={moundRef} geometry={mound} material={pickMat} />
       <mesh geometry={mound} material={moundMat} />
-      <primitive object={field.mesh} />
+      <primitive object={grains.mesh} />
       {/* the igloo, set into the middle mound, its base in the snow */}
       <Piece url={paper('igloo-back')} width={12.4} position={[0, iglooY + 2.6, -2.6]} rotation={[-0.06, 0, 0]} delay={0.2} glisten={1} puff={0.5} relief={0.7} solid sink={0.1} {...piece} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
       <Piece url={paper('igloo-front')} width={11.6} position={[0, iglooY + 2.2, 1.2]} rotation={[-0.05, 0, 0]} delay={0.5} glisten={1} puff={0.5} relief={0.7} solid sink={0.12} {...piece} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
