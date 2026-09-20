@@ -291,7 +291,7 @@ function letterMaterial(atlas: THREE.Texture) {
         // under the cursor the letters stir: they lift a little and shimmer
         float cd = distance(w.xz, uCursor.xz); vRing = smoothstep(4.2, 0.4, cd) * uCursorOn;
         // a ripple runs out from the cursor through the letters, and they lift and shiver on it
-        w.y += vRing * (0.14 * (0.5 + 0.5 * sin(cd * 2.6 - uTime * 3.2 + aSeed * 3.0)) + 0.1 * (0.5 + 0.5 * sin(uTime * 5.0 + aSeed * 40.0)));
+        w.y += vRing * (0.07 * (0.5 + 0.5 * sin(cd * 2.6 - uTime * 3.2 + aSeed * 3.0)) + 0.05 * (0.5 + 0.5 * sin(uTime * 5.0 + aSeed * 40.0)));
         // pressed down where something has been: the letters sink with the ground
         float tr = trailAt(w.xz); w.y -= tr * uTrailDepth; vTrail = tr;
         vW = w.xyz;
@@ -315,7 +315,7 @@ function letterMaterial(atlas: THREE.Texture) {
         col = mix(col, uShadow, edge * 0.26); col = mix(col, uWhite, rim * 0.35);
         // falling snow: fresh, bright, unshadowed
         bool bright = vColor.r > 1.05;   // the white letters on top, and the falling ones: fresh, unshadowed, and they are the sparkle
-        if (bright) col = mix(col, uWhite * 1.05 + uLight * 0.12, 0.85);
+        if (bright) col = mix(col, uWhite * 1.05 + uLight * 0.12, vColor.r > 1.15 ? 0.85 : 0.45);   // the falling ones fully; the ones lying in the snow keep its shading, so they sit in it
         col = mix(col, uShadow, clamp(vTrail * 0.75, 0.0, 0.8));
         // each letter is a facet: some catch the light hard as the camera moves
         vec3 Rf = reflect(-uLightDir, n); float glint = pow(max(0.0, dot(Rf, V)), 24.0 + vSeed * 40.0);
@@ -335,6 +335,8 @@ function letterMaterial(atlas: THREE.Texture) {
 type Field = {
   mesh: THREE.InstancedMesh; pos: Float32Array; quat: Float32Array; scl: Float32Array; vel: Float32Array; ang: Float32Array
   flying: Uint8Array; falling: Uint8Array; list: number[]
+  /** the field's clock and when each letter last landed: a letter just landed is not kicked again at once, so a sweep moves it one hop, not to the end */
+  time: number; landed: Float32Array
   /** the surface map the letters carry snow across: a kicked letter takes some with it, a landing one leaves it */
   trail?: Trail
 }
@@ -362,7 +364,7 @@ function buildField(atlas: THREE.Texture, n = N, nf = NF, zMin = -32, zMax = 22,
   const geo = new THREE.PlaneGeometry(1, 1)
   const glyph = new Float32Array(total), color = new Float32Array(total * 3), seed = new Float32Array(total)
   const pos = new Float32Array(total * 3), quat = new Float32Array(total * 4), scl = new Float32Array(total)
-  const vel = new Float32Array(total * 3), ang = new Float32Array(total * 3), flying = new Uint8Array(total), falling = new Uint8Array(total)
+  const vel = new Float32Array(total * 3), ang = new Float32Array(total * 3), flying = new Uint8Array(total), falling = new Uint8Array(total), landed = new Float32Array(total).fill(-9)
   for (let i = 0; i < total; i++) {
     glyph[i] = Math.floor(Math.random() * 64); seed[i] = Math.random()
     const c = PALETTE[Math.floor(Math.random() * PALETTE.length)]
@@ -373,7 +375,7 @@ function buildField(atlas: THREE.Texture, n = N, nf = NF, zMin = -32, zMax = 22,
       // in layers: half on the surface, a quarter just under it, a quarter deeper, seen through the translucent snow
       const x = (Math.random() - 0.5) * 2 * xHalf, z = zMin + (zMax - zMin) * Math.pow(Math.random(), 0.7); const layer = i % 8
       const under = layer === 4 || layer === 5, deep = layer >= 6
-      pos[i * 3] = x; pos[i * 3 + 2] = z; pos[i * 3 + 1] = H(x, z) + (deep ? -0.12 - Math.random() * 0.5 : under ? -0.05 : Math.random() * Math.random() * 0.16)
+      pos[i * 3] = x; pos[i * 3 + 2] = z; pos[i * 3 + 1] = H(x, z) + (deep ? -0.12 - Math.random() * 0.5 : under ? -0.05 : 0.005 + Math.random() * 0.05)
       // most of the surface is bright white letters (flag 1.08: the shader lifts them to the snow's white and lets them sparkle)
       if (!under && !deep && Math.random() < 0.6) { color[i * 3] = 1.08; color[i * 3 + 1] = 1.08; color[i * 3 + 2] = 1.08 }
       if (under) { color[i * 3] *= 0.86; color[i * 3 + 1] *= 0.88; color[i * 3 + 2] *= 0.97 }
@@ -391,28 +393,52 @@ function buildField(atlas: THREE.Texture, n = N, nf = NF, zMin = -32, zMax = 22,
   for (let i = 0; i < total; i++) { _p.set(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]); _q.set(quat[i * 4], quat[i * 4 + 1], quat[i * 4 + 2], quat[i * 4 + 3]); _s.setScalar(scl[i]); _m.compose(_p, _q, _s); mesh.setMatrixAt(i, _m) }
   mesh.instanceMatrix.needsUpdate = true
   const list: number[] = []; for (let i = n; i < total; i++) list.push(i)
-  return { mesh, pos, quat, scl, vel, ang, flying, falling, list }
+  return { mesh, pos, quat, scl, vel, ang, flying, falling, list, time: 0, landed }
 }
 
 const GRAIN = 0.03   // how much surface one moving letter carries
-/** Kick the letters around a point: they leap up and away and tumble; `px,pz` pushes them along with whatever moved. */
-function kick(f: Field, x: number, z: number, radius: number, strength: number, maxCount: number, px = 0, pz = 0) {
+const COOL = 0.3     // seconds after landing before a letter can be kicked again
+/** send one letter flying with this velocity, tumbling; the snow it was part of goes with it */
+function launch(f: Field, i: number, vx: number, vy: number, vz: number) {
+  f.vel[i * 3] = vx; f.vel[i * 3 + 1] = vy; f.vel[i * 3 + 2] = vz
+  f.ang[i * 3] = (Math.random() - 0.5) * 14; f.ang[i * 3 + 1] = (Math.random() - 0.5) * 14; f.ang[i * 3 + 2] = (Math.random() - 0.5) * 14
+  f.flying[i] = 1; f.list.push(i)
+  if (f.trail) heap(f.trail, f.pos[i * 3], f.pos[i * 3 + 2], 0.45, GRAIN)
+}
+/**
+ * Letters lying on a slope too steep for them hop downhill (a sample of those near a point): a heap pours into a
+ * hole, and snow swept aside comes back into the lane. Only the letters on the surface; the buried ones stay buried.
+ */
+function slide(f: Field, x: number, z: number, radius: number, maxCount: number) {
+  const t = f.trail; if (!t) return
+  let n = 0; const r2 = radius * radius; const start = Math.floor(Math.random() * N); const e = 0.3
+  for (let k = 0; k < 6000 && n < maxCount; k++) {
+    const i = (start + k * 13) % N; if (f.flying[i] || f.time - f.landed[i] < COOL) continue
+    const lx = f.pos[i * 3], lz = f.pos[i * 3 + 2]; const dx = lx - x, dz = lz - z; if (dx * dx + dz * dz > r2) continue
+    if (f.pos[i * 3 + 1] < H(lx, lz) - 0.03) continue
+    const gx = trailAt(t, lx + e, lz) - trailAt(t, lx - e, lz), gz = trailAt(t, lx, lz + e) - trailAt(t, lx, lz - e)   // toward the deeper side
+    const gl = Math.hypot(gx, gz); const slope = gl * 0.5 / (2 * e); if (slope < 0.3) continue
+    const v = Math.min(3, 1.0 + slope * 1.5); launch(f, i, (gx / gl) * v + (Math.random() - 0.5) * 0.4, 0.9 + slope * 0.5, (gz / gl) * v + (Math.random() - 0.5) * 0.4); n++
+  }
+}
+/**
+ * Kick the letters around a point: they leap up and tumble. `px,pz` pushes them along with whatever moved (a sweep carries
+ * snow with it, and a sweep back carries it back); `radial` is how much they also fly out from the point (1 for a dig).
+ */
+function kick(f: Field, x: number, z: number, radius: number, strength: number, maxCount: number, px = 0, pz = 0, radial = 1, lift = 1) {
   let n = 0; const r2 = radius * radius
   // sample a window of indices rather than every letter, so one kick costs the same each frame
   const start = Math.floor(Math.random() * N)
   for (let k = 0; k < 9000 && n < maxCount; k++) {
-    const i = (start + k * 11) % N; if (f.flying[i]) continue
+    const i = (start + k * 11) % N; if (f.flying[i] || f.time - f.landed[i] < COOL) continue
     const dx = f.pos[i * 3] - x, dz = f.pos[i * 3 + 2] - z; const d2 = dx * dx + dz * dz; if (d2 > r2) continue
     const d = Math.sqrt(d2) + 1e-3; const s = strength * (1 - d / radius) * (0.6 + Math.random() * 0.8)
-    f.vel[i * 3] = (dx / d) * s * 0.9 + (Math.random() - 0.5) * 0.6 + px * (0.6 + Math.random() * 0.8); f.vel[i * 3 + 1] = s * (0.9 + Math.random() * 0.7); f.vel[i * 3 + 2] = (dz / d) * s * 0.9 + (Math.random() - 0.5) * 0.6 + pz * (0.6 + Math.random() * 0.8)
-    f.ang[i * 3] = (Math.random() - 0.5) * 14; f.ang[i * 3 + 1] = (Math.random() - 0.5) * 14; f.ang[i * 3 + 2] = (Math.random() - 0.5) * 14
-    f.flying[i] = 1; f.list.push(i); n++
-    if (f.trail) heap(f.trail, f.pos[i * 3], f.pos[i * 3 + 2], 0.45, GRAIN)   // the snow it was part of goes with it
+    launch(f, i, (dx / d) * s * 0.9 * radial + (Math.random() - 0.5) * 0.6 + px * (0.6 + Math.random() * 0.8), s * (0.9 + Math.random() * 0.7) * lift, (dz / d) * s * 0.9 * radial + (Math.random() - 0.5) * 0.6 + pz * (0.6 + Math.random() * 0.8)); n++
   }
 }
 
 function stepField(f: Field, dt: number) {
-  const keep: number[] = []
+  f.time += dt; const keep: number[] = []
   for (const i of f.list) {
     const b = i * 3
     if (f.falling[i]) { f.vel[b] = Math.sin(f.pos[b + 1] * 1.3 + i) * 0.35; f.vel[b + 2] = Math.cos(f.pos[b + 1] * 0.9 + i * 0.3) * 0.35 }
@@ -424,7 +450,7 @@ function stepField(f: Field, dt: number) {
       if (f.falling[i]) { if (f.trail) heap(f.trail, f.pos[b], f.pos[b + 2], 0.4, -GRAIN * 0.3); spawnSky(f.pos, f.vel, b); keep.push(i) } // landed from the sky, a little more snow here: start again up high
       else { // settle on the slope, and the snow it carried lands with it: a heap, or a hole filling back
         if (f.trail) heap(f.trail, f.pos[b], f.pos[b + 2], 0.45, -GRAIN)
-        f.pos[b + 1] = ground + Math.random() * 0.04; f.vel[b] = f.vel[b + 1] = f.vel[b + 2] = 0; f.flying[i] = 0
+        f.pos[b + 1] = ground + Math.random() * 0.04; f.vel[b] = f.vel[b + 1] = f.vel[b + 2] = 0; f.flying[i] = 0; f.landed[i] = f.time
         restOrientation(f.pos[b], f.pos[b + 2], _q)
       }
     } else {
@@ -660,8 +686,10 @@ function Scene({ onEnter, onAbout, setHover: setHoverProp, enterRef, darkRef }: 
         // a wide wake: the snow flies up and away with the cursor, more of it the faster it goes, and a furrow is ploughed behind;
         // pressed, the cursor drags a trench and throws the snow out of it
         const mx = (c.x - lastCursor.current.x) / moved, mz = (c.z - lastCursor.current.z) / moved; const sp = Math.min(6, moved / Math.max(d, 1e-3) * 0.12)
-        kick(field, c.x, c.z, 2.6, Math.min(9, 2.6 + sp * 1.1) + (press ? 2.5 : 0), Math.round(70 + sp * 16) + (press ? 40 : 0), mx * sp * 1.4, mz * sp * 1.4)
-        kick(field, c.x + mx * 1.2, c.z + mz * 1.2, 1.5, 2.6 + sp * 0.6, 36, mx * sp, mz * sp)   // the bow wave, ahead
+        // the snow is carried along with the sweep (so a sweep back brings it back), lifted, and lands within the next sweep's reach
+        const push = Math.min(4.5, 1.4 + sp * 0.6) + (press ? 1.0 : 0)
+        kick(field, c.x, c.z, 2.6, Math.min(3.6, 1.6 + sp * 0.4) + (press ? 0.8 : 0), Math.round(70 + sp * 16) + (press ? 40 : 0), mx * push, mz * push, 0.25)
+        kick(field, c.x + mx * 1.2, c.z + mz * 1.2, 1.5, 1.6 + sp * 0.3, 36, mx * push * 0.8, mz * push * 0.8, 0.3)   // the bow wave, ahead
         // each pass takes more snow out (it adds up: a track worn deeper the more you go over it)
         const rate = press ? 4.5 : 1.7
         heap(trail, c.x, c.z, press ? 1.5 : 1.25, rate * d); heap(trail, c.x - mx * 0.6, c.z - mz * 0.6, 1.0, rate * 0.6 * d)
@@ -673,7 +701,7 @@ function Scene({ onEnter, onAbout, setHover: setHoverProp, enterRef, darkRef }: 
         stir.current += d; if (stir.current > (press ? 0.06 : 0.12)) { stir.current = 0
           const dg = dig.current
           const a = Math.random() * Math.PI * 2, rr = Math.random() * 1.2
-          kick(field, c.x + Math.cos(a) * rr, c.z + Math.sin(a) * rr, 1.0 + dg * 0.4, (press ? 5 : 1.6) + dg * 1.6, press ? 26 : 5 + Math.round(dg * 4)) }
+          kick(field, c.x + Math.cos(a) * rr, c.z + Math.sin(a) * rr, 1.0 + dg * 0.4, (press ? 3.2 : 1.3) + dg * 0.8, press ? 26 : 5 + Math.round(dg * 4)) }
       }
       lastCursor.current.copy(c)
     }
@@ -819,7 +847,7 @@ function Scene({ onEnter, onAbout, setHover: setHoverProp, enterRef, darkRef }: 
           if (tip && sweep > 0.3) kick(field, _p.x, _p.z, 0.9, 3.0 * sweep, 6)
         }
       } }
-    if (!reduced) { stepField(field, d); slump(trail, d); settleTrail(trail, d) }
+    if (!reduced) { if (hasCursor.current) slide(field, cursor.current.x, cursor.current.z, 5, 30); slide(field, F.x, F.z, 2.5, 8); stepField(field, d); slump(trail, d); settleTrail(trail, d) }
 
     if (!entering.current && !reduced) { camera.position.x += (home.x + par.current.x * 2.2 - camera.position.x) * 0.04; camera.position.y += (home.y - par.current.y * 0.9 - camera.position.y) * 0.04 }
     camera.lookAt(look)

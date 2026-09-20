@@ -199,6 +199,14 @@ Console: clean (art exists for every slot now). The verify scripts lived in the 
    the v5 painted-volume build and must be rebuilt in the same language (a table close up, few objects).
 1c. Headless screenshots are unreliable (frames captured mid-render, SwiftShader fps is meaningless for 82k instances); judge in a browser.
 1d. Letter snow to tune with Chimin: mound shapes, density per layer, letter size, kick strength, sky-fall rate. Real-GPU performance is unmeasured (SwiftShader reads 1 fps regardless); if a laptop struggles, lower N first, then the sparkle/dust counts.
+1s. **v13.5, sweeps that bring the snow back; letters grounded.** The wake now carries letters along the sweep
+   (`kick` takes `radial` 0.25 and a push along the motion; strength 1.6+0.4·sp, push 1.4+0.6·sp, so flights are ~0.4–2
+   units) instead of blowing them out; a landed letter is not kicked again for `COOL` 0.3 s (`field.landed`, `field.time`),
+   so one sweep moves a letter one hop rather than herding it to the end of the sweep, and the sweep back returns it.
+   `slide()` samples surface letters near the cursor and the fox and hops them downhill where the surface map is steeper
+   than 0.3, so a heap pours into a hole and swept-aside snow returns. `launch()` is the shared "one letter flies" step.
+   Letters lie 0.005–0.055 above the surface again (the 0.16 lift read as floating), the white surface letters keep 55%
+   of the snow's shading, and the cursor ring lift is halved. `sim-sweep.cjs` in the scratchpad models this at 60 fps.
 1r. **v13.4, snow that slides and fills, white letters on top.** `slump()` runs an angle-of-repose flow over the whole
    map (one row in six each frame, flow scaled to match; `REPOSE` 0.08 per texel, `SLIDE` 10): steep walls pour in, a
    heap slumps. `settleTrail` also fills anything deeper than a print (`FILL_FROM` 0.7) fast and faster the deeper
