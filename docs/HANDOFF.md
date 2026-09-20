@@ -199,6 +199,14 @@ Console: clean (art exists for every slot now). The verify scripts lived in the 
    the v5 painted-volume build and must be rebuilt in the same language (a table close up, few objects).
 1c. Headless screenshots are unreliable (frames captured mid-render, SwiftShader fps is meaningless for 82k instances); judge in a browser.
 1d. Letter snow to tune with Chimin: mound shapes, density per layer, letter size, kick strength, sky-fall rate. Real-GPU performance is unmeasured (SwiftShader reads 1 fps regardless); if a laptop struggles, lower N first, then the sparkle/dust counts.
+1q. **v13.3, snow that adds up.** The surface map is signed and additive: −1 (heaped) to 2 (dug), stored as
+   (v + 1) · 85, shaders read `.r * 3.0 - 1.0` (so an untouched map must be filled with 85; `makeSnowView` gets one).
+   `stamp` still max-blends (prints); `heap(t, x, z, r, amount)` adds (positive digs, negative heaps). The cursor uses
+   `heap` at a rate × dt (1.7/s moving, 4.5/s pressed, 0.35/s still, 1.6/s still and pressed), so passes wear a track
+   deeper. Letters carry snow (`GRAIN` 0.05): `kick` digs where a letter left, `stepField` heaps where it lands (a faller
+   0.3× that), so flicked snow piles up and can be flicked back into a hole; `field.trail` links the two. Settle τ 70 s.
+   The sparkle and dust point clouds are gone: N 180000 (phone 70000), NF 2400 (900); the letters' facet glint twinkles
+   (`tw`), the mound's glitter is 0.4× and its alpha 0.66, so the glisten and the snowfall are the letters.
 1p. **v13.2, digging, the lit doorway, a slower fox.** The trail map now holds 0–2 (bytes at half scale, the shaders
    read `.r * 2.0`): prints stay under 1, a dug hole goes past it (sink = trail × `uTrailDepth` 0.5, so up to 1 unit).
    The cursor digs: held still it deepens (`dig` ref, 0.35/s to 1.3; pressed 1.6/s to 2.0) and throws letters out

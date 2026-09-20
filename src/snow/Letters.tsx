@@ -19,8 +19,9 @@ import { Piece, paper, type Bone, type PieceControl, type Pose } from './Piece'
 type Props = { onEnter: () => void; onAbout: () => void }
 
 const G = 80            // field size
-const N = typeof window !== 'undefined' && window.innerWidth < 760 ? 56000 : 128000  // letters at rest on the field (fewer on a phone)
-const NF = 600          // letters falling from the sky
+const PHONE = typeof window !== 'undefined' && window.innerWidth < 760
+const N = PHONE ? 70000 : 180000   // letters at rest on the field (fewer on a phone)
+const NF = PHONE ? 900 : 2400      // letters falling from the sky: all the snowfall is letters
 const R = 5.6           // igloo footprint radius
 const CHARS = 'AaBbCcdDeEfFgGhHiJjkKLMmnNoOPpqrRsStTuvVwWxyzZ'
 
@@ -102,13 +103,14 @@ function moundGeometry() {
 // A pressure map over the near field (paw prints, the wading furrow, the snow angel, the cursor). The ground and the
 // letters on it sink where it is high; it fades back as snow falls.
 const TW = 512, TH = 384, TX0 = -32, TX1 = 32, TZ0 = -26, TZ1 = 22
+/** the snow's surface offset: 0 untouched, up to 2 where it is pressed or dug down, down to −1 where it is heaped up; stored as (v + 1) · 85 */
 type Trail = { data: Float32Array; bytes: Uint8Array; tex: THREE.DataTexture }
 function makeTrail(): Trail {
-  const bytes = new Uint8Array(TW * TH); const tex = new THREE.DataTexture(bytes, TW, TH, THREE.RedFormat, THREE.UnsignedByteType)
+  const bytes = new Uint8Array(TW * TH).fill(85); const tex = new THREE.DataTexture(bytes, TW, TH, THREE.RedFormat, THREE.UnsignedByteType)
   tex.minFilter = tex.magFilter = THREE.LinearFilter; tex.needsUpdate = true
   return { data: new Float32Array(TW * TH), bytes, tex }
 }
-/** press a soft disc into the snow (max blend: pressing twice does not dig deeper) */
+/** press a soft disc into the snow, to at least this depth (a footprint: pressing twice does not go deeper) */
 function stamp(t: Trail, x: number, z: number, r: number, depth: number) {
   const sx = TW / (TX1 - TX0), sz = TH / (TZ1 - TZ0); const cx = (x - TX0) * sx, cz = (z - TZ0) * sz; const rx = r * sx, rz = r * sz
   const x0 = Math.max(0, Math.floor(cx - rx)), x1 = Math.min(TW - 1, Math.ceil(cx + rx)), z0 = Math.max(0, Math.floor(cz - rz)), z1 = Math.min(TH - 1, Math.ceil(cz + rz))
@@ -117,14 +119,23 @@ function stamp(t: Trail, x: number, z: number, r: number, depth: number) {
     const v = depth * (1 - d2) * (1 - d2); const i = iz * TW + ix; if (v > t.data[i]) t.data[i] = v
   }
 }
+/** move snow: a positive amount digs the disc deeper each time, a negative one heaps snow up on it; the surface is held between −1 and 2 */
+function heap(t: Trail, x: number, z: number, r: number, amount: number) {
+  const sx = TW / (TX1 - TX0), sz = TH / (TZ1 - TZ0); const cx = (x - TX0) * sx, cz = (z - TZ0) * sz; const rx = r * sx, rz = r * sz
+  const x0 = Math.max(0, Math.floor(cx - rx)), x1 = Math.min(TW - 1, Math.ceil(cx + rx)), z0 = Math.max(0, Math.floor(cz - rz)), z1 = Math.min(TH - 1, Math.ceil(cz + rz))
+  for (let iz = z0; iz <= z1; iz++) for (let ix = x0; ix <= x1; ix++) {
+    const dx = (ix - cx) / rx, dz = (iz - cz) / rz; const d2 = dx * dx + dz * dz; if (d2 > 1) continue
+    const i = iz * TW + ix; t.data[i] = Math.max(-1, Math.min(2, t.data[i] + amount * (1 - d2) * (1 - d2)))
+  }
+}
 function trailAt(t: Trail, x: number, z: number) {
   const ix = Math.round((x - TX0) * TW / (TX1 - TX0)), iz = Math.round((z - TZ0) * TH / (TZ1 - TZ0))
   if (ix < 0 || iz < 0 || ix >= TW || iz >= TH) return 0; return t.data[iz * TW + ix]
 }
-/** the snow fills the prints back in: an exponential fade, then upload */
-function settleTrail(t: Trail, dt: number, tau = 45) {
+/** the snow settles: prints, holes and heaps all fade toward level ground, then upload */
+function settleTrail(t: Trail, dt: number, tau = 70) {
   const k = Math.exp(-dt / tau); const d = t.data, b = t.bytes
-  for (let i = 0; i < d.length; i++) { const v = d[i] * k; d[i] = v < 0.004 ? 0 : v; b[i] = Math.min(255, v * 127.5) }   // the map holds 0–2: prints are under 1, a dug hole goes past it
+  for (let i = 0; i < d.length; i++) { const v = d[i] * k; d[i] = Math.abs(v) < 0.004 ? 0 : v; b[i] = (v + 1) * 85 }
   t.tex.needsUpdate = true
 }
 
@@ -157,7 +168,7 @@ const SNOW_GLSL = `
   float speck(vec2 p){ vec2 c = floor(p); vec2 f = fract(p) - 0.5; float h = hash(c); vec2 pt = (vec2(hash(c + 1.3), hash(c + 2.7)) - 0.5) * 0.8; return step(0.94, h) * smoothstep(0.12, 0.03, length(f - pt)); }
   vec3 paperize(vec3 col, vec2 p, float amount){ col *= 1.0 + (fibre(p * 3.0) - 0.5) * 0.16 * amount; col = mix(col, col * 0.6, speck(p * 22.0) * 0.55 * amount); return col; }
   // the trail: pressed-down snow
-  float trailAt(vec2 xz){ vec2 uv = (xz - uTrailBox.xy) * uTrailBox.zw; if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return 0.0; return texture2D(uTrail, uv).r * 2.0; }
+  float trailAt(vec2 xz){ vec2 uv = (xz - uTrailBox.xy) * uTrailBox.zw; if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return 0.0; return texture2D(uTrail, uv).r * 3.0 - 1.0; }
   // the tilt of the ground where a print has pressed it: the surface normal of y = H - trail*depth
   vec3 trailTilt(vec2 xz, float depth){ float e = 0.12;
     float tx = trailAt(xz + vec2(e, 0.0)) - trailAt(xz - vec2(e, 0.0)); float tz = trailAt(xz + vec2(0.0, e)) - trailAt(xz - vec2(0.0, e));
@@ -173,14 +184,14 @@ const snowUniforms = () => ({
   uLightDir: { value: new THREE.Vector3(-0.35, 0.42, -0.84).normalize() }, uWhite: { value: new THREE.Color('#fcfcff') }, uShadow: { value: new THREE.Color('#b4c1ee') }, uLight: { value: new THREE.Color('#fff4dc') },
   uAurora: { value: 0 }, uTime: { value: 0 }, uSparkle: { value: 1 }, fogColor: { value: new THREE.Color('#f3ecf3') }, fogNear: { value: 24 }, fogFar: { value: 72 },
   uCursor: { value: new THREE.Vector3() }, uCursorOn: { value: 0 }, uDoor: { value: new THREE.Vector3(0, 1.2, 4.2) }, uDoorGlow: { value: 0 }, uDoorCol: { value: new THREE.Color('#ffc27c') },
-  uTrail: { value: null as THREE.Texture | null }, uTrailBox: { value: new THREE.Vector4(TX0, TZ0, 1 / (TX1 - TX0), 1 / (TZ1 - TZ0)) }, uTrailDepth: { value: 0.5 }, uDebug: { value: 0 }, uAlpha: { value: 0.74 },
+  uTrail: { value: null as THREE.Texture | null }, uTrailBox: { value: new THREE.Vector4(TX0, TZ0, 1 / (TX1 - TX0), 1 / (TZ1 - TZ0)) }, uTrailDepth: { value: 0.5 }, uDebug: { value: 0 }, uAlpha: { value: 0.66 },
 })
 
 function snowMaterial() {
   return new THREE.ShaderMaterial({
     uniforms: snowUniforms(),
     vertexShader: `varying vec3 vW; varying vec3 vN; varying float vFog; varying float vTrail; uniform sampler2D uTrail; uniform vec4 uTrailBox; uniform float uTrailDepth;
-      float trailAt(vec2 xz){ vec2 uv = (xz - uTrailBox.xy) * uTrailBox.zw; if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return 0.0; return texture2D(uTrail, uv).r * 2.0; }
+      float trailAt(vec2 xz){ vec2 uv = (xz - uTrailBox.xy) * uTrailBox.zw; if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return 0.0; return texture2D(uTrail, uv).r * 3.0 - 1.0; }
       void main(){ vec4 w = modelMatrix * vec4(position, 1.0); float tr = trailAt(w.xz); w.y -= tr * uTrailDepth; vTrail = tr; vW = w.xyz; vN = normalize(mat3(modelMatrix) * normal); vec4 mv = viewMatrix * w; vFog = -mv.z; gl_Position = projectionMatrix * mv; }`,
     fragmentShader: `
       uniform vec3 uLightDir, uWhite, uShadow, uLight, fogColor, uCursor; uniform float fogNear, fogFar, uAurora, uTime, uSparkle, uCursorOn, uTrailDepth, uDebug, uAlpha, uDoorGlow;
@@ -202,10 +213,10 @@ function snowMaterial() {
         // the prints: the trough is in shadow, its near wall darker, its far wall catches the light
         { float s = 0.16; float edge = trailAt(vW.xz - uLightDir.xz * s) - trailAt(vW.xz + uLightDir.xz * s);
           col = mix(col, uShadow, clamp(vTrail * 0.85 + max(0.0, edge) * 1.5, 0.0, 0.88));
-          col += uLight * clamp(-edge * 2.0, 0.0, 1.0) * 0.4; }
+          col += uLight * clamp(-edge * 2.0, 0.0, 1.0) * 0.4; col += uLight * clamp(-vTrail, 0.0, 1.0) * 0.12; }
         col += uLight * ring * 0.08 + uLight * ripple * 0.08;
         col += doorLight(vW, n);
-        col += uLight * glitter(vW, n, V, uLightDir, uTime) * uSparkle * (1.0 + ring * 2.5);
+        col += uLight * glitter(vW, n, V, uLightDir, uTime) * uSparkle * 0.4 * (1.0 + ring * 2.5);
         if (uAurora > 0.001) col += auroraOn(vW, uTime) * uAurora;
         float f = smoothstep(fogNear, fogFar, vFog); col = mix(col, fogColor, f);
         gl_FragColor = vec4(col, uAlpha); }`,
@@ -251,7 +262,7 @@ function letterMaterial(atlas: THREE.Texture) {
     vertexShader: `
       attribute float aGlyph; attribute vec3 aColor; attribute float aSeed; uniform vec3 uCursor; uniform float uCursorOn, uTime, uTrailDepth; uniform sampler2D uTrail; uniform vec4 uTrailBox;
       varying vec2 vUv; varying vec3 vColor; varying vec3 vN; varying vec3 vW; varying float vFog; varying float vSeed; varying float vRing; varying float vTrail;
-      float trailAt(vec2 xz){ vec2 uv = (xz - uTrailBox.xy) * uTrailBox.zw; if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return 0.0; return texture2D(uTrail, uv).r * 2.0; }
+      float trailAt(vec2 xz){ vec2 uv = (xz - uTrailBox.xy) * uTrailBox.zw; if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return 0.0; return texture2D(uTrail, uv).r * 3.0 - 1.0; }
       void main(){
         float col = mod(aGlyph, 8.0), row = floor(aGlyph / 8.0); vUv = (uv + vec2(col, row)) / 8.0; vColor = aColor; vSeed = aSeed;
         vec4 w = modelMatrix * instanceMatrix * vec4(position, 1.0);
@@ -272,7 +283,7 @@ function letterMaterial(atlas: THREE.Texture) {
       void main(){
         float a = texture2D(uAtlas, vUv).a; if (a < 0.38) discard;
         vec3 V = normalize(cameraPosition - vW); vec3 n = normalize(vN); if (dot(n, V) < 0.0) n = -n;
-        if (vTrail > 0.001) n = normalize(n + trailTilt(vW.xz, uTrailDepth));
+        if (abs(vTrail) > 0.001) n = normalize(n + trailTilt(vW.xz, uTrailDepth));
         float depth = smoothstep(1.2, -0.6, vW.y);
         vec3 col = snowShade(n, V, uLightDir, uWhite, uShadow, uLight, depth) * vColor;
         // each letter is cut paper: fibre across the stroke, a speckle, a lighter cut rim, and a soft blue edge outside it
@@ -285,7 +296,8 @@ function letterMaterial(atlas: THREE.Texture) {
         col = mix(col, uShadow, clamp(vTrail * 0.75, 0.0, 0.8));
         // each letter is a facet: some catch the light hard as the camera moves
         vec3 Rf = reflect(-uLightDir, n); float glint = pow(max(0.0, dot(Rf, V)), 24.0 + vSeed * 40.0);
-        col += uLight * glint * (0.3 + vSeed * 1.0) * uSparkle * (1.0 + vRing * 1.5);
+        float tw = 0.55 + 0.45 * sin(uTime * (1.5 + vSeed * 4.0) + vSeed * 60.0);   // and they twinkle: the glisten of the snow is the letters
+        col += uLight * glint * (0.5 + vSeed * 1.6) * tw * uSparkle * (1.0 + vRing * 1.5);
         col += uLight * glitter(vW, n, V, uLightDir, uTime) * uSparkle * (0.5 + vRing * 1.5);
         col += uLight * vRing * 0.1;
         col += doorLight(vW, n) * 0.9;
@@ -296,51 +308,12 @@ function letterMaterial(atlas: THREE.Texture) {
   })
 }
 
-// ------------------------------------------------------------------ sparkles on the surface, and snow dust in the air
-function makeSparkles(count = 1500) {
-  const pos = new Float32Array(count * 3), phase = new Float32Array(count), speed = new Float32Array(count), size = new Float32Array(count)
-  for (let i = 0; i < count; i++) {
-    const x = (Math.random() - 0.5) * 60, z = -30 + Math.random() * 50
-    pos[i * 3] = x; pos[i * 3 + 1] = H(x, z) + 0.1; pos[i * 3 + 2] = z
-    phase[i] = Math.random() * Math.PI * 2; speed[i] = 0.6 + Math.random() * 2.4; size[i] = 0.1 + Math.random() * Math.random() * 0.45
-  }
-  const geo = new THREE.BufferGeometry()
-  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('aPhase', new THREE.BufferAttribute(phase, 1))
-  geo.setAttribute('aSpeed', new THREE.BufferAttribute(speed, 1)); geo.setAttribute('aSize', new THREE.BufferAttribute(size, 1))
-  const mat = new THREE.ShaderMaterial({
-    uniforms: { uTime: { value: 0 }, uPixel: { value: 1 }, uGain: { value: 1 }, uColor: { value: new THREE.Color('#ffffff') } },
-    vertexShader: `attribute float aPhase, aSpeed, aSize; uniform float uTime, uPixel, uGain; varying float vA;
-      void main(){ vec4 mv = modelViewMatrix * vec4(position,1.0); float tw = pow(0.5+0.5*sin(uTime*aSpeed+aPhase), 6.0); vA = tw*uGain;
-      gl_PointSize = aSize * uPixel * (300.0 / -mv.z) * (0.6+0.8*tw); gl_Position = projectionMatrix * mv; }`,
-    fragmentShader: `varying float vA; uniform vec3 uColor; void main(){ vec2 p = gl_PointCoord-0.5; float d = length(p);
-      float core = smoothstep(0.5, 0.08, d); float star = max(0.0, 1.0-abs(p.x)*9.0)*max(0.0,1.0-abs(p.y)*40.0) + max(0.0, 1.0-abs(p.y)*9.0)*max(0.0,1.0-abs(p.x)*40.0);
-      float a = (core + star*0.7) * vA; gl_FragColor = vec4(uColor, a); }`,
-    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-  })
-  return new THREE.Points(geo, mat)
-}
-
-function makeDust(count = 420) {
-  const pos = new Float32Array(count * 3), seed = new Float32Array(count)
-  for (let i = 0; i < count; i++) { pos[i * 3] = (Math.random() - 0.5) * 40; pos[i * 3 + 1] = Math.random() * 14; pos[i * 3 + 2] = -6 + Math.random() * 28; seed[i] = Math.random() }
-  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('aSeed', new THREE.BufferAttribute(seed, 1))
-  const mat = new THREE.ShaderMaterial({
-    uniforms: { uTime: { value: 0 }, uPixel: { value: 1 }, uColor: { value: new THREE.Color('#ffffff') }, uGain: { value: 1 } },
-    vertexShader: `attribute float aSeed; uniform float uTime, uPixel; varying float vA;
-      void main(){ vec3 p = position; float t = uTime * (0.25 + aSeed * 0.35);
-        p.y = mod(p.y - t, 14.0); p.x += sin(t * 0.7 + aSeed * 20.0) * 0.8; p.z += cos(t * 0.5 + aSeed * 13.0) * 0.5;
-        vec4 mv = modelViewMatrix * vec4(p, 1.0); vA = 0.18 + 0.35 * aSeed;
-        gl_PointSize = (0.12 + aSeed * 0.22) * uPixel * (300.0 / -mv.z); gl_Position = projectionMatrix * mv; }`,
-    fragmentShader: `varying float vA; uniform vec3 uColor; uniform float uGain; void main(){ float d = length(gl_PointCoord - 0.5); float a = smoothstep(0.5, 0.1, d) * vA * uGain; gl_FragColor = vec4(uColor, a); }`,
-    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-  })
-  return new THREE.Points(geo, mat)
-}
-
 // ------------------------------------------------------------------ the letters as particles
 type Field = {
   mesh: THREE.InstancedMesh; pos: Float32Array; quat: Float32Array; scl: Float32Array; vel: Float32Array; ang: Float32Array
   flying: Uint8Array; falling: Uint8Array; list: number[]
+  /** the surface map the letters carry snow across: a kicked letter takes some with it, a landing one leaves it */
+  trail?: Trail
 }
 // mostly white; a few cooler letters give the snow its blue shadows
 const PALETTE = [[1, 1, 1], [1, 1, 1], [0.97, 0.97, 1], [0.93, 0.95, 1.0], [0.88, 0.91, 1.0], [0.96, 0.92, 0.98]]
@@ -396,6 +369,7 @@ function buildField(atlas: THREE.Texture, n = N, nf = NF, zMin = -32, zMax = 22,
   return { mesh, pos, quat, scl, vel, ang, flying, falling, list }
 }
 
+const GRAIN = 0.05   // how much surface one moving letter carries
 /** Kick the letters around a point: they leap up and away and tumble; `px,pz` pushes them along with whatever moved. */
 function kick(f: Field, x: number, z: number, radius: number, strength: number, maxCount: number, px = 0, pz = 0) {
   let n = 0; const r2 = radius * radius
@@ -408,6 +382,7 @@ function kick(f: Field, x: number, z: number, radius: number, strength: number, 
     f.vel[i * 3] = (dx / d) * s * 0.9 + (Math.random() - 0.5) * 0.6 + px * (0.6 + Math.random() * 0.8); f.vel[i * 3 + 1] = s * (0.9 + Math.random() * 0.7); f.vel[i * 3 + 2] = (dz / d) * s * 0.9 + (Math.random() - 0.5) * 0.6 + pz * (0.6 + Math.random() * 0.8)
     f.ang[i * 3] = (Math.random() - 0.5) * 14; f.ang[i * 3 + 1] = (Math.random() - 0.5) * 14; f.ang[i * 3 + 2] = (Math.random() - 0.5) * 14
     f.flying[i] = 1; f.list.push(i); n++
+    if (f.trail) heap(f.trail, f.pos[i * 3], f.pos[i * 3 + 2], 0.45, GRAIN)   // the snow it was part of goes with it
   }
 }
 
@@ -421,8 +396,9 @@ function stepField(f: Field, dt: number) {
     const ground = H(f.pos[b], f.pos[b + 2]) + 0.02
     _q.set(f.quat[i * 4], f.quat[i * 4 + 1], f.quat[i * 4 + 2], f.quat[i * 4 + 3])
     if (f.pos[b + 1] <= ground && f.vel[b + 1] <= 0) {
-      if (f.falling[i]) { spawnSky(f.pos, f.vel, b); keep.push(i) } // landed from the sky: start again up high
-      else { // settle on the slope
+      if (f.falling[i]) { if (f.trail) heap(f.trail, f.pos[b], f.pos[b + 2], 0.4, -GRAIN * 0.3); spawnSky(f.pos, f.vel, b); keep.push(i) } // landed from the sky, a little more snow here: start again up high
+      else { // settle on the slope, and the snow it carried lands with it: a heap, or a hole filling back
+        if (f.trail) heap(f.trail, f.pos[b], f.pos[b + 2], 0.45, -GRAIN)
         f.pos[b + 1] = ground + Math.random() * 0.04; f.vel[b] = f.vel[b + 1] = f.vel[b + 2] = 0; f.flying[i] = 0
         restOrientation(f.pos[b], f.pos[b + 2], _q)
       }
@@ -530,9 +506,7 @@ function Scene({ onEnter, onAbout, setHover: setHoverProp, enterRef, darkRef }: 
   const field = useMemo(() => buildField(atlas), [atlas])
   const mound = useMemo(() => moundGeometry(), [])
   const moundMat = useMemo(() => snowMaterial(), [])
-  const sparkles = useMemo(() => makeSparkles(), [])
-  const trail = useMemo(() => makeTrail(), [])
-  const dust = useMemo(() => makeDust(), [])
+  const trail = useMemo(() => makeTrail(), []); field.trail = trail
   const skyMat = useMemo(() => skyMaterial(), [])
 
   const home = useMemo(() => new THREE.Vector3(0, 8.2, 23), [])
@@ -646,8 +620,6 @@ function Scene({ onEnter, onAbout, setHover: setHoverProp, enterRef, darkRef }: 
     ;(scene.background as THREE.Color).copy(cur.horizon); (scene.fog as THREE.Fog).color.copy(cur.horizon)
     const su = skyMat.uniforms; su.uTop.value.copy(cur.sky); su.uMid.value.copy(cur.mid); su.uBot.value.copy(cur.horizon); su.uSun.value.copy(cur.sun); su.uSunDir.value.copy(cur.sunDir)
     su.uAurora.value = cur.aurora; su.uStars.value = cur.stars; su.uTime.value = t0.current; su.uBand.value.copy(cur.band); su.uBandI.value = cur.bandI
-    const sm = sparkles.material as THREE.ShaderMaterial; sm.uniforms.uTime.value = reduced ? 0.3 : t0.current; sm.uniforms.uGain.value = cur.sparkle; sm.uniforms.uPixel.value = gl.getPixelRatio(); sm.uniforms.uColor.value.copy(cur.light).lerp(cur.white, 0.5)
-    const dm = dust.material as THREE.ShaderMaterial; dm.uniforms.uTime.value = reduced ? 0 : t0.current; dm.uniforms.uPixel.value = gl.getPixelRatio(); dm.uniforms.uColor.value.copy(cur.white).multiplyScalar(0.8); dm.uniforms.uGain.value = 0.5 + cur.sparkle * 0.3
     // the doorway glows to say come in, and its light flickers like a lamp inside; the pool on the snow in front follows it
     doorMat.opacity = (0.28 + cur.glow * 0.5) * flick
     doorFill.uniforms.uTime.value = reduced ? 0.3 : t0.current; doorFill.uniforms.uGlow.value = (0.45 + cur.glow * 0.65) * flick; doorFill.uniforms.uSill.value = H(0, 4.4) - 0.05
@@ -665,14 +637,16 @@ function Scene({ onEnter, onAbout, setHover: setHoverProp, enterRef, darkRef }: 
         const mx = (c.x - lastCursor.current.x) / moved, mz = (c.z - lastCursor.current.z) / moved; const sp = Math.min(6, moved / Math.max(d, 1e-3) * 0.12)
         kick(field, c.x, c.z, 2.6, Math.min(9, 2.6 + sp * 1.1) + (press ? 2.5 : 0), Math.round(70 + sp * 16) + (press ? 40 : 0), mx * sp * 1.4, mz * sp * 1.4)
         kick(field, c.x + mx * 1.2, c.z + mz * 1.2, 1.5, 2.6 + sp * 0.6, 36, mx * sp, mz * sp)   // the bow wave, ahead
-        const fd = press ? 1.5 : 0.7
-        stamp(trail, c.x, c.z, press ? 1.5 : 1.25, fd); stamp(trail, c.x - mx * 0.6, c.z - mz * 0.6, 1.0, fd * 0.8)
+        // each pass takes more snow out (it adds up: a track worn deeper the more you go over it)
+        const rate = press ? 4.5 : 1.7
+        heap(trail, c.x, c.z, press ? 1.5 : 1.25, rate * d); heap(trail, c.x - mx * 0.6, c.z - mz * 0.6, 1.0, rate * 0.6 * d)
         dig.current = press ? Math.max(dig.current, 1.2) : 0.4; stir.current = 0
       } else {
         // held still, the cursor digs: the hole deepens the longer it stays (fast when pressed), and the snow it lifts flies out and lands around
         dig.current = Math.min(press ? 2.0 : 1.3, dig.current + d * (press ? 1.6 : 0.35))
+        heap(trail, c.x, c.z, 1.1 + dig.current * 0.35, (press ? 1.6 : 0.35) * d)
         stir.current += d; if (stir.current > (press ? 0.06 : 0.12)) { stir.current = 0
-          const dg = dig.current; stamp(trail, c.x, c.z, 1.1 + dg * 0.35, dg)
+          const dg = dig.current
           const a = Math.random() * Math.PI * 2, rr = Math.random() * 1.2
           kick(field, c.x + Math.cos(a) * rr, c.z + Math.sin(a) * rr, 1.0 + dg * 0.4, (press ? 5 : 1.6) + dg * 1.6, press ? 26 : 5 + Math.round(dg * 4)) }
       }
@@ -834,11 +808,9 @@ function Scene({ onEnter, onAbout, setHover: setHoverProp, enterRef, darkRef }: 
       <color attach="background" args={['#e8e3f1']} />
       <fog attach="fog" args={['#e8e3f1', 24, 72]} />
       <mesh material={skyMat} renderOrder={-1}><sphereGeometry args={[150, 32, 16]} /></mesh>
-      {/* the snow: the piled ground, the letters on it, the sparkles on it, the dust in the air */}
+      {/* the snow: the piled ground and the letters on it; the snow in the air is letters too */}
       <mesh ref={moundRef} geometry={mound} material={moundMat} />
       <primitive object={field.mesh} />
-      <primitive object={sparkles} />
-      <primitive object={dust} />
       {/* the igloo, set into the middle mound, its base in the snow */}
       <Piece url={paper('igloo-back')} width={12.4} position={[0, iglooY + 2.6, -2.6]} rotation={[-0.06, 0, 0]} delay={0.2} glisten={1} puff={0.5} relief={0.7} solid sink={0.1} {...piece} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
       <Piece url={paper('igloo-front')} width={11.6} position={[0, iglooY + 2.2, 1.2]} rotation={[-0.05, 0, 0]} delay={0.5} glisten={1} puff={0.5} relief={0.7} solid sink={0.12} {...piece} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
@@ -902,8 +874,9 @@ export function makeSnowView(): SnowView {
   const atlas = glyphAtlas(); const field = buildField(atlas, 22000, 160, -60, -9.5, 34)
   const mound = new THREE.Mesh(moundGeometryRect(-40, 40, -70, -8.5), snowMaterial()); (mound.material as THREE.ShaderMaterial).uniforms.uAlpha.value = 1
   const sky = new THREE.Mesh(new THREE.SphereGeometry(140, 32, 16), skyMaterial()); sky.renderOrder = -1
-  const sparkles = makeSparkles(500); const dust = makeDust(200)
-  group.add(sky, mound, field.mesh, sparkles, dust)
+  const flat = makeTrail(); flat.tex.needsUpdate = true   // an untouched surface, so the shaders read level ground
+  for (const m of [mound.material as THREE.ShaderMaterial, field.mesh.material as THREE.ShaderMaterial]) m.uniforms.uTrail.value = flat.tex
+  group.add(sky, mound, field.mesh)
   const cur = newCur(), tgt = newCur(); setLook(cur, LOOKS[getMode()]); setLook(tgt, LOOKS[getMode()])
   window.addEventListener('modechange', () => setLook(tgt, LOOKS[getMode()]))
   const dummy = new THREE.Vector3(); let t0 = 0
@@ -918,8 +891,6 @@ export function makeSnowView(): SnowView {
     }
     const su = (sky.material as THREE.ShaderMaterial).uniforms; su.uTop.value.copy(cur.sky); su.uMid.value.copy(cur.mid); su.uBot.value.copy(cur.horizon); su.uSun.value.copy(cur.sun); su.uSunDir.value.copy(cur.sunDir)
     su.uAurora.value = cur.aurora; su.uStars.value = cur.stars; su.uTime.value = t0; su.uBand.value.copy(cur.band); su.uBandI.value = cur.bandI
-    const sm = sparkles.material as THREE.ShaderMaterial; sm.uniforms.uTime.value = reduced ? 0.3 : t0; sm.uniforms.uGain.value = cur.sparkle; sm.uniforms.uColor.value.copy(cur.light).lerp(cur.white, 0.5)
-    const dm = dust.material as THREE.ShaderMaterial; dm.uniforms.uTime.value = reduced ? 0 : t0; dm.uniforms.uColor.value.copy(cur.white).multiplyScalar(0.8); dm.uniforms.uGain.value = 0.5
     if (!reduced) stepField(field, d)
   }
   return { group, cur, tick }
