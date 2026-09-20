@@ -1,6 +1,7 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { useTexture } from '@react-three/drei'
 import { EffectComposer, Bloom, Noise, Vignette } from '@react-three/postprocessing'
 import { gsap } from '../lib/gsap'
 import { prefersReducedMotion } from '../lib/motion-prefs'
@@ -123,7 +124,7 @@ function trailAt(t: Trail, x: number, z: number) {
 /** the snow fills the prints back in: an exponential fade, then upload */
 function settleTrail(t: Trail, dt: number, tau = 45) {
   const k = Math.exp(-dt / tau); const d = t.data, b = t.bytes
-  for (let i = 0; i < d.length; i++) { const v = d[i] * k; d[i] = v < 0.004 ? 0 : v; b[i] = v * 255 }
+  for (let i = 0; i < d.length; i++) { const v = d[i] * k; d[i] = v < 0.004 ? 0 : v; b[i] = Math.min(255, v * 127.5) }   // the map holds 0–2: prints are under 1, a dug hole goes past it
   t.tex.needsUpdate = true
 }
 
@@ -156,7 +157,7 @@ const SNOW_GLSL = `
   float speck(vec2 p){ vec2 c = floor(p); vec2 f = fract(p) - 0.5; float h = hash(c); vec2 pt = (vec2(hash(c + 1.3), hash(c + 2.7)) - 0.5) * 0.8; return step(0.94, h) * smoothstep(0.12, 0.03, length(f - pt)); }
   vec3 paperize(vec3 col, vec2 p, float amount){ col *= 1.0 + (fibre(p * 3.0) - 0.5) * 0.16 * amount; col = mix(col, col * 0.6, speck(p * 22.0) * 0.55 * amount); return col; }
   // the trail: pressed-down snow
-  float trailAt(vec2 xz){ vec2 uv = (xz - uTrailBox.xy) * uTrailBox.zw; if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return 0.0; return texture2D(uTrail, uv).r; }
+  float trailAt(vec2 xz){ vec2 uv = (xz - uTrailBox.xy) * uTrailBox.zw; if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return 0.0; return texture2D(uTrail, uv).r * 2.0; }
   // the tilt of the ground where a print has pressed it: the surface normal of y = H - trail*depth
   vec3 trailTilt(vec2 xz, float depth){ float e = 0.12;
     float tx = trailAt(xz + vec2(e, 0.0)) - trailAt(xz - vec2(e, 0.0)); float tz = trailAt(xz + vec2(0.0, e)) - trailAt(xz - vec2(0.0, e));
@@ -179,7 +180,7 @@ function snowMaterial() {
   return new THREE.ShaderMaterial({
     uniforms: snowUniforms(),
     vertexShader: `varying vec3 vW; varying vec3 vN; varying float vFog; varying float vTrail; uniform sampler2D uTrail; uniform vec4 uTrailBox; uniform float uTrailDepth;
-      float trailAt(vec2 xz){ vec2 uv = (xz - uTrailBox.xy) * uTrailBox.zw; if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return 0.0; return texture2D(uTrail, uv).r; }
+      float trailAt(vec2 xz){ vec2 uv = (xz - uTrailBox.xy) * uTrailBox.zw; if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return 0.0; return texture2D(uTrail, uv).r * 2.0; }
       void main(){ vec4 w = modelMatrix * vec4(position, 1.0); float tr = trailAt(w.xz); w.y -= tr * uTrailDepth; vTrail = tr; vW = w.xyz; vN = normalize(mat3(modelMatrix) * normal); vec4 mv = viewMatrix * w; vFog = -mv.z; gl_Position = projectionMatrix * mv; }`,
     fragmentShader: `
       uniform vec3 uLightDir, uWhite, uShadow, uLight, fogColor, uCursor; uniform float fogNear, fogFar, uAurora, uTime, uSparkle, uCursorOn, uTrailDepth, uDebug, uAlpha, uDoorGlow;
@@ -250,7 +251,7 @@ function letterMaterial(atlas: THREE.Texture) {
     vertexShader: `
       attribute float aGlyph; attribute vec3 aColor; attribute float aSeed; uniform vec3 uCursor; uniform float uCursorOn, uTime, uTrailDepth; uniform sampler2D uTrail; uniform vec4 uTrailBox;
       varying vec2 vUv; varying vec3 vColor; varying vec3 vN; varying vec3 vW; varying float vFog; varying float vSeed; varying float vRing; varying float vTrail;
-      float trailAt(vec2 xz){ vec2 uv = (xz - uTrailBox.xy) * uTrailBox.zw; if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return 0.0; return texture2D(uTrail, uv).r; }
+      float trailAt(vec2 xz){ vec2 uv = (xz - uTrailBox.xy) * uTrailBox.zw; if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return 0.0; return texture2D(uTrail, uv).r * 2.0; }
       void main(){
         float col = mod(aGlyph, 8.0), row = floor(aGlyph / 8.0); vUv = (uv + vec2(col, row)) / 8.0; vColor = aColor; vSeed = aSeed;
         vec4 w = modelMatrix * instanceMatrix * vec4(position, 1.0);
@@ -436,6 +437,56 @@ function stepField(f: Field, dt: number) {
   f.list = keep; f.mesh.instanceMatrix.needsUpdate = true
 }
 
+// ------------------------------------------------------------------ the doorway
+const ARCH_W = 4.6, ARCH_ASPECT = 1081 / 1336
+/** The dark opening painted in the arch picture, as a soft mask (1 inside the door), so light can be laid over it. */
+const doorCache = new WeakMap<HTMLImageElement, THREE.DataTexture>()
+function doorMask(img: HTMLImageElement): THREE.DataTexture {
+  const hit = doorCache.get(img); if (hit) return hit
+  const W = 256, Hh = Math.max(8, Math.round((W * img.height) / img.width))
+  const c = document.createElement('canvas'); c.width = W; c.height = Hh; const g = c.getContext('2d')!
+  g.drawImage(img, 0, 0, W, Hh); const d = g.getImageData(0, 0, W, Hh).data
+  const m = new Float32Array(W * Hh)
+  for (let i = 0; i < W * Hh; i++) m[i] = d[i * 4 + 3] > 128 && d[i * 4] + d[i * 4 + 1] + d[i * 4 + 2] < 300 ? 1 : 0
+  const out = new Uint8Array(W * Hh)
+  for (let y = 0; y < Hh; y++) for (let x = 0; x < W; x++) { let s = 0, n = 0
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { const xx = x + dx, yy = y + dy; if (xx < 0 || yy < 0 || xx >= W || yy >= Hh) continue; s += m[yy * W + xx]; n++ }
+    out[y * W + x] = Math.round((s / n) * 255) }
+  const t = new THREE.DataTexture(out, W, Hh, THREE.RedFormat, THREE.UnsignedByteType); t.flipY = true; t.minFilter = t.magFilter = THREE.LinearFilter; t.needsUpdate = true
+  doorCache.set(img, t); return t
+}
+/** Light in the doorway: a lamp low inside, its light moving on the inner walls, flickering, with glints. Drawn over the painted opening. */
+function doorMaterial() {
+  return new THREE.ShaderMaterial({
+    uniforms: { uMask: { value: null as THREE.Texture | null }, uTime: { value: 0 }, uGlow: { value: 0 }, uSill: { value: -99 }, uCol: { value: new THREE.Color('#d8752c') }, uColHi: { value: new THREE.Color('#ffe4ae') } },
+    vertexShader: `varying vec2 vUv; varying vec3 vW; void main(){ vUv = uv; vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`,
+    fragmentShader: `uniform sampler2D uMask; uniform float uTime, uGlow, uSill; uniform vec3 uCol, uColHi; varying vec2 vUv; varying vec3 vW;
+      float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      float vnoise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f); return mix(mix(hash(i), hash(i+vec2(1,0)), f.x), mix(hash(i+vec2(0,1)), hash(i+vec2(1,1)), f.x), f.y); }
+      float fbm(vec2 p){ float v = 0.0, a = 0.5; for (int i = 0; i < 3; i++) { v += a * vnoise(p); p *= 2.1; a *= 0.5; } return v; }
+      void main(){
+        float m = texture2D(uMask, vUv).r; if (m < 0.03 || vW.y < uSill) discard;
+        // the door's own space: 0 at the sill, 1 at the crown; x across it
+        float y = clamp((vUv.y - 0.12) / 0.5, 0.0, 1.0); float x = (vUv.x - 0.5) / 0.13;
+        // a lamp low inside: brightest just above the sill in the middle, deep amber up in the crown
+        float lamp = exp(-(x * x * 0.35 + (y - 0.18) * (y - 0.18) * 2.4));
+        // light moving over the inner walls, and glints where the ice inside catches it
+        float sh = fbm(vec2(vUv.x * 6.0, vUv.y * 4.0 - uTime * 0.18)); float sh2 = fbm(vec2(vUv.x * 11.0 + 3.0, vUv.y * 7.0 - uTime * 0.35));
+        float glint = pow(vnoise(vec2(vUv.x * 30.0, vUv.y * 24.0 - uTime * 0.6)), 10.0);
+        vec3 col = mix(uCol * 0.55, uColHi, lamp * 0.85 + 0.15 * sh);
+        col *= 0.7 + 0.55 * sh2; col += uColHi * glint * 0.9 * (0.5 + lamp);
+        col *= uGlow;
+        float a = m * mix(0.98, 0.72, y);   // the crown keeps a little of the dark inside
+        gl_FragColor = vec4(col, a); }`,
+    transparent: true, depthWrite: false, depthTest: false,
+  })
+}
+function DoorFill({ mat, y }: { mat: THREE.ShaderMaterial; y: number }) {
+  const tex = useTexture(paper('igloo-arch'))
+  useEffect(() => { mat.uniforms.uMask.value = doorMask(tex.image as HTMLImageElement) }, [tex, mat])
+  return <mesh position={[0, y, 3.95]} rotation={[-0.04, 0, 0]} material={mat} renderOrder={1}><planeGeometry args={[ARCH_W, ARCH_W * ARCH_ASPECT]} /></mesh>
+}
+
 // ------------------------------------------------------------------ the sky
 function skyMaterial() {
   return new THREE.ShaderMaterial({
@@ -472,7 +523,7 @@ const newCur = (): Cur => ({ white: new THREE.Color(), shadow: new THREE.Color()
 const setLook = (d: Cur, L: Look) => { d.white.set(L.white); d.shadow.set(L.shadow); d.light.set(L.light); d.sky.set(L.sky); d.mid.set(L.mid); d.horizon.set(L.horizon); d.band.set(L.band); d.bandI = L.bandI; d.sun.set(L.sun); d.sunDir.set(...L.sunDir).normalize(); d.sparkle = L.sparkle; d.aurora = L.aurora; d.glow = L.glow; d.stars = L.stars }
 
 type SceneProps = Props & { setHover: (h: 'igloo' | 'chimin' | null) => void; enterRef: React.MutableRefObject<() => void>; darkRef: React.RefObject<HTMLDivElement | null> }
-function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
+function Scene({ onEnter, onAbout, setHover: setHoverProp, enterRef, darkRef }: SceneProps) {
   const { camera, gl, scene } = useThree()
   const reduced = useMemo(() => prefersReducedMotion(), [])
   const atlas = useMemo(() => glyphAtlas(), [])
@@ -490,6 +541,8 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
 
   // pointer on the ground (against the mound mesh, so the cursor really touches the snow)
   const cursor = useRef(new THREE.Vector3()); const hasCursor = useRef(false); const lastCursor = useRef(new THREE.Vector3()); const stir = useRef(0)
+  const dig = useRef(0); const pressing = useRef(false); const hoverRef = useRef<'igloo' | 'chimin' | null>(null)
+  const setHover = (h: 'igloo' | 'chimin' | null) => { hoverRef.current = h; setHoverProp(h) }
   const ray = useMemo(() => new THREE.Raycaster(), []); const moundRef = useRef<THREE.Mesh>(null)
   useEffect(() => {
     const el = gl.domElement
@@ -499,9 +552,11 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
       const hit = moundRef.current ? ray.intersectObject(moundRef.current, false)[0] : undefined
       if (hit) { cursor.current.copy(hit.point); hasCursor.current = true } else hasCursor.current = false
     }
-    const onLeave = () => { hasCursor.current = false }
-    el.addEventListener('pointermove', onMove); el.addEventListener('pointerleave', onLeave)
-    return () => { el.removeEventListener('pointermove', onMove); el.removeEventListener('pointerleave', onLeave) }
+    const onLeave = () => { hasCursor.current = false; pressing.current = false }
+    const onDown = (e: PointerEvent) => { if (e.button === 0 && hoverRef.current !== 'igloo') pressing.current = true }
+    const onUp = () => { pressing.current = false }
+    el.addEventListener('pointermove', onMove); el.addEventListener('pointerleave', onLeave); el.addEventListener('pointerdown', onDown); window.addEventListener('pointerup', onUp); window.addEventListener('pointercancel', onUp)
+    return () => { el.removeEventListener('pointermove', onMove); el.removeEventListener('pointerleave', onLeave); el.removeEventListener('pointerdown', onDown); window.removeEventListener('pointerup', onUp); window.removeEventListener('pointercancel', onUp) }
   }, [gl, camera, ray])
 
   // the fox
@@ -526,7 +581,7 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
   const pieceTint = useMemo(() => new THREE.Color('#ffffff'), [])
   const glowTex = useMemo(() => { const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d')!; const gr = g.createRadialGradient(128, 128, 0, 128, 128, 128); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 256, 256); return new THREE.CanvasTexture(c) }, [])
   const doorMat = useMemo(() => new THREE.MeshBasicMaterial({ color: '#ffc27c', transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }), [])
-  const doorRef = useRef<THREE.Mesh>(null)
+  const doorRef = useRef<THREE.Mesh>(null); const doorFill = useMemo(doorMaterial, [])
   useEffect(() => { doorMat.map = glowTex; doorMat.needsUpdate = true }, [doorMat, glowTex])
 
   // entering the igloo
@@ -574,26 +629,28 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
 
   const dbg = useRef({ noRig: false })
   const t0 = useRef(0)
-  useEffect(() => { (window as unknown as { __snow?: unknown }).__snow = { f: f.current, chiminPose: chiminPose.current, foxPose: foxPose.current, angel: angel.current, dbg: dbg.current, cursor: cursor.current, gsap, trail, moundMat, letterMat: field.mesh.material, field, gl, views, viewState: viewState.current, clock: () => t0.current, stamp: (x: number, z: number, r: number, depth: number) => stamp(trail, x, z, r, depth) } }, [])
+  useEffect(() => { (window as unknown as { __snow?: unknown }).__snow = { f: f.current, chiminPose: chiminPose.current, foxPose: foxPose.current, angel: angel.current, dbg: dbg.current, cursor: cursor.current, gsap, trail, moundMat, letterMat: field.mesh.material, field, gl, views, viewState: viewState.current, clock: () => t0.current, stamp: (x: number, z: number, r: number, depth: number) => stamp(trail, x, z, r, depth), dig, pressing } }, [])
   useFrame((_, dt) => {
     const d = Math.min(dt, 0.05); t0.current += d; const k = Math.min(1, d * 2.2)
     for (const key of ['white', 'shadow', 'light', 'sky', 'mid', 'horizon', 'band', 'sun'] as const) cur[key].lerp(tgt[key], k)
     cur.bandI += (tgt.bandI - cur.bandI) * k
     cur.sunDir.lerp(tgt.sunDir, k).normalize()
     cur.sparkle += (tgt.sparkle - cur.sparkle) * k; cur.aurora += (tgt.aurora - cur.aurora) * k; cur.glow += (tgt.glow - cur.glow) * k; cur.stars += (tgt.stars - cur.stars) * k
+    // the lamp inside the igloo flickers: a slow breath with quicker unevenness over it
+    const tt = t0.current; const flick = reduced ? 0.9 : 0.82 + 0.1 * Math.sin(tt * 1.6) + 0.05 * Math.sin(tt * 5.3 + 1.0) + 0.035 * Math.sin(tt * 9.1 + 2.0) + 0.025 * Math.sin(tt * 14.7 + 0.5)
     for (const m of [moundMat, field.mesh.material as THREE.ShaderMaterial]) {
       const u = m.uniforms; u.uWhite.value.copy(cur.white).lerp(cur.mid, 0.16); u.uShadow.value.copy(cur.shadow).lerp(cur.sky, 0.12); u.uLight.value.copy(cur.light); u.uLightDir.value.copy(cur.sunDir)
       u.uAurora.value = cur.aurora; u.uTime.value = reduced ? 0.3 : t0.current; u.uSparkle.value = cur.sparkle; u.fogColor.value.copy(cur.horizon)
-      u.uTrail.value = trail.tex; u.uDoorGlow.value = (0.2 + cur.glow * 0.8) * (0.85 + 0.15 * Math.sin(t0.current * 1.6)); u.uDoor.value.set(0, H(0, 3.9) + 1.0, 4.2); u.uCursor.value.copy(cursor.current); u.uCursorOn.value += ((hasCursor.current && !entering.current && !reduced ? 1 : 0) - u.uCursorOn.value) * Math.min(1, d * 4)
+      u.uTrail.value = trail.tex; u.uDoorGlow.value = (0.2 + cur.glow * 0.8) * flick; u.uDoor.value.set(0, H(0, 3.9) + 1.0, 4.2); u.uCursor.value.copy(cursor.current); u.uCursorOn.value += ((hasCursor.current && !entering.current && !reduced ? 1 : 0) - u.uCursorOn.value) * Math.min(1, d * 4)
     }
     ;(scene.background as THREE.Color).copy(cur.horizon); (scene.fog as THREE.Fog).color.copy(cur.horizon)
     const su = skyMat.uniforms; su.uTop.value.copy(cur.sky); su.uMid.value.copy(cur.mid); su.uBot.value.copy(cur.horizon); su.uSun.value.copy(cur.sun); su.uSunDir.value.copy(cur.sunDir)
     su.uAurora.value = cur.aurora; su.uStars.value = cur.stars; su.uTime.value = t0.current; su.uBand.value.copy(cur.band); su.uBandI.value = cur.bandI
     const sm = sparkles.material as THREE.ShaderMaterial; sm.uniforms.uTime.value = reduced ? 0.3 : t0.current; sm.uniforms.uGain.value = cur.sparkle; sm.uniforms.uPixel.value = gl.getPixelRatio(); sm.uniforms.uColor.value.copy(cur.light).lerp(cur.white, 0.5)
     const dm = dust.material as THREE.ShaderMaterial; dm.uniforms.uTime.value = reduced ? 0 : t0.current; dm.uniforms.uPixel.value = gl.getPixelRatio(); dm.uniforms.uColor.value.copy(cur.white).multiplyScalar(0.8); dm.uniforms.uGain.value = 0.5 + cur.sparkle * 0.3
-    // the doorway glows, and breathes a little, to say come in; the pool on the snow in front follows it
-    const breathe = 0.85 + 0.15 * Math.sin(t0.current * 1.6)
-    doorMat.opacity = (0.28 + cur.glow * 0.5) * breathe
+    // the doorway glows to say come in, and its light flickers like a lamp inside; the pool on the snow in front follows it
+    doorMat.opacity = (0.28 + cur.glow * 0.5) * flick
+    doorFill.uniforms.uTime.value = reduced ? 0.3 : t0.current; doorFill.uniforms.uGlow.value = (0.45 + cur.glow * 0.65) * flick; doorFill.uniforms.uSill.value = H(0, 4.4) - 0.05
     if (doorRef.current) doorRef.current.quaternion.copy(camera.quaternion)
     // the painted pieces take the day's light: white by day, warm by evening, blue by night
     pieceTint.copy(cur.white).lerp(cur.light, 0.25)
@@ -601,16 +658,23 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
     // the cursor shifts the snow
     if (hasCursor.current && !entering.current && !reduced) {
       const c = cursor.current; const moved = lastCursor.current.distanceTo(c)
+      const press = pressing.current
       if (moved > 0.02) {
-        // a wide wake: the letters leap up and are thrown along with the cursor, and a furrow is ploughed behind it
+        // a wide wake: the snow flies up and away with the cursor, more of it the faster it goes, and a furrow is ploughed behind;
+        // pressed, the cursor drags a trench and throws the snow out of it
         const mx = (c.x - lastCursor.current.x) / moved, mz = (c.z - lastCursor.current.z) / moved; const sp = Math.min(6, moved / Math.max(d, 1e-3) * 0.12)
-        kick(field, c.x, c.z, 2.4, Math.min(6, 2.0 + sp * 0.8), Math.round(60 + sp * 12), mx * sp * 1.2, mz * sp * 1.2)
-        kick(field, c.x + mx * 1.2, c.z + mz * 1.2, 1.4, 2.4 + sp * 0.5, 30, mx * sp, mz * sp)   // the bow wave, ahead
-        stamp(trail, c.x, c.z, 1.15, 0.5); stamp(trail, c.x - mx * 0.6, c.z - mz * 0.6, 0.9, 0.4)
-        stir.current = 0
+        kick(field, c.x, c.z, 2.6, Math.min(9, 2.6 + sp * 1.1) + (press ? 2.5 : 0), Math.round(70 + sp * 16) + (press ? 40 : 0), mx * sp * 1.4, mz * sp * 1.4)
+        kick(field, c.x + mx * 1.2, c.z + mz * 1.2, 1.5, 2.6 + sp * 0.6, 36, mx * sp, mz * sp)   // the bow wave, ahead
+        const fd = press ? 1.5 : 0.7
+        stamp(trail, c.x, c.z, press ? 1.5 : 1.25, fd); stamp(trail, c.x - mx * 0.6, c.z - mz * 0.6, 1.0, fd * 0.8)
+        dig.current = press ? Math.max(dig.current, 1.2) : 0.4; stir.current = 0
       } else {
-        // at rest the snow keeps stirring under the cursor: a few letters lift and settle, and it presses in slowly
-        stir.current += d; if (stir.current > 0.12) { stir.current = 0; kick(field, c.x + (Math.random() - 0.5) * 2.4, c.z + (Math.random() - 0.5) * 2.4, 0.9, 1.4 + Math.random() * 1.2, 6); stamp(trail, c.x, c.z, 1.3, 0.35) }
+        // held still, the cursor digs: the hole deepens the longer it stays (fast when pressed), and the snow it lifts flies out and lands around
+        dig.current = Math.min(press ? 2.0 : 1.3, dig.current + d * (press ? 1.6 : 0.35))
+        stir.current += d; if (stir.current > (press ? 0.06 : 0.12)) { stir.current = 0
+          const dg = dig.current; stamp(trail, c.x, c.z, 1.1 + dg * 0.35, dg)
+          const a = Math.random() * Math.PI * 2, rr = Math.random() * 1.2
+          kick(field, c.x + Math.cos(a) * rr, c.z + Math.sin(a) * rr, 1.0 + dg * 0.4, (press ? 5 : 1.6) + dg * 1.6, press ? 26 : 5 + Math.round(dg * 4)) }
       }
       lastCursor.current.copy(c)
     }
@@ -628,10 +692,10 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
       F.leapT = Math.min(1, F.leapT + d / F.leap); const t = F.leapT; const a = Math.max(0, (t - 0.16) / 0.84)
       const e = a < 0.5 ? 2 * a * a : 1 - 2 * (1 - a) * (1 - a)
       F.x = F.leapFrom.x + (F.leapTo.x - F.leapFrom.x) * e; F.z = F.leapFrom.z + (F.leapTo.z - F.leapFrom.z) * e; F.lift = 4 * a * (1 - a) * 1.8
-      F.moving = true; F.idle = 0; F.speed = 5
+      F.moving = true; F.idle = 0; F.speed = 4
       if (t >= 1) { F.leap = 0; F.lift = 0; if (!reduced) { stamp(trail, F.x, F.z, 0.7, 0.9); kick(field, F.x, F.z, 1.8, 5, 50) } }
     } else {
-    const want = dist > 0.3 ? Math.min(5.5, 1.2 + dist * 1.1) : 0
+    const want = dist > 0.3 ? Math.min(4.0, 1.0 + dist * 0.8) : 0
     F.speed += (want - F.speed) * Math.min(1, d * (want > F.speed ? 3.5 : 7))
     F.moving = F.speed > 0.08 && dist > 0.02
     if (F.moving) {
@@ -640,7 +704,7 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
       const cx = CHIMIN[0] - F.x, cz = CHIMIN[1] - F.z; const along = cx * hx + cz * hz; const perp = Math.abs(cx * hz - cz * hx); const cd = Math.hypot(cx, cz)
       if (along > 0 && along < dist && perp < KEEP_CHIMIN - 0.2 && cd < KEEP_CHIMIN + 0.7 && !reduced) {
         const half = Math.sqrt(Math.max(0, KEEP_CHIMIN * KEEP_CHIMIN - perp * perp)); const exit = along + half + 0.5
-        F.leapFrom.set(F.x, 0, F.z); F.leapTo.set(F.x + hx * exit, 0, F.z + hz * exit); F.leap = Math.max(0.75, exit / 6); F.leapT = 0
+        F.leapFrom.set(F.x, 0, F.z); F.leapTo.set(F.x + hx * exit, 0, F.z + hz * exit); F.leap = Math.max(0.9, exit / 4.5); F.leapT = 0
         kick(field, F.x, F.z, 1.2, 3.5, 30)
       } else {
         _g.set(F.x + hx * step, 0, F.z + hz * step)
@@ -668,7 +732,7 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
     // after a while it sits down; when it is called again it gets up (the pictures cross-dissolve)
     F.sitting = F.idle > 3.5 && !F.leaving && !reduced
     if (fox.current) {
-      const bob = F.moving ? Math.abs(Math.sin(F.gait)) * (0.06 + 0.1 * Math.max(0, Math.min(1, (F.speed - 3) / 2.5))) * Math.min(1, F.speed / 2) : 0
+      const bob = F.moving ? Math.abs(Math.sin(F.gait)) * (0.06 + 0.1 * Math.max(0, Math.min(1, (F.speed - 2.3) / 1.7))) * Math.min(1, F.speed / 2) : 0
       fox.current.position.set(F.x, H(F.x, F.z) + 0.02 + bob + F.lift - trailAt(trail, F.x, F.z) * 0.3 * (1 - Math.min(1, F.lift)), F.z)  // sunk to the belly: its legs are in the snow; lifted mid-leap
       const la = F.leap > 0 ? Math.max(0, (F.leapT - 0.16) / 0.84) : 0
       fox.current.rotation.z = F.leap > 0 ? (F.flip ? 1 : -1) * (0.4 - 0.8 * la) : F.moving ? Math.sin(F.gait) * 0.05 : 0   // nose up on the way up, level at the top, down on the way down
@@ -707,7 +771,7 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
       P.angles[0] = 0.05 * Math.sin(t * 1.7) + 0.07 * Math.sin(g) * mv                                  // head
       P.angles[1] = 0.16 * Math.sin(t * 2.1) + 0.22 * Math.sin(g * 0.5) * mv                            // tail
       const st = Math.min(1, F.speed / 2.5)                                                            // the stride eases in with its speed
-      const gallop = Math.max(0, Math.min(1, (F.speed - 3.2) / 1.6))                                   // a trot at a walk, a gallop when it runs
+      const gallop = Math.max(0, Math.min(1, (F.speed - 2.4) / 1.3))                                   // a trot at a walk, a gallop when it runs
       const A = (0.42 + 0.22 * gallop) * mv * st
       // trot: diagonal pairs swing together; gallop: the front pair together, the back pair together, a little behind
       const trotN = Math.sin(g), trotF = -Math.sin(g); const galF = Math.sin(g), galB = -Math.sin(g - 1.1)
@@ -779,7 +843,8 @@ function Scene({ onEnter, onAbout, setHover, enterRef, darkRef }: SceneProps) {
       <Piece url={paper('igloo-back')} width={12.4} position={[0, iglooY + 2.6, -2.6]} rotation={[-0.06, 0, 0]} delay={0.2} glisten={1} puff={0.5} relief={0.7} solid sink={0.1} {...piece} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
       <Piece url={paper('igloo-front')} width={11.6} position={[0, iglooY + 2.2, 1.2]} rotation={[-0.05, 0, 0]} delay={0.5} glisten={1} puff={0.5} relief={0.7} solid sink={0.12} {...piece} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
       <Piece url={paper('igloo-arch')} width={4.6} position={[0, H(0, 3.9) + 1.2, 3.9]} rotation={[-0.04, 0, 0]} delay={0.8} glisten={1} puff={0.3} relief={0.7} solid sink={0.14} {...piece} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
-      <mesh ref={doorRef} position={[0, H(0, 3.9) + 0.7, 4.08]} material={doorMat}><planeGeometry args={[1.5, 1.7]} /></mesh>
+      <DoorFill mat={doorFill} y={H(0, 3.9) + 1.2} />
+      <mesh ref={doorRef} position={[0, H(0, 3.9) + 0.8, 4.12]} material={doorMat}><planeGeometry args={[2.0, 2.2]} /></mesh>
       {/* Chimin, lying in the snow */}
       <group ref={chiminGrp} position={[chiminPos.x, H(chiminPos.x, chiminPos.z) + 0.68, chiminPos.z]} quaternion={chiminQuat}>
         <Piece url={paper('chimin')} width={4.2} position={[0, 0, 0]} delay={1.1} solid {...piece} glisten={0.35} puff={0.28} relief={1} bones={CHIMIN_BONES} pose={chiminPose} onHover={h => { setHover(h ? 'chimin' : null); setChiminHover(h) }} onClick={onAbout} />

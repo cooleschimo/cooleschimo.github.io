@@ -199,6 +199,16 @@ Console: clean (art exists for every slot now). The verify scripts lived in the 
    the v5 painted-volume build and must be rebuilt in the same language (a table close up, few objects).
 1c. Headless screenshots are unreliable (frames captured mid-render, SwiftShader fps is meaningless for 82k instances); judge in a browser.
 1d. Letter snow to tune with Chimin: mound shapes, density per layer, letter size, kick strength, sky-fall rate. Real-GPU performance is unmeasured (SwiftShader reads 1 fps regardless); if a laptop struggles, lower N first, then the sparkle/dust counts.
+1p. **v13.2, digging, the lit doorway, a slower fox.** The trail map now holds 0–2 (bytes at half scale, the shaders
+   read `.r * 2.0`): prints stay under 1, a dug hole goes past it (sink = trail × `uTrailDepth` 0.5, so up to 1 unit).
+   The cursor digs: held still it deepens (`dig` ref, 0.35/s to 1.3; pressed 1.6/s to 2.0) and throws letters out
+   (`kick`) every 0.12 s (0.06 s pressed); moving, the wake is bigger and pressed it drags a trench (depth 1.5). Pointer
+   down/up on the canvas sets `pressing` unless the igloo is hovered (`hoverRef`, kept by the scene's `setHover`
+   wrapper). The arch picture's doorway is painted opaque dark, so `DoorFill` lays light over it: `doorMask()` builds a
+   mask from the arch image (opaque and dark = the opening), `doorMaterial()` draws a lamp low inside, light moving on
+   the walls, glints, alpha fading toward the crown, `uSill` clips it below the snow in front; no depth test, at z 3.95
+   over the arch at 3.9. One `flick` (four sines) drives the door fill, the additive halo and `uDoorGlow` on the snow.
+   Fox: top speed 4.0 (was 5.5), leap speed 4, leap time exit/4.5, gallop from speed 2.4.
 1o. **v13, Chimin's own drawing** (`chimin.webp`, 1086×1259 after the crop; cut out with rembg + matting, defringe,
    restyle `--rim 4 --smooth 3`, then a fleck pass that drops saturated matting flecks at the edge). `CHIMIN_ASPECT`
    1259/1086; `CHIMIN_BONES` re-placed (neck pivot 0.5,0.78 with the hair in the head region; shoulders 0.38/0.63 at
