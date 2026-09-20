@@ -205,19 +205,21 @@ const snowUniforms = () => ({
   uLightDir: { value: new THREE.Vector3(-0.35, 0.42, -0.84).normalize() }, uWhite: { value: new THREE.Color('#fcfcff') }, uShadow: { value: new THREE.Color('#b4c1ee') }, uLight: { value: new THREE.Color('#fff4dc') },
   uAurora: { value: 0 }, uTime: { value: 0 }, uSparkle: { value: 1 }, fogColor: { value: new THREE.Color('#f3ecf3') }, fogNear: { value: 24 }, fogFar: { value: 72 },
   uCursor: { value: new THREE.Vector3() }, uCursorOn: { value: 0 }, uDoor: { value: new THREE.Vector3(0, 1.2, 4.2) }, uDoorGlow: { value: 0 }, uDoorCol: { value: new THREE.Color('#ffc27c') },
-  uTrail: { value: null as THREE.Texture | null }, uTrailBox: { value: new THREE.Vector4(TX0, TZ0, 1 / (TX1 - TX0), 1 / (TZ1 - TZ0)) }, uTrailDepth: { value: 0.5 }, uDebug: { value: 0 }, uAlpha: { value: 1.0 }, uGap: { value: 0.6 },
+  uTrail: { value: null as THREE.Texture | null }, uTrailBox: { value: new THREE.Vector4(TX0, TZ0, 1 / (TX1 - TX0), 1 / (TZ1 - TZ0)) }, uTrailDepth: { value: 0.5 }, uDebug: { value: 0 }, uAlpha: { value: 1.0 }, uGap: { value: 0.72 }, uPile: { value: 1 },
 })
 
 function snowMaterial() {
   return new THREE.ShaderMaterial({
     uniforms: snowUniforms(),
-    vertexShader: `varying vec3 vW; varying vec3 vN; varying float vFog; varying float vTrail; uniform sampler2D uTrail; uniform vec4 uTrailBox; uniform float uTrailDepth;
+    vertexShader: `varying vec3 vW; varying vec3 vN; varying float vFog; varying float vTrail; varying float vIn; uniform sampler2D uTrail; uniform vec4 uTrailBox; uniform float uTrailDepth, uPile;
       float trailAt(vec2 xz){ vec2 uv = (xz - uTrailBox.xy) * uTrailBox.zw; if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return 0.0; return texture2D(uTrail, uv).r * 3.0 - 1.0; }
-      void main(){ vec4 w = modelMatrix * vec4(position, 1.0); float tr = trailAt(w.xz); w.y -= tr * uTrailDepth; vTrail = tr; vW = w.xyz; vN = normalize(mat3(modelMatrix) * normal); vec4 mv = viewMatrix * w; vFog = -mv.z; gl_Position = projectionMatrix * mv; }`,
+      void main(){ vec4 w = modelMatrix * vec4(position, 1.0); float tr = trailAt(w.xz); w.y -= tr * uTrailDepth; vTrail = tr;
+        // inside the letter field the painted snow is only the floor under the heap of letters, well below them
+        vIn = uPile * smoothstep(-34.0, -26.0, w.z) * (1.0 - smoothstep(30.0, 36.0, abs(w.x))); w.y -= 0.8 * vIn; vW = w.xyz; vN = normalize(mat3(modelMatrix) * normal); vec4 mv = viewMatrix * w; vFog = -mv.z; gl_Position = projectionMatrix * mv; }`,
     fragmentShader: `
       uniform vec3 uLightDir, uWhite, uShadow, uLight, fogColor, uCursor; uniform float fogNear, fogFar, uAurora, uTime, uSparkle, uCursorOn, uTrailDepth, uDebug, uAlpha, uGap, uDoorGlow;
       uniform sampler2D uTrail; uniform vec4 uTrailBox; uniform vec3 uDoor, uDoorCol;
-      varying vec3 vW; varying vec3 vN; varying float vFog; varying float vTrail;
+      varying vec3 vW; varying vec3 vN; varying float vFog; varying float vTrail; varying float vIn;
       ${SNOW_GLSL}
       void main(){
         vec3 V = normalize(cameraPosition - vW); vec3 n = normalize(vN);
@@ -242,7 +244,7 @@ function snowMaterial() {
         if (uAurora > 0.001) col += auroraOn(vW, uTime) * uAurora;
         float f = smoothstep(fogNear, fogFar, vFog); col = mix(col, fogColor, f);
         // the smooth snow is only the gaps between the letters, in their shadow; past the letter field (the far hills) it is the snow itself
-        col *= mix(1.0, uGap, smoothstep(-34.0, -26.0, vW.z) * (1.0 - smoothstep(30.0, 36.0, abs(vW.x))));
+        col *= mix(1.0, uGap, vIn);   // the floor under the heap is in its shadow
         gl_FragColor = vec4(col, uAlpha); }`,
     transparent: true,
   })
@@ -375,10 +377,13 @@ function buildField(atlas: THREE.Texture, n = N, nf = NF, zMin = -32, zMax = 22,
     if (i < n) {
       // the ground is built of letters: all of them on the surface, big enough to tile it, denser toward the camera;
       // the smooth snow under them is only the shadowed gaps between
-      const x = (Math.random() - 0.5) * 2 * xHalf, z = zMin + (zMax - zMin) * Math.pow(Math.random(), 0.7)
-      pos[i * 3] = x; pos[i * 3 + 2] = z; pos[i * 3 + 1] = H(x, z) + 0.005 + Math.random() * 0.05
-      // most of them bright white (flag 1.08: the shader lifts them to the snow's white and lets them sparkle)
-      if (Math.random() < 0.7) { color[i * 3] = 1.08; color[i * 3 + 1] = 1.08; color[i * 3 + 2] = 1.08 }
+      // a heap: four layers of letters, the top one on the surface, the ones below seen through its gaps and in the
+      // walls of anything dug; nothing is painted under them
+      const x = (Math.random() - 0.5) * 2 * xHalf, z = zMin + (zMax - zMin) * Math.pow(Math.random(), 0.7); const layer = i % 4
+      pos[i * 3] = x; pos[i * 3 + 2] = z; pos[i * 3 + 1] = H(x, z) + 0.005 + Math.random() * 0.06 - layer * 0.24
+      // most of the top bright white (flag 1.08: the shader lifts them to the snow's white and lets them sparkle); the heap darkens a little with depth
+      if (layer < 2 && Math.random() < 0.7) { color[i * 3] = 1.08; color[i *3 + 1] = 1.08; color[i * 3 + 2] = 1.08 }
+      else if (layer > 0) { const k = 1 - layer * 0.1; color[i * 3] *= k; color[i * 3 + 1] *= k + 0.01; color[i * 3 + 2] *= k + 0.04 }
       restOrientation(x, z, _q); quat.set([_q.x, _q.y, _q.z, _q.w], i * 4)
     } else {
       falling[i] = 1; flying[i] = 1; spawnSky(pos, vel, i * 3); pos[i * 3 + 1] = Math.random() * 20; scl[i] *= 0.65
@@ -555,7 +560,7 @@ function Scene({ onEnter, onAbout, setHover: setHoverProp, enterRef, darkRef }: 
   const atlas = useMemo(() => glyphAtlas(), [])
   const field = useMemo(() => buildField(atlas), [atlas])
   const mound = useMemo(() => moundGeometry(), [])
-  const moundMat = useMemo(() => snowMaterial(), [])
+  const moundMat = useMemo(() => snowMaterial(), []); const pickMat = useMemo(() => new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false }), [])
   const trail = useMemo(() => makeTrail(), []); field.trail = trail
   const skyMat = useMemo(() => skyMaterial(), [])
 
@@ -862,7 +867,8 @@ function Scene({ onEnter, onAbout, setHover: setHoverProp, enterRef, darkRef }: 
       <fog attach="fog" args={['#e8e3f1', 24, 72]} />
       <mesh material={skyMat} renderOrder={-1}><sphereGeometry args={[150, 32, 16]} /></mesh>
       {/* the snow: the piled ground and the letters on it; the snow in the air is letters too */}
-      <mesh ref={moundRef} geometry={mound} material={moundMat} />
+      <mesh ref={moundRef} geometry={mound} material={pickMat} />
+      <mesh geometry={mound} material={moundMat} />
       <primitive object={field.mesh} />
       {/* the igloo, set into the middle mound, its base in the snow */}
       <Piece url={paper('igloo-back')} width={12.4} position={[0, iglooY + 2.6, -2.6]} rotation={[-0.06, 0, 0]} delay={0.2} glisten={1} puff={0.5} relief={0.7} solid sink={0.1} {...piece} onHover={h => setHover(h ? 'igloo' : null)} onClick={() => enterRef.current()} />
@@ -925,7 +931,7 @@ export type SnowView = { group: THREE.Group; cur: Cur; tick: (dt: number, reduce
 export function makeSnowView(): SnowView {
   const group = new THREE.Group()
   const atlas = glyphAtlas(); const field = buildField(atlas, 22000, 160, -60, -9.5, 34)
-  const mound = new THREE.Mesh(moundGeometryRect(-40, 40, -70, -8.5), snowMaterial()); (mound.material as THREE.ShaderMaterial).uniforms.uAlpha.value = 1
+  const mound = new THREE.Mesh(moundGeometryRect(-40, 40, -70, -8.5), snowMaterial()); (mound.material as THREE.ShaderMaterial).uniforms.uAlpha.value = 1; (mound.material as THREE.ShaderMaterial).uniforms.uPile.value = 0
   const sky = new THREE.Mesh(new THREE.SphereGeometry(140, 32, 16), skyMaterial()); sky.renderOrder = -1
   const flat = makeTrail(); flat.tex.needsUpdate = true   // an untouched surface, so the shaders read level ground
   for (const m of [mound.material as THREE.ShaderMaterial, field.mesh.material as THREE.ShaderMaterial]) m.uniforms.uTrail.value = flat.tex

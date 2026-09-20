@@ -203,6 +203,9 @@ Console: clean (art exists for every slot now). The verify scripts lived in the 
    so they tile it, 70% flagged white, tilt ±0.35; the mound is solid (`uAlpha` 1) and darkened by `uGap` 0.6 so it is
    only the shadowed gaps between letters, fading back to plain snow past the letter field (z < −26, |x| > 30: the far
    hills). The letters carry the light and the sparkle; the mound still carries the raycast, the door pool and the prints.
+   v14.1: the letters are a heap of four layers (0.24 apart, the lower ones tinted down 10% a layer, white flags only
+   on the top two) and the painted mound is dropped 0.8 under them inside the field (`uPile`, `vIn`; darkened by `uGap`
+   0.72) as the heap's shadowed floor, seen only through gaps; an unseen copy at the true height (`pickMat`) takes the ray.
 1s. **v13.5, sweeps that bring the snow back; letters grounded.** The wake now carries letters along the sweep
    (`kick` takes `radial` 0.25 and a push along the motion; strength 1.6+0.4·sp, push 1.4+0.6·sp, so flights are ~0.4–2
    units) instead of blowing them out; a landed letter is not kicked again for `COOL` 0.3 s (`field.landed`, `field.time`),
