@@ -1,10 +1,18 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
+import { Component, lazy, Suspense, useCallback, useEffect, useState, type ReactNode } from 'react'
 import { AnimatePresence } from 'motion/react'
 import { Sheet } from '../sheets/Sheet'
 import { About, Photos } from '../sheets/contents'
 import { DesignPanel, Magazine, PlacesSpread, Projects } from '../sheets/room'
 
 type Open = { kind: 'about' } | { kind: 'photos' } | { kind: 'projects' } | { kind: 'design'; n: number } | { kind: 'essay'; slug: string } | { kind: 'places' } | null
+
+/** if a scene throws, say what it said instead of showing nothing */
+class SceneBoundary extends Component<{ children: ReactNode }, { msg: string | null }> {
+  state = { msg: null as string | null }
+  static getDerivedStateFromError(e: unknown) { return { msg: e instanceof Error ? `${e.message}\n${(e.stack || '').split('\n').slice(1, 4).join('\n')}` : String(e) } }
+  componentDidCatch(e: unknown) { console.error(e) }
+  render() { return this.state.msg ? <pre className="label" style={{ position: 'fixed', top: 8, left: 8, zIndex: 99, whiteSpace: 'pre-wrap', maxWidth: '70vw', background: 'rgba(255,255,255,0.85)', padding: '6px 8px', borderRadius: 6 }}>something broke: {this.state.msg}</pre> : this.props.children }
+}
 
 const Outside = lazy(() => import('../snow/Letters').then(m => ({ default: m.Letters })))
 const Inside = lazy(() => import('../snow/Inside').then(m => ({ default: m.Inside })))
@@ -35,12 +43,12 @@ export function Room() {
     <div className={`room ${open ? 'room--dim' : ''} ${arrived ? '' : 'room--arriving'} ${shut ? 'room--shut' : ''}`}>
       {!arrived && (
         <Suspense fallback={<div className="snow" aria-hidden="true" />}>
-          <Outside onEnter={() => setArrived(true)} onAbout={() => setOpen({ kind: 'about' })} />
+          <SceneBoundary><Outside onEnter={() => setArrived(true)} onAbout={() => setOpen({ kind: 'about' })} /></SceneBoundary>
         </Suspense>
       )}
       {arrived && (
         <Suspense fallback={null}>
-          <Inside opened={opened} shut={shut} onShutter={() => setShut(v => !v)} onOpen={onOpen} />
+          <SceneBoundary><Inside opened={opened} shut={shut} onShutter={() => setShut(v => !v)} onOpen={onOpen} /></SceneBoundary>
         </Suspense>
       )}
 
