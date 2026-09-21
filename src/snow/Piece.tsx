@@ -1,7 +1,6 @@
 import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
 import { useFrame, useThree } from '@react-three/fiber'
-import { useTexture } from '@react-three/drei'
 import { gsap } from '../lib/gsap'
 import { prefersReducedMotion } from '../lib/motion-prefs'
 import { BONES, makePaintMaterial } from './paint'
@@ -9,6 +8,31 @@ import { BONES, makePaintMaterial } from './paint'
 /** Public art, resolved against the build base so the site works from a subfolder. */
 export const B = import.meta.env.BASE_URL.replace(/\/$/, '')
 export const paper = (name: string) => `${B}/art/paper/${name}.webp`
+
+/**
+ * A picture, loaded for React suspense: fetched (so a failure has a status to report), tried four times with a pause
+ * between, decoded, then a texture. The plain image loader gave up on the first dropped request with no reason.
+ */
+type ArtEntry = { status: 'pending' | 'done' | 'error'; promise: Promise<void>; tex?: THREE.Texture; error?: Error }
+const artCache = new Map<string, ArtEntry>()
+async function loadArt(url: string): Promise<THREE.Texture> {
+  let last: unknown
+  for (let i = 0; i < 4; i++) {
+    try {
+      const r = await fetch(url); if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      const blob = await r.blob(); const img = new Image(); img.src = URL.createObjectURL(blob); await img.decode()
+      const tex = new THREE.Texture(img); tex.colorSpace = THREE.SRGBColorSpace; tex.needsUpdate = true; return tex
+    } catch (e) { last = e; await new Promise((res) => setTimeout(res, 500 * (i + 1))) }
+  }
+  throw new Error(`could not load ${url} after 4 tries: ${last instanceof Error ? last.message : String(last)}`)
+}
+export function useArt(url: string): THREE.Texture {
+  let e = artCache.get(url)
+  if (!e) { const entry: ArtEntry = { status: 'pending', promise: Promise.resolve() }; entry.promise = loadArt(url).then((t) => { entry.tex = t; entry.status = 'done' }, (err) => { entry.error = err; entry.status = 'error' }); artCache.set(url, entry); e = entry }
+  if (e.status === 'pending') throw e.promise
+  if (e.status === 'error') throw e.error
+  return e.tex!
+}
 
 export type PieceControl = { reveal: (to: number, d?: number) => void; dissolve: (to: number, d?: number) => void; fade: (to: number, d?: number) => void; mat: THREE.ShaderMaterial }
 
@@ -95,7 +119,7 @@ function heightMap(img: HTMLImageElement): THREE.DataTexture {
 
 /** A painted picture standing on a plane. Arrives as ink and fills with watercolour; can dissolve into pigment; can be a puppet. */
 export function Piece({ url, width, position, rotation = [0, 0, 0], delay = 0, flip = false, opacity = 1, tint, onHover, onClick, control, renderOrder, solid = false, quaternion, sink = 0, snow, light, fog = false, frost = 0, grain = 0, glisten = 0, bones, pose, eye, puff = 0, relief = 0, shadow, lampA, lampACol, lampB, lampBCol }: PieceProps) {
-  const tex = useTexture(url); tex.colorSpace = THREE.SRGBColorSpace
+  const tex = useArt(url)
   const scene = useThree(s => s.scene)
   const img = tex.image as HTMLImageElement
   const aspect = img.height / img.width

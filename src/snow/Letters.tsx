@@ -1,12 +1,11 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { useTexture } from '@react-three/drei'
 import { EffectComposer, Bloom, Noise, Vignette } from '@react-three/postprocessing'
 import { gsap } from '../lib/gsap'
 import { prefersReducedMotion } from '../lib/motion-prefs'
 import { getMode, type Mode } from '../lib/mode'
-import { Piece, paper, type Bone, type PieceControl, type Pose } from './Piece'
+import { Piece, paper, useArt, type Bone, type PieceControl, type Pose } from './Piece'
 import { createGrains } from './grains'
 
 /**
@@ -22,7 +21,7 @@ type Props = { onEnter: () => void; onAbout: () => void }
 const G = 80            // field size
 const PHONE = typeof window !== 'undefined' && window.innerWidth < 760
 const GRAINS_Q = typeof window !== 'undefined' ? Number(new URLSearchParams(window.location.search).get('grains')) : 0   // ?grains=N to try another count
-const N = GRAINS_Q || (PHONE ? 120000 : 380000)   // letters on the field: fine grains, simulated on the GPU (fewer on a phone)
+const N = GRAINS_Q || (PHONE ? 100000 : 260000)   // letters on the field: fine grains, simulated on the GPU (fewer on a phone)
 const NF = PHONE ? 1500 : 4000      // letters falling from the sky: all the snowfall is letters
 const R = 5.6           // igloo footprint radius
 const CHARS = 'AaBbCcdDeEfFgGhHiJjkKLMmnNoOPpqrRsStTuvVwWxyzZ'
@@ -481,7 +480,7 @@ function doorMaterial() {
   })
 }
 function DoorFill({ mat, y }: { mat: THREE.ShaderMaterial; y: number }) {
-  const tex = useTexture(paper('igloo-arch'))
+  const tex = useArt(paper('igloo-arch'))
   useEffect(() => { mat.uniforms.uMask.value = doorMask(tex.image as HTMLImageElement) }, [tex, mat])
   return <mesh position={[0, y, 3.95]} rotation={[-0.04, 0, 0]} material={mat} renderOrder={1}><planeGeometry args={[ARCH_W, ARCH_W * ARCH_ASPECT]} /></mesh>
 }
